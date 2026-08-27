@@ -6,7 +6,7 @@
       "name": "bareiron",
       "version": "1.21.8",
       "size": "46KB",
-      "size_bytes": 46791,
+      "size_bytes": 46804,
       "description": "Ultra-lightweight Minecraft server written in C for embedded devices",
       "category": "gaming",
       "filename": "bareiron-1.21.8.ngpkg"
@@ -15,7 +15,7 @@
       "name": "bash",
       "version": "5.2.21",
       "size": "821KB",
-      "size_bytes": 841012,
+      "size_bytes": 841027,
       "description": "GNU Bourne-Again SHell - powerful interactive command language",
       "category": "utilities",
       "filename": "bash-5.2.21.ngpkg"
@@ -33,7 +33,7 @@
       "name": "git",
       "version": "2.43.5",
       "size": "10.0MB",
-      "size_bytes": 10494252,
+      "size_bytes": 10494221,
       "description": "Fast, scalable, distributed revision control system (with HTTPS support)",
       "category": "development",
       "filename": "git-2.43.5.ngpkg"
@@ -42,7 +42,7 @@
       "name": "htop",
       "version": "3.3.0",
       "size": "248KB",
-      "size_bytes": 254431,
+      "size_bytes": 254418,
       "description": "Interactive process viewer and system monitor",
       "category": "monitoring",
       "filename": "htop-3.3.0.ngpkg"
@@ -51,7 +51,7 @@
       "name": "nano",
       "version": "7.2",
       "size": "302KB",
-      "size_bytes": 309335,
+      "size_bytes": 309318,
       "description": "Lightweight CLI text editor with syntax highlighting",
       "category": "editors",
       "filename": "nano-7.2.ngpkg"
@@ -60,7 +60,7 @@
       "name": "netclient",
       "version": "1.1.0",
       "size": "5.3MB",
-      "size_bytes": 5553042,
+      "size_bytes": 5553052,
       "description": "Fast, automated WireGuard overlay mesh network client",
       "category": "networking",
       "filename": "netclient-1.1.0.ngpkg"
@@ -69,7 +69,7 @@
       "name": "screen",
       "version": "4.9.1",
       "size": "352KB",
-      "size_bytes": 360838,
+      "size_bytes": 360811,
       "description": "Full-screen terminal multiplexer and window manager",
       "category": "utilities",
       "filename": "screen-4.9.1.ngpkg"
@@ -78,7 +78,7 @@
       "name": "ufw",
       "version": "0.36.2",
       "size": "7.3MB",
-      "size_bytes": 7686909,
+      "size_bytes": 7686304,
       "description": "Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall",
       "category": "security",
       "filename": "ufw-0.36.2.ngpkg"
