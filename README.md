@@ -1,27 +1,27 @@
-# 🛡️ ngpkg — Next-Generation Package Manager for OpenNGFW
+# ngpkg - Netgear Package Manager for OpenNGFW
 
 [![Platform](https://img.shields.io/badge/platform-OpenNGFW%20%7C%20Linux%20ARMv7-cyan.svg)](https://code.weexnes.dev/OpenNGFW/ngpkg)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Built With V](https://img.shields.io/badge/built%20with-Vlang-blue.svg)](https://vlang.io)
 
-`ngpkg` is the high-performance, standalone package manager designed specifically for **OpenNGFW** (embedded Linux router operating systems). It enables routers to run rich userspace applications (like `nano`, `htop`, `btop`, `screen`, `git`, `ufw`, `netclient`, `bareiron`) off persistent USB storage (`/mnt/usb/opt`) without consuming precious onboard flash.
+`ngpkg` is a standalone package manager designed for OpenNGFW (embedded Linux router operating systems). It enables routers to run userspace applications (such as `bash`, `nano`, `htop`, `btop`, `screen`, `git`, `ufw`, `netclient`, `bareiron`) installed on persistent USB storage (`/mnt/usb/opt`) without utilizing onboard flash memory.
 
 ---
 
-## 🌟 Key Features
+## Features
 
-- **Zero Runtime Dependencies**: Written in V and pre-translated to pure standard C (`ngpkg.c`). Runs on `musl` libc without dynamic dependencies.
-- **Branded User Binaries**: Installs binary symlinks into `$HOME/.ngpkg-bin/` (and `/root/.ngpkg-bin/`), automatically integrated into `$PATH`.
-- **Modular Recipe Framework**: Simple declarative `recipe.json` + `build.sh` system that lets anyone easily create and build new packages.
-- **Universal BusyBox Extraction**: Resilient multi-tier decompression pipeline compatible with any BusyBox or GNU tar configuration.
-- **High-Performance Repo Server**: Built-in Vlang HTTP server featuring a modern dark-mode glassmorphic dashboard.
+- **Zero Runtime Dependencies**: The client is written in V and translated to standalone C (`client/ngpkg.c`). It compiles against `musl` libc with no external library dependencies.
+- **Persistent Storage Integration**: Installs binaries to `/mnt/usb/opt` and automatically manages symlinks in `$HOME/.ngpkg-bin/` and `/root/.ngpkg-bin/`.
+- **Standalone Recipe Framework**: Each package is defined by a `recipe.json` manifest and a standalone `build.sh` script.
+- **Universal BusyBox Extraction**: Multi-tier extraction pipeline compatible with BusyBox `tar` and GNU `tar`.
+- **Package Repository Server**: Built-in HTTP server (`server/pkg_server.v`) providing package distribution and metadata APIs.
 
 ---
 
-## 🚀 Quick Start on Router
+## Router Usage
 
 ### 1. Configure Repository
-On your OpenNGFW router:
+On the OpenNGFW router:
 ```bash
 export REPO_URL="http://<SERVER_IP>:8000/packages"
 pkg update
@@ -29,103 +29,113 @@ pkg update
 
 ### 2. Available Commands
 ```bash
-# Update local index
+# Update local package index
 pkg update
 
-# List available & installed packages
+# List available and installed packages
 pkg list
 
-# Search for a package
-pkg search wireguard
+# Search packages
+pkg search <query>
 
-# Inspect package details & installed files
-pkg info screen
+# Show package metadata and installed file list
+pkg info <package>
 
-# Install an application to /mnt/usb/opt
-pkg install btop
-pkg install screen
-pkg install git
+# Install a package to /mnt/usb/opt
+pkg install <package>
 
-# Remove an application and clean symlinks
-pkg remove btop
+# Remove a package and clean symlinks
+pkg remove <package>
 
-# Check USB storage and prefix status
+# Show storage breakdown and installation status
 pkg status
 ```
 
 ---
 
-## 🛠️ Adding New Packages (Recipe Framework)
+## Adding Packages (Recipe Framework)
 
-Adding a new application is as simple as running:
+Each package in `recipes/<name>/` consists of two files:
+- `recipe.json`: Package metadata manifest
+- `build.sh`: Standalone cross-compilation and packaging script
 
+### Creating a Recipe
+
+Scaffold a new recipe:
 ```bash
-# Scaffold a new recipe
-python3 framework/ngpkg_build.py new myapp
+python3 framework/ngpkg_build.py new <name>
 ```
 
-This creates `recipes/myapp/recipe.json`:
+Example `recipes/myapp/recipe.json`:
 ```json
 {
   "name": "myapp",
   "version": "1.0.0",
-  "description": "My awesome application",
+  "description": "Utility description",
   "category": "utilities",
   "license": "MIT",
   "homepage": "https://example.com",
-  "type": "binary",
-  "source": {
-    "url": "https://github.com/user/myapp/releases/download/v1.0.0/myapp-armv7.tar.gz"
-  },
+  "type": "source",
   "binaries": [
     "bin/myapp"
   ]
 }
 ```
 
-Then build it:
+Example `recipes/myapp/build.sh`:
 ```bash
-# Build single recipe
+#!/usr/bin/env bash
+set -euo pipefail
+mkdir -p "${STAGE_DIR}/bin"
+
+# Cross-compile or download application
+${CROSS_CC:-arm-buildroot-linux-musleabi-gcc} -O2 src/main.c -o "${STAGE_DIR}/bin/myapp"
+${CROSS_STRIP:-arm-buildroot-linux-musleabi-strip} --strip-all "${STAGE_DIR}/bin/myapp"
+```
+
+### Building Packages
+
+```bash
+# Build a single package
 python3 framework/ngpkg_build.py build myapp
 
-# Or build all recipes & update index
+# Build all packages and generate repository index
 python3 framework/ngpkg_build.py build-all
 ```
 
-For detailed instructions, see [Creating Packages Guide](docs/CREATING_PACKAGES.md).
-
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```text
 ngpkg/
-├── client/              # Client source tree (ngpkg.v & standalone ngpkg.c)
+├── client/              # Client source code (ngpkg.v and standalone ngpkg.c)
 ├── server/              # Package repository server (pkg_server.v)
-├── framework/           # ngpkg-build CLI engine & recipe validator
-├── recipes/             # Modular package recipes (nano, htop, btop, git, screen...)
-├── repo/packages/       # Built .ngpkg archives and index.txt / index.json
-├── docs/                # Comprehensive developer documentation
-├── Makefile             # Workspace build orchestration
+├── framework/           # Recipe build orchestration engine (ngpkg_build.py)
+├── recipes/             # Standalone package build recipes
+├── repo/packages/       # Built .ngpkg archives and index metadata
+├── docs/                # Developer and CLI documentation
+├── Makefile             # Workspace build targets
 └── README.md            # Project overview
 ```
 
 ---
 
-## ⚙️ Building the Toolchain Locally
+## Local Compilation
 
 ```bash
-# Build native client, server, and all package recipes
+# Build native host client, server, and package recipes
 make
 
-# Build ARM target client (requires Buildroot toolchain)
+# Build ARM target client using cross-toolchain
 make client-arm
 
-# Launch repository server & web dashboard on port 8000
+# Start repository server on port 8000
 make serve
 ```
 
 ---
 
-## 📄 License
-MIT License. Free and open source for the OpenNGFW community.
+## License
+
+MIT License.
