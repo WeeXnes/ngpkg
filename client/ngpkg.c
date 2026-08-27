@@ -7,8 +7,10 @@
 
 // V comptime_definitions:
 // V compile time defines by -d or -define flags:
-//     All custom defines      : linux
-//     Turned ON custom defines: linux
+//     All custom defines      : no_backtrace,cross,linux
+//     Turned ON custom defines: no_backtrace,cross,linux
+#define CUSTOM_DEFINE_no_backtrace
+#define CUSTOM_DEFINE_cross
 #define CUSTOM_DEFINE_linux
 
 
@@ -40,9 +42,11 @@ typedef struct _option _option;
 typedef struct None__ None__;
 typedef struct DenseArray DenseArray;
 typedef struct map map;
+typedef struct VMemoryBlock VMemoryBlock;
 typedef struct string string;
 typedef union StrIntpMem StrIntpMem;
 typedef struct StrIntpData StrIntpData;
+typedef struct ToWideConfig ToWideConfig;
 typedef struct os__Eof os__Eof;
 typedef struct os__NotExpected os__NotExpected;
 typedef struct os__File os__File;
@@ -736,6 +740,22 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 
 #endif
 
+#if defined(_WIN32)
+
+// added by module `os`, file: fd.c.v:10:
+
+#if defined(__has_include)
+#if __has_include(<winsock2.h>)
+#include <winsock2.h>
+#else
+#error VERROR_MESSAGE Header file <winsock2.h>, needed for module `os` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <winsock2.h>
+#endif
+
+#endif
+
 // added by module `os`, file: os.c.v:5:
 
 #if defined(__has_include)
@@ -751,6 +771,38 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 
 // added by module `os`, file: os.c.v:6:
 #include <errno.h>
+
+#if defined(__APPLE__)
+
+// added by module `os`, file: os.c.v:9:
+
+#if defined(__has_include)
+#if __has_include(<mach-o/dyld.h>)
+#include <mach-o/dyld.h>
+#else
+#error VERROR_MESSAGE Header file <mach-o/dyld.h>, needed for module `os` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <mach-o/dyld.h>
+#endif
+
+#endif
+
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
+
+// added by module `os`, file: os.c.v:15:
+
+#if defined(__has_include)
+#if __has_include(<sys/sysctl.h>)
+#include <sys/sysctl.h>
+#else
+#error VERROR_MESSAGE Header file <sys/sysctl.h>, needed for module `os` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <sys/sysctl.h>
+#endif
+
+#endif
 
 // added by module `os`, file: os_nix.c.v:5:
 
@@ -878,17 +930,25 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #define _const_init_capicity 32
 #define _const_init_even_index 30
 #define _const_extra_metas_inc 4
+#define _const_prealloc_block_size 16777216
 #define _const_rune_maps_columns_in_row 4
 #define _const_rune_maps_ul -3
 #define _const_rune_maps_utl -2
 #define _const_degree 6
+#define _const_max_len 11
 #define _const_replace_stack_buffer_size 10
 #define _const_kmp_stack_buffer_size 20
+#define _const_cp_acp 0
+#define _const_cp_utf8 65001
 #define _const_os__max_path_buffer_size 4096
 #define _const_os__buf_size 4096
 #define _const_os__error_code_not_set -1
 #define _const_os__max_path_len 4096
 #define _const_os__f_ok 0
+#define _const_os__x_ok 1
+#define _const_os__s_ixusr 64
+#define _const_os__s_ixgrp 8
+#define _const_os__s_ixoth 1
 
 // Enum definitions:
 
@@ -1043,6 +1103,8 @@ typedef u8 Array_fixed_u8_26 [26];
 typedef u8 Array_fixed_u8_512 [512];
 typedef u64 Array_fixed_u64_47 [47];
 typedef u64 Array_fixed_u64_31 [31];
+typedef voidptr Array_fixed_voidptr_100 [100];
+typedef u8 Array_fixed_u8_1000 [1000];
 typedef u8 Array_fixed_u8_17 [17];
 typedef i32 Array_fixed_i32_1264 [1264];
 typedef int Array_fixed_int_10 [10];
@@ -1051,6 +1113,7 @@ typedef array Array_StrIntpType;
 typedef u8 Array_fixed_u8_4096 [4096];
 typedef u8 Array_fixed_u8_1024 [1024];
 typedef Array_u8 strings__Builder;
+typedef void (*FnGC_WarnCB)(char*,usize);
 // #start sorted_symbols
 struct none {
 	E_STRUCT_DECL;
@@ -1105,6 +1168,16 @@ union strconv__Float32u {
 	u32 u;
 };
 
+struct VMemoryBlock {
+	u8* current;
+	u8* stop;
+	u8* start;
+	VMemoryBlock* previous;
+	VMemoryBlock* next;
+	int id;
+	int mallocs;
+};
+
 union StrIntpMem {
 	u32 d_c;
 	u8 d_u8;
@@ -1131,6 +1204,10 @@ struct strconv__BF_param {
 	bool sign_flag;
 	strconv__Align_text align;
 	bool rm_tail_zero;
+};
+
+struct ToWideConfig {
+	bool from_ansi;
 };
 
 struct strconv__Dec32 {
@@ -1303,6 +1380,7 @@ u32 v_typeof_interface_idx_IError(u32 sidx);
 // end of definitions #endif
 strings__Builder strings__new_builder(int initial_size);
 void strings__Builder_write_ptr(strings__Builder* b, u8* ptr, int len);
+void strings__Builder_write_rune(strings__Builder* b, rune r);
 void strings__Builder_write_runes(strings__Builder* b, Array_rune runes);
 void strings__Builder_write_u8(strings__Builder* b, u8 data);
 void strings__Builder_write_string(strings__Builder* b, string s);
@@ -1402,7 +1480,9 @@ VV_LOC void builtin__array_prepend_noscan(array* a, voidptr val);
 VV_LOC void builtin__array_push_noscan(array* a, voidptr val);
 VV_LOC void builtin__array_push_many_noscan(array* a, voidptr val, int size);
 void builtin__print_backtrace(void);
+VV_LOC void builtin__eprint_space_padding(string output, int max_len);
 bool builtin__print_backtrace_skipping_top_frames(int xskipframes);
+VV_LOC bool builtin__print_backtrace_skipping_top_frames_bsd(int skipframes);
 VV_LOC bool builtin__print_backtrace_skipping_top_frames_linux(int skipframes);
 void builtin___v_exit(int code);
 VV_LOC void builtin__v_segmentation_fault_handler(i32 signal_number);
@@ -1413,6 +1493,11 @@ u64 builtin__v_getpid(void);
 u64 builtin__v_gettid(void);
 bool builtin__isnil(voidptr v);
 VV_LOC void builtin__builtin_init(void);
+VV_LOC void builtin__break_if_debugger_attached(void);
+void builtin__gc_set_warn_proc(void (*cb)(char* msg, usize arg));
+VV_LOC void builtin__internal_gc_warn_proc_none(char* msg, usize arg);
+VV_LOC void builtin__print_libbacktrace(int frames_to_skip);
+VV_LOC void builtin__eprint_libbacktrace(int frames_to_skip);
 int builtin__vstrlen(u8* s);
 int builtin__vstrlen_char(char* s);
 voidptr builtin__vmemcpy(voidptr dest, const voidptr const_src, isize n);
@@ -1517,6 +1602,12 @@ void builtin__panic_result_not_set(string s);
 void builtin___v_panic(string s);
 void builtin__panic_n(string s, i64 number1);
 void builtin__panic_n2(string s, i64 number1, i64 number2);
+VV_LOC void builtin__vmemory_abort_on_nil(voidptr p, isize bytes);
+VV_LOC VMemoryBlock* builtin__vmemory_block_new(VMemoryBlock* prev, isize at_least, isize align);
+VV_LOC u8* builtin__vmemory_block_malloc(isize n, isize align);
+VV_LOC u8* builtin__prealloc_malloc(isize n);
+VV_LOC u8* builtin__prealloc_realloc(u8* old_data, isize old_size, isize new_size);
+VV_LOC u8* builtin__prealloc_calloc(isize n);
 void builtin__eprintln(string s);
 void builtin__eprint(string s);
 void builtin__flush_stdout(void);
@@ -1572,6 +1663,7 @@ string builtin__string_trim_string_right(string s, string str);
 string builtin__string_str(string s);
 VV_LOC u8 builtin__string_at(string s, int idx);
 void builtin__string_free(string* s);
+string builtin__string_all_before(string s, string sub);
 string builtin__string_all_after(string s, string sub);
 string builtin__string_all_after_last(string s, string sub);
 Array_string builtin__string_fields(string s);
@@ -1582,6 +1674,9 @@ VV_LOC f64 builtin__fabs64(f64 x);
 VV_LOC u64 builtin__abs64(i64 x);
 VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, strings__Builder* sb);
 string builtin__str_intp(int data_len, StrIntpData* input_base);
+u16* builtin__string_to_wide(string _str, ToWideConfig param);
+string builtin__string_from_wide(u16* _wstr);
+string builtin__string_from_wide2(u16* _wstr, int len);
 int builtin__utf8_char_len(u8 b);
 string builtin__utf32_to_str(u32 code);
 string builtin__utf32_to_str_no_malloc(u32 code, u8* buf);
@@ -1614,12 +1709,14 @@ VV_LOC multi_return_int_bool os__posix_wait4_to_exit_status(int waitret);
 string os__posix_get_error_msg(int code);
 VV_LOC int os__vpclose(voidptr f);
 bool os__exists(string path);
+bool os__is_executable(string path);
 _result_void os__rm(string path);
 _result_void os__rmdir(string path);
 string os__real_path(string fpath);
 VV_LOC void os__normalize_drive_letter(string path);
 _result_void os__chmod(string path, int mode);
 IError os__error_posix(os__SystemError e);
+IError os__error_win32(os__SystemError e);
 void os__Result_free(os__Result* result);
 _result_Array_string os__read_lines(string path);
 string os__file_name(string path);
@@ -1633,6 +1730,7 @@ _result_Array_string os__ls(string path);
 _result_void os__mkdir(string path, os__MkdirParams params);
 os__Result os__execute(string cmd);
 _result_void os__symlink(string target, string link_name);
+string os__get_error_msg(int code);
 void os__File_close(os__File* f);
 _result_os__Stat os__stat(string path);
 _result_os__Stat os__lstat(string path);
@@ -1784,6 +1882,8 @@ Array_fixed_u64_584 _const_strconv__pow5_inv_split_64_x = {((u64)(0x000000000000
 ((u64)(0x2746cd003e3e73feLL)), ((u64)(0x03a162b4923d708bLL)), ((u64)(0x1f6bd73364fec332LL)), ((u64)(0x02e7822a0e978d3cLL)), ((u64)(0xe5efdf5c50cbcf5bULL)), ((u64)(0x0252ce880bac70fcLL)), ((u64)(0x3cb2fefa1adfb22bLL)), ((u64)(0x03b7b0d9ac471b2eLL)), ((u64)(0x308f3261af195b56LL)), ((u64)(0x02f95a47bd05af58LL)), ((u64)(0x5a0c284e25ade2abLL)), ((u64)(0x0261150630d15913LL)), ((u64)(0x29ad0d49d5e30445LL)), ((u64)(0x03ce8809e7b55b52LL)), ((u64)(0x548a7107de4f369dLL)), ((u64)(0x030ba007ec9115dbLL)), ((u64)(0xdd3b8d9fe50c2bb1ULL)), ((u64)(0x026fb3398a0dab15LL)), ((u64)(0x952c15cca1ad12b5ULL)), ((u64)(0x03e5eb8f434911bcLL)), ((u64)(0x775677d6e7bda891LL)), ((u64)(0x031e560c35d40e30LL)), ((u64)(0xc5dec645863153a7ULL)), ((u64)(0x027eab3cf7dcd826LL))}; // fixed array const
 bool v_memory_panic = false; // global 6
 
+i64 total_m = ((i64)(0)); // global 6
+
 int g_main_argc = ((int)(0)); // global 6
 
 voidptr g_main_argv = ((void*)0); // global 6
@@ -1797,6 +1897,8 @@ i64 _const_min_i64; // inited later
 i64 _const_max_i64; // inited later
 const u32 _const_hash_mask = 16777215; // precomputed2
 const u32 _const_probe_inc = 16777216; // precomputed2
+VMemoryBlock* g_memory_block; // global 6
+
 Array_fixed_i32_1264 _const_rune_maps = {((i32)(0xB5)), 0xB5, 743, 0, 0xC0, 0xD6, 0, 32, 0xD8, 0xDE, 0, 32, 0xE0, 0xF6, -32, 0, 
 0xF8, 0xFE, -32, 0, 0xFF, 0xFF, 121, 0, 0x100, 0x12F, -3, -3, 0x130, 0x130, 0, -199, 
 0x131, 0x131, -232, 0, 0x132, 0x137, -3, -3, 0x139, 0x148, -3, -3, 0x14A, 0x177, -3, -3, 
@@ -2117,11 +2219,11 @@ u32 v_typeof_interface_idx_IError(u32 sidx) {
 	if (sidx == _IError_voidptr_index) return 2;
 	if (sidx == _IError_Error_index) return 63;
 	if (sidx == _IError_MessageError_index) return 64;
-	if (sidx == _IError_os__Eof_index) return 140;
-	if (sidx == _IError_os__NotExpected_index) return 141;
-	if (sidx == _IError_os__FileNotOpenedError_index) return 143;
-	if (sidx == _IError_os__SizeOfTypeIs0Error_index) return 144;
-	if (sidx == _IError_os__ExecutableNotFoundError_index) return 164;
+	if (sidx == _IError_os__Eof_index) return 141;
+	if (sidx == _IError_os__NotExpected_index) return 142;
+	if (sidx == _IError_os__FileNotOpenedError_index) return 144;
+	if (sidx == _IError_os__SizeOfTypeIs0Error_index) return 145;
+	if (sidx == _IError_os__ExecutableNotFoundError_index) return 165;
 	return 30;
 }
 // << typeof() support for sum types
@@ -2137,8 +2239,16 @@ void strings__Builder_write_ptr(strings__Builder* b, u8* ptr, int len) {
 	}
 	builtin__array_push_many(b, ptr, len);
 }
+void strings__Builder_write_rune(strings__Builder* b, rune r) {
+	Array_fixed_u8_5 buffer = {0, 0, 0, 0, 0};
+	string res = builtin__utf32_to_str_no_malloc(((u32)(r)), &buffer[0]);
+	if (res.len == 0) {
+		return;
+	}
+	builtin__array_push_many(b, res.str, res.len);
+}
 void strings__Builder_write_runes(strings__Builder* b, Array_rune runes) {
-	Array_fixed_u8_5 buffer = {0};
+	Array_fixed_u8_5 buffer = {0, 0, 0, 0, 0};
 	for (int _t1 = 0; _t1 < runes.len; ++_t1) {
 		rune r = ((rune*)runes.data)[_t1];
 		string res = builtin__utf32_to_str_no_malloc(((u32)(r)), &buffer[0]);
@@ -2190,6 +2300,8 @@ inline multi_return_u64_u64 math__bits__mul_64(u64 x, u64 y) {
 	u64 lo = ((u64)(0));
 	#if defined(_MSC_VER)
 	{
+		lo = _umul128(x, y, &hi);
+		return (multi_return_u64_u64){.arg0=hi, .arg1=lo};
 	}
 	#elif defined(__V_amd64)
 	{
@@ -2212,9 +2324,13 @@ inline int math__bits__trailing_zeros_32(u32 x) {
 	}
 	#if defined(_MSC_VER)
 	{
+		int pos = 0;
+		_BitScanForward(&pos, x);
+		return pos;
 	}
 	#elif !defined(__TINYC__)
 	{
+		return __builtin_ctz(x);
 	}
 	#endif
 	return math__bits__trailing_zeros_32_default(x);
@@ -2225,9 +2341,13 @@ inline int math__bits__trailing_zeros_64(u64 x) {
 	}
 	#if defined(_MSC_VER)
 	{
+		int pos = 0;
+		_BitScanForward64(&pos, x);
+		return pos;
 	}
 	#elif !defined(__TINYC__)
 	{
+		return __builtin_ctzll(x);
 	}
 	#endif
 	return math__bits__trailing_zeros_64_default(x);
@@ -2800,7 +2920,8 @@ void strconv__format_dec_sb(u64 d, strconv__BF_param p, strings__Builder* res) {
 			strings__Builder_write_u8(res, '-');
 		}
 	}
-	Array_fixed_u8_32 buf = {0};
+	Array_fixed_u8_32 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int i = 20;
 	u64 n = d;
 	u64 d_i = ((u64)(0));
@@ -2843,7 +2964,7 @@ string strconv__f64_to_str_lnd1(f64 f, int dec_digit) {
 		}
 		bool m_sgn_flag = false;
 		int sgn = 1;
-		Array_fixed_u8_26 b = {0};
+		Array_fixed_u8_26 b = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		int d_pos = 1;
 		int i = 0;
 		int i1 = 0;
@@ -3002,8 +3123,70 @@ string strconv__format_fl(f64 f, strconv__BF_param p) {
 			fs = strconv__remove_tail_zeros(fs);
 			builtin__string_free(&tmp);
 		}
-		Array_fixed_u8_512 buf = {0};
-		Array_fixed_u8_512 out = {0};
+		Array_fixed_u8_512 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		Array_fixed_u8_512 out = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		int buf_i = 0;
 		int out_i = 0;
 		int sign_len_diff = 0;
@@ -3063,8 +3246,70 @@ string strconv__format_es(f64 f, strconv__BF_param p) {
 			fs = strconv__remove_tail_zeros(fs);
 			builtin__string_free(&tmp);
 		}
-		Array_fixed_u8_512 buf = {0};
-		Array_fixed_u8_512 out = {0};
+		Array_fixed_u8_512 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		Array_fixed_u8_512 out = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		int buf_i = 0;
 		int out_i = 0;
 		int sign_len_diff = 0;
@@ -3269,7 +3514,7 @@ string strconv__fxx_to_str_l_parse(string s) {
 	}
 	bool m_sgn_flag = false;
 	int sgn = 1;
-	Array_fixed_u8_26 b = {0};
+	Array_fixed_u8_26 b = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int d_pos = 1;
 	int i = 0;
 	int i1 = 0;
@@ -3385,7 +3630,7 @@ string strconv__fxx_to_str_l_parse_with_dot(string s) {
 	}
 	bool m_sgn_flag = false;
 	int sgn = 1;
-	Array_fixed_u8_26 b = {0};
+	Array_fixed_u8_26 b = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int d_pos = 1;
 	int i = 0;
 	int i1 = 0;
@@ -3690,6 +3935,7 @@ VNORETURN VV_LOC void builtin___memory_panic(string fname, isize size) {
 	builtin__eprint(_S("("));
 	#if defined(_VFREESTANDING) || defined(__vinix__)
 	{
+		builtin__eprint(_S("size"));
 	}
 	#else
 	{
@@ -3705,6 +3951,12 @@ VNORETURN VV_LOC void builtin___memory_panic(string fname, isize size) {
 	while(1);
 }
 u8* builtin___v_malloc(isize n) {
+	#if defined(CUSTOM_DEFINE_trace_malloc)
+	{
+		total_m += n;
+		fprintf(stderr, "_v_malloc %6d total %10d\n", n, total_m);
+	}
+	#endif
 	if (n < 0) {
 		builtin___memory_panic(_S("malloc"), n);
 		VUNREACHABLE();
@@ -3714,9 +3966,13 @@ u8* builtin___v_malloc(isize n) {
 	u8* res = ((u8*)(((void*)0)));
 	#if defined(_VPREALLOC)
 	{
+		return builtin__prealloc_malloc(n);
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
+		{ // Unsafe block
+			res = GC_MALLOC(n);
+		}
 	}
 	#elif defined(_VFREESTANDING)
 	{
@@ -3725,6 +3981,7 @@ u8* builtin___v_malloc(isize n) {
 	{
 		#if defined(_WIN32)
 		{
+			res = _aligned_malloc(n, 1);
 		}
 		#else
 		{
@@ -3737,9 +3994,20 @@ u8* builtin___v_malloc(isize n) {
 		builtin___memory_panic(_S("malloc"), n);
 		VUNREACHABLE();
 	}
+	#if defined(CUSTOM_DEFINE_debug_malloc)
+	{
+		memset(res, 0x4D, n);
+	}
+	#endif
 	return res;
 }
 u8* builtin__malloc_noscan(isize n) {
+	#if defined(CUSTOM_DEFINE_trace_malloc)
+	{
+		total_m += n;
+		fprintf(stderr, "malloc_noscan %6d total %10d\n", n, total_m);
+	}
+	#endif
 	if (n < 0) {
 		builtin___memory_panic(_S("malloc_noscan"), n);
 		VUNREACHABLE();
@@ -3747,12 +4015,27 @@ u8* builtin__malloc_noscan(isize n) {
 	u8* res = ((u8*)(((void*)0)));
 	#if defined(_VNATIVE)
 	{
+		res = malloc(n);
 	}
 	#elif defined(_VPREALLOC)
 	{
+		return builtin__prealloc_malloc(n);
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
+		#if defined(CUSTOM_DEFINE_gcboehm_opt)
+		{
+			{ // Unsafe block
+				res = GC_MALLOC_ATOMIC(n);
+			}
+		}
+		#else
+		{
+			{ // Unsafe block
+				res = GC_MALLOC(n);
+			}
+		}
+		#endif
 	}
 	#elif defined(_VFREESTANDING)
 	{
@@ -3761,6 +4044,7 @@ u8* builtin__malloc_noscan(isize n) {
 	{
 		#if defined(_WIN32)
 		{
+			res = _aligned_malloc(n, 1);
 		}
 		#else
 		{
@@ -3773,6 +4057,11 @@ u8* builtin__malloc_noscan(isize n) {
 		builtin___memory_panic(_S("malloc_noscan"), n);
 		VUNREACHABLE();
 	}
+	#if defined(CUSTOM_DEFINE_debug_malloc)
+	{
+		memset(res, 0x4D, n);
+	}
+	#endif
 	return res;
 }
 inline VV_LOC u64 builtin____at_least_one(u64 how_many) {
@@ -3782,17 +4071,29 @@ inline VV_LOC u64 builtin____at_least_one(u64 how_many) {
 	return how_many;
 }
 u8* builtin__v_realloc(u8* b, isize n) {
+	#if defined(CUSTOM_DEFINE_trace_realloc)
+	{
+		fprintf(stderr, "v_realloc %6d\n", n);
+	}
+	#endif
 	u8* new_ptr = ((u8*)(((void*)0)));
 	#if defined(_VPREALLOC)
 	{
+		{ // Unsafe block
+			new_ptr = builtin___v_malloc(n);
+			memcpy(new_ptr, b, n);
+		}
+		return new_ptr;
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
+		new_ptr = GC_REALLOC(b, n);
 	}
 	#else
 	{
 		#if defined(_WIN32)
 		{
+			new_ptr = _aligned_realloc(b, n, 1);
 		}
 		#else
 		{
@@ -3808,14 +4109,38 @@ u8* builtin__v_realloc(u8* b, isize n) {
 	return new_ptr;
 }
 u8* builtin__realloc_data(u8* old_data, int old_size, int new_size) {
+	#if defined(CUSTOM_DEFINE_trace_realloc)
+	{
+		fprintf(stderr, "realloc_data old_size: %6d new_size: %6d\n", old_size, new_size);
+	}
+	#endif
+	#if defined(_VPREALLOC)
+	{
+		return builtin__prealloc_realloc(old_data, old_size, new_size);
+	}
+	#endif
+	#if defined(CUSTOM_DEFINE_debug_realloc)
+	{
+		{ // Unsafe block
+			u8* new_ptr = builtin___v_malloc(new_size);
+			int min_size = (old_size < new_size ? (old_size) : (new_size));
+			memcpy(new_ptr, old_data, min_size);
+			memset(old_data, 0x57, old_size);
+			builtin___v_free(old_data);
+			return new_ptr;
+		}
+	}
+	#endif
 	u8* nptr = ((u8*)(((void*)0)));
 	#if defined(CUSTOM_DEFINE_gcboehm)
 	{
+		nptr = GC_REALLOC(old_data, new_size);
 	}
 	#else
 	{
 		#if defined(_WIN32)
 		{
+			nptr = _aligned_realloc(old_data, new_size, 1);
 		}
 		#else
 		{
@@ -3831,6 +4156,12 @@ u8* builtin__realloc_data(u8* old_data, int old_size, int new_size) {
 	return nptr;
 }
 u8* builtin__vcalloc(isize n) {
+	#if defined(CUSTOM_DEFINE_trace_vcalloc)
+	{
+		total_m += n;
+		fprintf(stderr, "vcalloc %6d total %10d\n", n, total_m);
+	}
+	#endif
 	if (n < 0) {
 		builtin___memory_panic(_S("vcalloc"), n);
 		VUNREACHABLE();
@@ -3839,17 +4170,25 @@ u8* builtin__vcalloc(isize n) {
 	}
 	#if defined(_VPREALLOC)
 	{
+		return builtin__prealloc_calloc(n);
 	}
 	#elif defined(_VNATIVE)
 	{
+		return calloc(1, n);
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
+		return ((u8*)(GC_MALLOC(n)));
 	}
 	#else
 	{
 		#if defined(_WIN32)
 		{
+			voidptr ptr = _aligned_malloc(n, 1);
+			if (ptr != ((u8*)(((void*)0)))) {
+				memset(ptr, 0, n);
+			}
+			return ptr;
 		}
 		#else
 		{
@@ -3861,11 +4200,34 @@ u8* builtin__vcalloc(isize n) {
 	return ((u8*)(((void*)0)));
 }
 u8* builtin__vcalloc_noscan(isize n) {
+	#if defined(CUSTOM_DEFINE_trace_vcalloc)
+	{
+		total_m += n;
+		fprintf(stderr, "vcalloc_noscan %6d total %10d\n", n, total_m);
+	}
+	#endif
 	#if defined(_VPREALLOC)
 	{
+		return builtin__prealloc_calloc(n);
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
+		if (n < 0) {
+			builtin___memory_panic(_S("vcalloc_noscan"), n);
+			VUNREACHABLE();
+		}
+		#if defined(CUSTOM_DEFINE_gcboehm_opt)
+		{
+			voidptr res = GC_MALLOC_ATOMIC(n);
+			memset(res, 0, n);
+			return ((u8*)(res));
+		}
+		#else
+		{
+			voidptr res = GC_MALLOC(n);
+			return ((u8*)(res));
+		}
+		#endif
 	}
 	#else
 	{
@@ -3875,19 +4237,46 @@ u8* builtin__vcalloc_noscan(isize n) {
 	return ((u8*)(((void*)0)));
 }
 void builtin___v_free(voidptr ptr) {
+	#if defined(CUSTOM_DEFINE_trace_free)
+	{
+		fprintf(stderr, "free ptr: %p\n", ptr);
+	}
+	#endif
+	#if defined(CUSTOM_DEFINE_builtin_free_nop)
+	{
+		return;
+	}
+	#endif
 	if (ptr == 0) {
+		#if defined(CUSTOM_DEFINE_trace_free_nulls)
+		{
+			fprintf(stderr, "free null ptr\n", ptr);
+		}
+		#endif
+		#if defined(CUSTOM_DEFINE_trace_free_nulls_break)
+		{
+			builtin__break_if_debugger_attached();
+		}
+		#endif
 		return;
 	}
 	#if defined(_VPREALLOC)
 	{
+		return;
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
+		#if defined(CUSTOM_DEFINE_gcboehm_leak)
+		{
+			GC_FREE(ptr);
+		}
+		#endif
 	}
 	#else
 	{
 		#if defined(_WIN32)
 		{
+			_aligned_free(ptr);
 		}
 		#else
 		{
@@ -3898,6 +4287,11 @@ void builtin___v_free(voidptr ptr) {
 	#endif
 }
 voidptr builtin__memdup(voidptr src, isize sz) {
+	#if defined(CUSTOM_DEFINE_trace_memdup)
+	{
+		fprintf(stderr, "memdup size: %10d\n", sz);
+	}
+	#endif
 	if (sz == 0) {
 		return builtin__vcalloc(1);
 	}
@@ -3908,6 +4302,11 @@ voidptr builtin__memdup(voidptr src, isize sz) {
 	return 0;
 }
 voidptr builtin__memdup_noscan(voidptr src, isize sz) {
+	#if defined(CUSTOM_DEFINE_trace_memdup)
+	{
+		fprintf(stderr, "memdup_noscan size: %10d\n", sz);
+	}
+	#endif
 	if (sz == 0) {
 		return builtin__vcalloc_noscan(1);
 	}
@@ -4208,6 +4607,11 @@ void builtin__array_push_many(array* a, voidptr val, int size) {
 	a->len = ((int)(new_len));
 }
 void builtin__array_free(array* a) {
+	#if defined(_VPREALLOC)
+	{
+		return;
+	}
+	#endif
 	if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__nofree)) {
 		return;
 	}
@@ -4224,8 +4628,13 @@ void builtin__array_free(array* a) {
 }
 bool builtin__array_contains(array a, voidptr value);
 void Array_string_free(Array_string* a) {
-	for (int _t1 = 0; _t1 < a->len; ++_t1) {
-		string* s = ((string*)a->data) + _t1;
+	#if defined(_VPREALLOC)
+	{
+		return;
+	}
+	#endif
+	for (int _t2 = 0; _t2 < a->len; ++_t2) {
+		string* s = ((string*)a->data) + _t2;
 		builtin__string_free(s);
 	}
 	builtin__array_free((((array*)(a))));
@@ -4295,23 +4704,35 @@ void builtin__print_backtrace(void) {
 		}
 		#elif defined(CUSTOM_DEFINE_use_libbacktrace)
 		{
+			builtin__print_libbacktrace(1);
 		}
 		#else
 		{
+			builtin__print_backtrace_skipping_top_frames(2);
 		}
 		#endif
 	}
 	#endif
 }
+VV_LOC void builtin__eprint_space_padding(string output, int max_len) {
+	int padding_len = (int)(max_len - output.len);
+	if (padding_len > 0) {
+		for (int _t1 = 0; _t1 < padding_len; ++_t1) {
+			builtin__eprint(_S(" "));
+		}
+	}
+}
 bool builtin__print_backtrace_skipping_top_frames(int xskipframes) {
 	#if defined(CUSTOM_DEFINE_no_backtrace)
 	{
+		return false;
 	}
 	#else
 	{
 		int skipframes = (int)(xskipframes + 2);
 		#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 		{
+			return builtin__print_backtrace_skipping_top_frames_bsd(skipframes);
 		}
 		#elif defined(__linux__)
 		{
@@ -4319,18 +4740,63 @@ bool builtin__print_backtrace_skipping_top_frames(int xskipframes) {
 		}
 		#else
 		{
+			builtin__println(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("print_backtrace_skipping_top_frames is not implemented. skipframes: "), 0xfe07, {.d_i32 = skipframes}}, {_SLIT0, 0, { .d_c = 0 }}})));
 		}
 		#endif
 	}
 	#endif
 	return false;
 }
+VV_LOC bool builtin__print_backtrace_skipping_top_frames_bsd(int skipframes) {
+	#if defined(CUSTOM_DEFINE_no_backtrace)
+	{
+		return false;
+	}
+	#else
+	{
+		#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
+		{
+			Array_fixed_voidptr_100 buffer = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+			i32 nr_ptrs = backtrace(&buffer[0], 100);
+			if (nr_ptrs < 2) {
+				builtin__eprintln(_S("C.backtrace returned less than 2 frames"));
+				return false;
+			}
+			backtrace_symbols_fd(&buffer[skipframes], (int)(nr_ptrs - skipframes), 2);
+		}
+		#endif
+		return true;
+	}
+	#endif
+	return 0;
+}
 VV_LOC bool builtin__print_backtrace_skipping_top_frames_linux(int skipframes) {
+	#if defined(__ANDROID__)
+	{
+		builtin__eprintln(_S("On Android no backtrace is available."));
+		return false;
+	}
+	#endif
+	#if !defined(__GLIBC__)
+	{
+		builtin__eprintln(_S("backtrace_symbols is missing => printing backtraces is not available."));
+		builtin__eprintln(_S("Some libc implementations like musl simply do not provide it."));
+		return false;
+	}
+	#endif
 	#if defined(_VNATIVE)
 	{
+		builtin__eprintln(_S("native backend does not support backtraces yet."));
+		return false;
 	}
 	#elif defined(CUSTOM_DEFINE_no_backtrace)
 	{
+		return false;
 	}
 	#else
 	{
@@ -4343,6 +4809,119 @@ VV_LOC bool builtin__print_backtrace_skipping_top_frames_linux(int skipframes) {
 			}
 			#else
 			{
+				Array_fixed_voidptr_100 buffer = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+				i32 nr_ptrs = backtrace(&buffer[0], 100);
+				if (nr_ptrs < 2) {
+					builtin__eprintln(_S("C.backtrace returned less than 2 frames"));
+					return false;
+				}
+				int nr_actual_frames = (int)(nr_ptrs - skipframes);
+				char** csymbols = backtrace_symbols(((voidptr)(&buffer[skipframes])), nr_actual_frames);
+				for (int i = 0; i < nr_actual_frames; ++i) {
+					string sframe = builtin__tos2(((u8*)(csymbols[i])));
+					string executable = builtin__string_all_before(sframe, _S("("));
+					string addr = builtin__string_all_before(builtin__string_all_after(sframe, _S("[")), _S("]"));
+					string beforeaddr = builtin__string_all_before(sframe, _S("["));
+					string cmd = builtin__string__plus(builtin__string__plus(builtin__string__plus(_S("addr2line -e "), executable), _S(" ")), addr);
+					voidptr f = popen(((char*)(cmd.str)), "r");
+					if (f == ((void*)0)) {
+						builtin__eprintln(sframe);
+						continue;
+					}
+					Array_fixed_u8_1000 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+					string output = _S("");
+					{ // Unsafe block
+						u8* bp = &buf[0];
+						for (;;) {
+							if (!(fgets(((char*)(bp)), 1000, f) != 0)) break;
+							output = builtin__string__plus(output, builtin__tos(bp, builtin__vstrlen(bp)));
+						}
+					}
+					output = builtin__string__plus(builtin__string_trim_chars(output, _S(" \t\n"), TrimMode__trim_both), _S(":"));
+					if (pclose(f) != 0) {
+						builtin__eprintln(sframe);
+						continue;
+					}
+					if (_SLIT_EQ(output.str, output.len, "??:0:") || _SLIT_EQ(output.str, output.len, "??:?:")) {
+						output = _S("");
+					}
+					output = builtin__string_replace(output, _S(" (discriminator"), _S(": (d."));
+					builtin__eprint(output);
+					builtin__eprint_space_padding(output, 55);
+					builtin__eprint(_S(" | "));
+					builtin__eprint(addr);
+					builtin__eprint(_S(" | "));
+					builtin__eprintln(beforeaddr);
+				}
+				if (nr_actual_frames > 0) {
+					free(csymbols);
+				}
 			}
 			#endif
 		}
@@ -4367,6 +4946,7 @@ VV_LOC void builtin__v_segmentation_fault_handler(i32 signal_number) {
 	#endif
 	#if defined(CUSTOM_DEFINE_use_libbacktrace)
 	{
+		builtin__eprint_libbacktrace(1);
 	}
 	#else
 	{
@@ -4393,6 +4973,7 @@ Array_string builtin__arguments(void) {
 	for (int i = 0; i < g_main_argc; ++i) {
 		#if defined(_WIN32)
 		{
+			builtin__array_push((array*)&res, _MOV((string[]){ builtin__string_from_wide(((u16*)(argv[i]))) }));
 		}
 		#else
 		{
@@ -4408,9 +4989,11 @@ string builtin__vcurrent_hash(void) {
 u64 builtin__v_getpid(void) {
 	#if defined(CUSTOM_DEFINE_no_getpid)
 	{
+		return 0;
 	}
 	#elif defined(_WIN32)
 	{
+		return ((u64)(GetCurrentProcessId()));
 	}
 	#else
 	{
@@ -4422,9 +5005,11 @@ u64 builtin__v_getpid(void) {
 u64 builtin__v_gettid(void) {
 	#if defined(CUSTOM_DEFINE_no_gettid)
 	{
+		return 0;
 	}
 	#elif defined(_WIN32)
 	{
+		return ((u64)(GetCurrentThreadId()));
 	}
 	#elif defined(__linux__) && !defined(CUSTOM_DEFINE_musl)
 	{
@@ -4432,9 +5017,11 @@ u64 builtin__v_gettid(void) {
 	}
 	#elif defined(__VTHREADS__)
 	{
+		return ((u64)(pthread_self()));
 	}
 	#else
 	{
+		return builtin__v_getpid();
 	}
 	#endif
 	return 0;
@@ -4443,6 +5030,29 @@ inline bool builtin__isnil(voidptr v) {
 	return v == 0;
 }
 VV_LOC void builtin__builtin_init(void) {
+	#if defined(CUSTOM_DEFINE_gcboehm)
+	{
+		#if !defined(CUSTOM_DEFINE_gc_warn_on_stderr)
+		{
+			builtin__gc_set_warn_proc((voidptr)builtin__internal_gc_warn_proc_none);
+		}
+		#endif
+	}
+	#endif
+}
+VV_LOC void builtin__break_if_debugger_attached(void) {
+	{ // Unsafe block
+		voidptr* ptr = ((voidptr*)(0));
+		*ptr = ((void*)0);
+	}
+}
+void builtin__gc_set_warn_proc(void (*cb)(char* msg, usize arg)) {
+}
+VV_LOC void builtin__internal_gc_warn_proc_none(char* msg, usize arg) {
+}
+VV_LOC void builtin__print_libbacktrace(int frames_to_skip) {
+}
+__NOINLINE VV_LOC void builtin__eprint_libbacktrace(int frames_to_skip) {
 }
 inline int builtin__vstrlen(u8* s) {
 	return ((int)(strlen(((char*)(s)))));
@@ -4451,6 +5061,19 @@ inline int builtin__vstrlen_char(char* s) {
 	return ((int)(strlen(s)));
 }
 inline voidptr builtin__vmemcpy(voidptr dest, const voidptr const_src, isize n) {
+	#if defined(CUSTOM_DEFINE_trace_vmemcpy)
+	{
+		fprintf(stderr, "vmemcpy dest: %p src: %p n: %6ld\n", dest, const_src, n);
+	}
+	#endif
+	#if defined(CUSTOM_DEFINE_trace_vmemcpy_nulls)
+	{
+		if (dest == 0 || const_src == 0) {
+			fprintf(stderr, "vmemcpy null pointers passed, dest: %p src: %p n: %6ld\n", dest, const_src, n);
+			builtin__print_backtrace();
+		}
+	}
+	#endif
 	if (n == 0 || ((u64)(dest)) <= 0xFFFF || ((u64)(const_src)) <= 0xFFFF) {
 		return dest;
 	}
@@ -4460,6 +5083,11 @@ inline voidptr builtin__vmemcpy(voidptr dest, const voidptr const_src, isize n) 
 	return 0;
 }
 inline voidptr builtin__vmemmove(voidptr dest, const voidptr const_src, isize n) {
+	#if defined(CUSTOM_DEFINE_trace_vmemmove)
+	{
+		fprintf(stderr, "vmemmove dest: %p src: %p n: %6ld\n", dest, const_src, n);
+	}
+	#endif
 	if (n == 0 || ((u64)(dest)) <= 0xFFFF || ((u64)(const_src)) <= 0xFFFF) {
 		return dest;
 	}
@@ -4469,6 +5097,11 @@ inline voidptr builtin__vmemmove(voidptr dest, const voidptr const_src, isize n)
 	return 0;
 }
 inline int builtin__vmemcmp(const voidptr const_s1, const voidptr const_s2, isize n) {
+	#if defined(CUSTOM_DEFINE_trace_vmemcmp)
+	{
+		fprintf(stderr, "vmemcmp s1: %p s2: %p n: %6ld\n", const_s1, const_s2, n);
+	}
+	#endif
 	if (n == 0 || ((u64)(const_s1)) <= 0xFFFF || ((u64)(const_s2)) <= 0xFFFF) {
 		return 0;
 	}
@@ -4478,6 +5111,19 @@ inline int builtin__vmemcmp(const voidptr const_s1, const voidptr const_s2, isiz
 	return 0;
 }
 inline voidptr builtin__vmemset(voidptr s, int c, isize n) {
+	#if defined(CUSTOM_DEFINE_trace_vmemset)
+	{
+		fprintf(stderr, "vmemset s: %p c: %d n: %6ld\n", s, c, n);
+	}
+	#endif
+	#if defined(CUSTOM_DEFINE_trace_vmemset_nulls)
+	{
+		if (s == 0) {
+			fprintf(stderr, "vmemset null pointers passed s: %p, c: %6d, n: %6ld\n", s, c, n);
+			builtin__print_backtrace();
+		}
+	}
+	#endif
 	if (n == 0 || ((u64)(s)) <= 0xFFFF) {
 		return s;
 	}
@@ -4637,6 +5283,9 @@ inline VV_LOC string builtin__int_str_l(int nn, int max) {
 		}
 		#if defined(CUSTOM_DEFINE_new_int) && defined(TARGET_IS_64BIT)
 		{
+			if (n == _const_min_i64) {
+				return _S("-9223372036854775808");
+			}
 		}
 		#else
 		{
@@ -4694,6 +5343,7 @@ string builtin__i32_str(i32 n) {
 string builtin__int_str(int n) {
 	#if defined(CUSTOM_DEFINE_new_int)
 	{
+		return builtin__impl_i64_to_string(n);
 	}
 	#else
 	{
@@ -4826,7 +5476,7 @@ string builtin__bool_str(bool b) {
 }
 inline VV_LOC string builtin__u64_to_hex_no_leading_zeros(u64 nn, u8 len) {
 	u64 n = nn;
-	Array_fixed_u8_17 buf = {0};
+	Array_fixed_u8_17 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	buf[len] = 0;
 	int i = 0;
 	for (i = (u8)(len - 1); i >= 0; i--) {
@@ -4873,6 +5523,11 @@ VV_LOC u64 builtin__map_hash_string(voidptr pkey) {
 	string key = *((string*)(pkey));
 	#if defined(_VNATIVE)
 	{
+		u64 hash = ((u64)(14695981039346656037ULL));
+		for (int i = 0; i < key.len; i++) {
+			hash = (u64)(((hash ^ ((u64)(key.str[i])))) * ((u64)(1099511628211LL)));
+		}
+		return hash;
 	}
 	#else
 	{
@@ -5633,12 +6288,18 @@ VNORETURN void builtin___v_panic(string s) {
 		builtin__flush_stdout();
 		#if defined(_VNATIVE)
 		{
+			exit(1);
+			VUNREACHABLE();
 		}
 		#elif defined(CUSTOM_DEFINE_exit_after_panic_message)
 		{
+			exit(1);
+			VUNREACHABLE();
 		}
 		#elif defined(CUSTOM_DEFINE_no_backtrace)
 		{
+			exit(1);
+			VUNREACHABLE();
 		}
 		#else
 		{
@@ -5646,6 +6307,7 @@ VNORETURN void builtin___v_panic(string s) {
 			{
 				#if defined(CUSTOM_DEFINE_panics_break_into_debugger)
 				{
+					builtin__break_if_debugger_attached();
 				}
 				#else
 				{
@@ -5658,10 +6320,16 @@ VNORETURN void builtin___v_panic(string s) {
 			#endif
 			#if defined(CUSTOM_DEFINE_use_libbacktrace)
 			{
+				builtin__eprint_libbacktrace(1);
 			}
 			#else
 			{
 				builtin__print_backtrace_skipping_top_frames(1);
+			}
+			#endif
+			#if defined(CUSTOM_DEFINE_panics_break_into_debugger)
+			{
+				builtin__break_if_debugger_attached();
 			}
 			#endif
 			exit(1);
@@ -5684,21 +6352,118 @@ VNORETURN void builtin__panic_n2(string s, i64 number1, i64 number2) {
 	VUNREACHABLE();
 	while(1);
 }
+VV_LOC void builtin__vmemory_abort_on_nil(voidptr p, isize bytes) {
+	if (p == 0) {
+		fprintf(stderr, "could not allocate %td bytes\n", bytes);
+		builtin___v_exit(1);
+		VUNREACHABLE();
+	}
+}
+VV_LOC VMemoryBlock* builtin__vmemory_block_new(VMemoryBlock* prev, isize at_least, isize align) {
+	u32 vmem_block_size = sizeof(VMemoryBlock);
+	VMemoryBlock* v = ((VMemoryBlock*)(calloc(1, vmem_block_size)));
+	builtin__vmemory_abort_on_nil(v, vmem_block_size);
+	if (prev != 0) {
+		v->id = (int)(prev->id + 1);
+	}
+	v->previous = prev;
+	if (prev != 0) {
+		prev->next = v;
+	}
+	isize base_block_size = (at_least < ((isize)(_const_prealloc_block_size)) ? (((isize)(_const_prealloc_block_size))) : (at_least));
+	isize block_size = (align > 0 ? (((isize)(base_block_size % align) == 0 ? (base_block_size) : ((isize)((isize)(base_block_size + align) - ((isize)(base_block_size % align)))))) : (base_block_size));
+	#if defined(CUSTOM_DEFINE_prealloc_trace_malloc)
+	{
+		fprintf(stderr, "vmemory_block_new id: %d, block_size: %lld, at_least: %lld, align: %lld\n", v->id, block_size, at_least, align);
+	}
+	#endif
+	int fixed_align = (align <= 1 ? (1) : (align));
+	#if defined(_WIN32)
+	{
+		v->start = _aligned_malloc(block_size, fixed_align);
+	}
+	#else
+	{
+		if (fixed_align == 1) {
+			v->start = malloc(block_size);
+		} else {
+			v->start = aligned_alloc(fixed_align, block_size);
+		}
+	}
+	#endif
+	builtin__vmemory_abort_on_nil(v->start, block_size);
+	#if defined(CUSTOM_DEFINE_prealloc_memset)
+	{
+		memset(v->start, ((int)(0)), block_size);
+	}
+	#endif
+	v->stop = ((u8*)((i64)(((i64)(v->start)) + block_size)));
+	v->current = v->start;
+	return v;
+}
+VV_LOC u8* builtin__vmemory_block_malloc(isize n, isize align) {
+	#if defined(CUSTOM_DEFINE_prealloc_trace_malloc)
+	{
+		fprintf(stderr, "vmemory_block_malloc g_memory_block.id: %d, n: %lld align: %d\n", g_memory_block->id, n, align);
+	}
+	#endif
+	{ // Unsafe block
+		i64 remaining = (i64)(((i64)(g_memory_block->stop)) - ((i64)(g_memory_block->current)));
+		if (_unlikely_(remaining < n)) {
+			g_memory_block = builtin__vmemory_block_new(g_memory_block, n, align);
+		}
+		u8* res = ((u8*)(g_memory_block->current));
+		g_memory_block->current += n;
+		#if defined(CUSTOM_DEFINE_prealloc_stats)
+		{
+			g_memory_block->mallocs++;
+		}
+		#endif
+		return res;
+	}
+	return 0;
+}
+VV_LOC u8* builtin__prealloc_malloc(isize n) {
+	return builtin__vmemory_block_malloc(n, 0);
+}
+VV_LOC u8* builtin__prealloc_realloc(u8* old_data, isize old_size, isize new_size) {
+	u8* new_ptr = builtin__vmemory_block_malloc(new_size, 0);
+	isize min_size = (old_size < new_size ? (old_size) : (new_size));
+	memcpy(new_ptr, old_data, min_size);
+	return new_ptr;
+}
+VV_LOC u8* builtin__prealloc_calloc(isize n) {
+	u8* new_ptr = builtin__vmemory_block_malloc(n, 0);
+	memset(new_ptr, 0, n);
+	return new_ptr;
+}
 void builtin__eprintln(string s) {
 	if (s.str == 0 || ((u64)(s.str)) <= 0xFFFF) {
 		builtin__eprintln(_S("eprintln(NIL)"));
 		return;
 	}
+	#if defined(CUSTOM_DEFINE_builtin_print_use_fprintf)
+	{
+		fprintf(stderr, "%.*s\n", s.len, s.str);
+		return;
+	}
+	#endif
 	#if defined(_VFREESTANDING)
 	{
 	}
 	#elif defined(__TARGET_IOS__)
 	{
+		WrappedNSLog(s.str);
 	}
 	#else
 	{
 		builtin__flush_stdout();
 		builtin__flush_stderr();
+		#if defined(__ANDROID__) && !defined(__TERMUX__)
+		{
+			android_print(stderr, "%.*s\n", s.len, s.str);
+		}
+		#endif
 		builtin___writeln_to_fd(2, s);
 		builtin__flush_stderr();
 	}
@@ -5709,16 +6474,28 @@ void builtin__eprint(string s) {
 		builtin__eprint(_S("eprint(NIL)"));
 		return;
 	}
+	#if defined(CUSTOM_DEFINE_builtin_print_use_fprintf)
+	{
+		fprintf(stderr, "%.*s", s.len, s.str);
+		return;
+	}
+	#endif
 	#if defined(_VFREESTANDING)
 	{
 	}
 	#elif defined(__TARGET_IOS__)
 	{
+		WrappedNSLog(s.str);
 	}
 	#else
 	{
 		builtin__flush_stdout();
 		builtin__flush_stderr();
+		#if defined(__ANDROID__) && !defined(__TERMUX__)
+		{
+			android_print(stderr, "%.*s", s.len, s.str);
+		}
+		#endif
 		builtin___write_buf_to_fd(2, s.str, s.len);
 		builtin__flush_stderr();
 	}
@@ -5751,11 +6528,19 @@ void builtin__flush_stderr(void) {
 	#endif
 }
 void builtin__print(string s) {
+	#if defined(CUSTOM_DEFINE_builtin_print_use_fprintf)
+	{
+		fprintf(stdout, "%.*s", s.len, s.str);
+		return;
+	}
+	#endif
 	#if defined(__ANDROID__) && !defined(__TERMUX__)
 	{
+		android_print(stdout, "%.*s\n", s.len, s.str);
 	}
 	#elif defined(__TARGET_IOS__)
 	{
+		WrappedNSLog(s.str);
 	}
 	#elif defined(_VFREESTANDING)
 	{
@@ -5771,11 +6556,21 @@ void builtin__println(string s) {
 		builtin__println(_S("println(NIL)"));
 		return;
 	}
+	#if defined(CUSTOM_DEFINE_builtin_print_use_fprintf)
+	{
+		fprintf(stdout, "%.*s\n", s.len, s.str);
+		return;
+	}
+	#endif
 	#if defined(__ANDROID__) && !defined(__TERMUX__)
 	{
+		android_print(stdout, "%.*s\n", s.len, s.str);
+		return;
 	}
 	#elif defined(__TARGET_IOS__)
 	{
+		WrappedNSLog(s.str);
+		return;
 	}
 	#elif defined(_VFREESTANDING)
 	{
@@ -5789,6 +6584,14 @@ void builtin__println(string s) {
 VV_LOC void builtin___writeln_to_fd(int fd, string s) {
 	#if defined(CUSTOM_DEFINE_builtin_writeln_should_write_at_once)
 	{
+		{ // Unsafe block
+			int buf_len = (int)(s.len + 1);
+			u8* buf = builtin___v_malloc(buf_len);
+			memcpy(buf, s.str, s.len);
+			buf[s.len] = '\n';
+			builtin___write_buf_to_fd(fd, buf, buf_len);
+			builtin___v_free(buf);
+		}
 	}
 	#else
 	{
@@ -5807,6 +6610,15 @@ VV_LOC void builtin___write_buf_to_fd(int fd, u8* buf, int buf_len) {
 	isize x = ((isize)(0));
 	#if defined(_VFREESTANDING) || defined(__vinix__) || defined(CUSTOM_DEFINE_builtin_write_buf_to_fd_should_use_c_write)
 	{
+		fflush(((void*)0));
+		{ // Unsafe block
+			for (;;) {
+				if (!(remaining_bytes > 0)) break;
+				x = write(fd, ptr, remaining_bytes);
+				ptr += x;
+				remaining_bytes -= x;
+			}
+		}
 	}
 	#else
 	{
@@ -5969,7 +6781,7 @@ string builtin__string_replace(string s, string rep, string with) {
 	}
 	int pidxs_len = 0;
 	int pidxs_cap = (int)(s.len / rep.len);
-	Array_fixed_int_10 stack_idxs = {0};
+	Array_fixed_int_10 stack_idxs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int* pidxs = &stack_idxs[0];
 	if (pidxs_cap > _const_replace_stack_buffer_size) {
 		pidxs = ((int*)(builtin___v_malloc((int)(((int)(sizeof(int))) * pidxs_cap))));
@@ -6217,7 +7029,7 @@ VV_LOC int builtin__string_index_kmp(string s, string p) {
 	if (p.len > s.len) {
 		return -1;
 	}
-	Array_fixed_int_20 stack_prefixes = {0};
+	Array_fixed_int_20 stack_prefixes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int* p_prefixes = &stack_prefixes[0];
 	if (p.len > _const_kmp_stack_buffer_size) {
 		p_prefixes = ((int*)(builtin__vcalloc((int)(p.len * ((int)(sizeof(int)))))));
@@ -6518,6 +7330,11 @@ VV_LOC u8 builtin__string_at(string s, int idx) {
 	return s.str[idx];
 }
 void builtin__string_free(string* s) {
+	#if defined(_VPREALLOC)
+	{
+		return;
+	}
+	#endif
 	if (s->is_lit == -98761234) {
 		u8* double_free_msg = ((u8*)("double string.free() detected\n"));
 		int double_free_msg_len = builtin__vstrlen(double_free_msg);
@@ -6539,6 +7356,13 @@ void builtin__string_free(string* s) {
 		s->str = ((void*)0);
 	}
 	s->is_lit = -98761234;
+}
+string builtin__string_all_before(string s, string sub) {
+	int pos = builtin__string_index_(s, sub);
+	if (pos == -1) {
+		return builtin__string_clone(s);
+	}
+	return builtin__string_substr(s, 0, pos);
 }
 string builtin__string_all_after(string s, string sub) {
 	int pos = builtin__string_index_(s, sub);
@@ -7206,6 +8030,83 @@ string builtin__str_intp(int data_len, StrIntpData* input_base) {
 	strings__Builder_free(&res);
 	return ret;
 }
+u16* builtin__string_to_wide(string _str, ToWideConfig param) {
+	#if defined(_WIN32)
+	{
+		{ // Unsafe block
+			int src_encoding = (param.from_ansi ? (_const_cp_acp) : (_const_cp_utf8));
+			i32 num_chars = (MultiByteToWideChar(src_encoding, 0, ((char*)(_str.str)), _str.len, 0, 0));
+			u16* wstr = ((u16*)(builtin__malloc_noscan((i32)(((i32)(num_chars + 1)) * 2))));
+			if (wstr != 0) {
+				MultiByteToWideChar(src_encoding, 0, ((char*)(_str.str)), _str.len, wstr, num_chars);
+				memset(((u8*)(wstr)) + (i32)(num_chars * 2), 0, 2);
+			}
+			return wstr;
+		}
+	}
+	#else
+	{
+		Array_rune srunes = builtin__string_runes(_str);
+		{ // Unsafe block
+			u16* result = ((u16*)(builtin__vcalloc_noscan((int)(((int)(srunes.len + 1)) * 2))));
+			for (int i = 0; i < srunes.len; ++i) {
+				rune r = ((rune*)srunes.data)[i];
+				result[i] = ((u16)(r));
+			}
+			result[srunes.len] = 0;
+			return result;
+		}
+	}
+	#endif
+	return 0;
+}
+string builtin__string_from_wide(u16* _wstr) {
+	#if defined(_WIN32)
+	{
+		{ // Unsafe block
+			usize wstr_len = wcslen(_wstr);
+			return builtin__string_from_wide2(_wstr, ((int)(wstr_len)));
+		}
+	}
+	#else
+	{
+		int i = 0;
+		for (;;) {
+			if (!(_wstr[i] != 0)) break;
+			i++;
+		}
+		return builtin__string_from_wide2(_wstr, i);
+	}
+	#endif
+	return (string){.str=(byteptr)"", .is_lit=1};
+}
+string builtin__string_from_wide2(u16* _wstr, int len) {
+	#if defined(_WIN32)
+	{
+		{ // Unsafe block
+			i32 num_chars = WideCharToMultiByte(_const_cp_utf8, 0, _wstr, len, 0, 0, 0, 0);
+			u8* str_to = builtin__malloc_noscan((i32)(num_chars + 1));
+			if (str_to != 0) {
+				WideCharToMultiByte(_const_cp_utf8, 0, _wstr, len, ((char*)(str_to)), num_chars, 0, 0);
+				memset(str_to + num_chars, 0, 1);
+			}
+			return builtin__tos2(str_to);
+		}
+	}
+	#else
+	{
+		strings__Builder sb = strings__new_builder(len);
+		for (int i = 0; i < len; i++) {
+			rune u = ((rune)(_wstr[i]));
+			strings__Builder_write_rune(&sb, u);
+		}
+		string res = strings__Builder_str(&sb);
+		strings__Builder_free(&sb);
+		return res;
+	}
+	#endif
+	return (string){.str=(byteptr)"", .is_lit=1};
+}
 int builtin__utf8_char_len(u8 b) {
 	return (int_literal)(((((0xe5000000U >> ((((b >> 3)) & 0x1e)))) & 3)) + 1);
 }
@@ -7362,23 +8263,54 @@ _option_string os__getenv_opt(string key) {
 	{ // Unsafe block
 		#if defined(_WIN32)
 		{
+			u16* kw = builtin__string_to_wide(key, ((ToWideConfig){.from_ansi = 0,}));
+			voidptr s = _wgetenv(kw);
+			if (s == 0) {
+				_option_string _t2 = (_option_string){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+					{ // defer begin
+					#if defined(_WIN32)
+						builtin___v_free(((voidptr)(kw)));
+					
+					#endif
+					} // defer end
+				return _t2;
+			}
+			_option_string _t3;
+			builtin___option_ok(&(string[]) { builtin__string_from_wide(s) }, (_option*)(&_t3), sizeof(string));
+			 
+				{ // defer begin
+				#if defined(_WIN32)
+					builtin___v_free(((voidptr)(kw)));
+				
+				#endif
+				} // defer end
+			return _t3;
+			{ // defer begin
+			#if defined(_WIN32)
+				builtin___v_free(((voidptr)(kw)));
+			
+			#endif
+			} // defer end
 		}
 		#else
 		{
 			char* s = getenv(((char*)(key.str)));
 			if (s == ((void*)0)) {
-				return (_option_string){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+				_option_string _t4 = (_option_string){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+				return _t4;
 			}
-			_option_string _t3;
-			builtin___option_ok(&(string[]) { builtin__cstring_to_vstring(s) }, (_option*)(&_t3), sizeof(string));
+			_option_string _t5;
+			builtin___option_ok(&(string[]) { builtin__cstring_to_vstring(s) }, (_option*)(&_t5), sizeof(string));
 			 
-			return _t3;
+			return _t5;
 		}
 		#endif
 	}
 	return (_option_string){.state=2, .err=_const_none__, .data={E_STRUCT}};
 }
 #if !defined(_WIN32)
+#endif
+#if defined(_WIN32)
 #endif
 VV_LOC string os__NotExpected_msg(os__NotExpected err) {
 	return err.cause;
@@ -7458,6 +8390,10 @@ string os__SizeOfTypeIs0Error_msg(os__SizeOfTypeIs0Error err) {
 VV_LOC IError os__error_file_not_opened(void) {
 	return I_os__FileNotOpenedError_to_Interface_IError(((os__FileNotOpenedError*)builtin__memdup(&(os__FileNotOpenedError){.Error = ((Error){E_STRUCT}),}, sizeof(os__FileNotOpenedError))));
 }
+#if defined(__APPLE__)
+#endif
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#endif
 VV_LOC _result_int os__find_cfile_size(FILE* fp) {
 	i32 cseek = fseek(fp, 0, SEEK_END);
 	isize raw_fsize = ftell(fp);
@@ -7478,7 +8414,262 @@ VV_LOC _result_int os__find_cfile_size(FILE* fp) {
 	return _t4;
 }
 VV_LOC _result_strings__Builder os__slurp_file_in_builder(FILE* fp) {
-	Array_fixed_u8_4096 buf = {0};
+	Array_fixed_u8_4096 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	strings__Builder sb = strings__new_builder(_const_os__buf_size);
 	for (;;) {
 		_result_int _t1 = os__fread(&buf[0], 1, _const_os__buf_size, fp);
@@ -7591,6 +8782,15 @@ u64 os__file_size(string path) {
 _result_void os__cp(string src, string dst, os__CopyParams config) {
 	#if defined(_WIN32)
 	{
+		string w_src = builtin__string_replace(src, _S("/"), _S("\\"));
+		string w_dst = builtin__string_replace(dst, _S("/"), _S("\\"));
+		if (os__is_dir(w_dst)) {
+			w_dst = os__join_path_single(w_dst, os__file_name(w_src));
+		}
+		if (CopyFile(builtin__string_to_wide(w_src, ((ToWideConfig){.from_ansi = 0,})), builtin__string_to_wide(w_dst, ((ToWideConfig){.from_ansi = 0,})), config.fail_if_exists) == 0) {
+			int code = ((int)(GetLastError()));
+			return (_result_void){ .is_error=true, .err=os__error_win32(((os__SystemError){.msg = builtin__str_intp(3, _MOV((StrIntpData[]){{_S("cp: failed to copy "), 0xfe10, {.d_s = src}}, {_S(" to "), 0xfe10, {.d_s = dst}}, {_SLIT0, 0, { .d_c = 0 }}})),.code = code,})), .data={E_STRUCT} };
+		}
 	}
 	#else
 	{
@@ -7612,7 +8812,70 @@ _result_void os__cp(string src, string dst, os__CopyParams config) {
 			close(fp_from);
 			return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("cp: failed to open "), 0xfe10, {.d_s = w_dst}}, {_S(" for writing"), 0, { .d_c = 0 }}})), ((int)(fp_to))), .data={E_STRUCT} };
 		}
-		Array_fixed_u8_1024 buf = {0};
+		Array_fixed_u8_1024 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		int count = ((int)(0));
 		for (;;) {
 			count = ((int)(read(fp_from, &buf[0], sizeof(Array_fixed_u8_1024))));
@@ -7625,15 +8888,15 @@ _result_void os__cp(string src, string dst, os__CopyParams config) {
 				return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("cp: failed to write to "), 0xfe10, {.d_s = w_dst}}, {_SLIT0, 0, { .d_c = 0 }}})), ((int)(-1))), .data={E_STRUCT} };
 			}
 		}
-		_result_os__Stat _t5 = os__stat(src);
-		if (_t5.is_error) {
-			_result_void _t6 = {0};
-			_t6.is_error = true;
-			_t6.err = _t5.err;
-			return _t6;
+		_result_os__Stat _t6 = os__stat(src);
+		if (_t6.is_error) {
+			_result_void _t7 = {0};
+			_t7.is_error = true;
+			_t7.err = _t6.err;
+			return _t7;
 		}
 		
- 		os__Stat from_attr = (*(os__Stat*)_t5.data);
+ 		os__Stat from_attr = (*(os__Stat*)_t6.data);
 		if (chmod(((char*)(w_dst.str)), from_attr.mode) < 0) {
 			close(fp_to);
 			close(fp_from);
@@ -7652,6 +8915,7 @@ _result_FILE_ptr os__vfopen(string path, string mode) {
 	voidptr fp = ((void*)0);
 	#if defined(_WIN32)
 	{
+		fp = _wfopen(builtin__string_to_wide(path, ((ToWideConfig){.from_ansi = 0,})), builtin__string_to_wide(mode, ((ToWideConfig){.from_ansi = 0,})));
 	}
 	#else
 	{
@@ -7671,6 +8935,7 @@ _result_FILE_ptr os__vfopen(string path, string mode) {
 int os__fileno(voidptr cfile) {
 	#if defined(_WIN32)
 	{
+		return _fileno(cfile);
 	}
 	#else
 	{
@@ -7684,6 +8949,9 @@ int os__fileno(voidptr cfile) {
 VV_LOC voidptr os__vpopen(string path) {
 	#if defined(_WIN32)
 	{
+		string mode = _S("rb");
+		u16* wpath = builtin__string_to_wide(path, ((ToWideConfig){.from_ansi = 0,}));
+		return _wpopen(wpath, builtin__string_to_wide(mode, ((ToWideConfig){.from_ansi = 0,})));
 	}
 	#else
 	{
@@ -7696,6 +8964,7 @@ VV_LOC voidptr os__vpopen(string path) {
 VV_LOC multi_return_int_bool os__posix_wait4_to_exit_status(int waitret) {
 	#if defined(_WIN32)
 	{
+		return (multi_return_int_bool){.arg0=waitret, .arg1=false};
 	}
 	#else
 	{
@@ -7723,6 +8992,7 @@ string os__posix_get_error_msg(int code) {
 VV_LOC int os__vpclose(voidptr f) {
 	#if defined(_WIN32)
 	{
+		return _pclose(f);
 	}
 	#else
 	{
@@ -7736,6 +9006,8 @@ VV_LOC int os__vpclose(voidptr f) {
 bool os__exists(string path) {
 	#if defined(_WIN32)
 	{
+		string p = builtin__string_replace(path, _S("/"), _S("\\"));
+		return _waccess(builtin__string_to_wide(p, ((ToWideConfig){.from_ansi = 0,})), _const_os__f_ok) != -1;
 	}
 	#else
 	{
@@ -7744,10 +9016,35 @@ bool os__exists(string path) {
 	#endif
 	return 0;
 }
+bool os__is_executable(string path) {
+	#if defined(_WIN32)
+	{
+		string p = os__real_path(path);
+		if (!os__exists(p)) {
+			return false;
+		}
+		string ext = builtin__string_all_after_last(builtin__string_to_lower(p), _S("."));
+		return (_SLIT_EQ(ext.str, ext.len, "exe") || _SLIT_EQ(ext.str, ext.len, "com") || _SLIT_EQ(ext.str, ext.len, "bat") || _SLIT_EQ(ext.str, ext.len, "cmd"));
+	}
+	#endif
+	#if defined(__sun)
+	{
+		_result_os__Stat _t5 = os__stat(path);
+		if (_t5.is_error) {
+			return false;
+		}
+		
+ 		os__Stat attr = (*(os__Stat*)_t5.data);
+		return ((((int)(attr.mode)) & (((_const_os__s_ixusr | _const_os__s_ixgrp) | _const_os__s_ixoth)))) != 0;
+	}
+	#endif
+	return access(((char*)(path.str)), _const_os__x_ok) != -1;
+}
 _result_void os__rm(string path) {
 	int rc = 0;
 	#if defined(_WIN32)
 	{
+		rc = _wremove(builtin__string_to_wide(path, ((ToWideConfig){.from_ansi = 0,})));
 	}
 	#else
 	{
@@ -7762,6 +9059,11 @@ _result_void os__rm(string path) {
 _result_void os__rmdir(string path) {
 	#if defined(_WIN32)
 	{
+		bool rc = RemoveDirectory(builtin__string_to_wide(path, ((ToWideConfig){.from_ansi = 0,})));
+		if (!rc) {
+			int code = ((int)(GetLastError()));
+			return (_result_void){ .is_error=true, .err=os__error_win32(((os__SystemError){.msg = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("Failed to remove \""), 0xfe10, {.d_s = path}}, {_S("\""), 0, { .d_c = 0 }}})),.code = code,})), .data={E_STRUCT} };
+		}
 	}
 	#else
 	{
@@ -7774,24 +9076,339 @@ _result_void os__rmdir(string path) {
 	return (_result_void){0};
 }
 string os__real_path(string fpath) {
-	Array_fixed_u8_4096 fullpath = {0};
+	Array_fixed_u8_4096 fullpath = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	string res = _S("");
 	#if defined(_WIN32)
 	{
+		u16* pu16_fullpath = ((u16*)(&fullpath[0]));
+		u16* fpath_wide = builtin__string_to_wide(fpath, ((ToWideConfig){.from_ansi = 0,}));
+		voidptr file = CreateFile(fpath_wide, 0x80000000U, 1, 0, 3, 0x80, 0);
+		if (file != ((voidptr)(-1))) {
+			u32 final_len = GetFinalPathNameByHandleW(file, pu16_fullpath, _const_os__max_path_buffer_size, 0);
+			if (final_len < ((u32)(_const_os__max_path_buffer_size)) && final_len != 0) {
+				string rt = builtin__string_from_wide2(pu16_fullpath, ((int)(final_len)));
+				string srt = builtin__string_substr(rt, 4, 2147483647);
+				builtin__string_free(&res);
+				res = builtin__string_clone(srt);
+			} else {
+				if (final_len != 0) {
+					builtin__eprintln(_S("os.real_path() saw that the file path was too long"));
+				}
+				builtin__string_free(&res);
+				string _t2 = builtin__string_clone(fpath);
+					{ // defer begin
+					#if defined(_WIN32)
+						CloseHandle(file);
+					
+					#endif
+					} // defer end
+					{ // defer begin
+					#if defined(_WIN32)
+						builtin___v_free(((voidptr)(fpath_wide)));
+					
+					#endif
+					} // defer end
+				return _t2;
+			}
+			{ // defer begin
+			#if defined(_WIN32)
+				CloseHandle(file);
+			
+			#endif
+			} // defer end
+		} else {
+			u32 ret = GetFullPathName(fpath_wide, _const_os__max_path_len, pu16_fullpath, 0);
+			if (ret == 0) {
+				builtin__string_free(&res);
+				string _t3 = builtin__string_clone(fpath);
+					{ // defer begin
+					#if defined(_WIN32)
+						builtin___v_free(((voidptr)(fpath_wide)));
+					
+					#endif
+					} // defer end
+				return _t3;
+			}
+			builtin__string_free(&res);
+			res = builtin__string_from_wide(pu16_fullpath);
+		}
+		{ // defer begin
+		#if defined(_WIN32)
+			builtin___v_free(((voidptr)(fpath_wide)));
+		
+		#endif
+		} // defer end
 	}
 	#else
 	{
 		char* ret = ((char*)(realpath(((char*)(fpath.str)), ((char*)(&fullpath[0])))));
 		if (ret == 0) {
 			builtin__string_free(&res);
-			return builtin__string_clone(fpath);
+			string _t4 = builtin__string_clone(fpath);
+			return _t4;
 		}
 		builtin__string_free(&res);
 		res = builtin__tos_clone(&fullpath[0]);
 	}
 	#endif
 	os__normalize_drive_letter(res);
-	return res;
+	string _t5 = res;
+	return _t5;
 }
 VV_LOC void os__normalize_drive_letter(string path) {
 	#if !defined(_WIN32)
@@ -7816,6 +9433,24 @@ inline IError os__error_posix(os__SystemError e) {
 	int code = (e.code == _const_os__error_code_not_set ? (errno) : (e.code));
 	string message = ((e.msg).len == 0 ? (os__posix_get_error_msg(code)) : (e.msg));
 	return builtin__error_with_code(message, code);
+}
+inline IError os__error_win32(os__SystemError e) {
+	#if defined(_WIN32)
+	{
+		if (e.code == _const_os__error_code_not_set) {
+			builtin___v_panic(_S("before calling `error_win32`, you must set `e.code` first."));
+			VUNREACHABLE();
+		}
+		string message = ((e.msg).len == 0 ? (os__get_error_msg(e.code)) : (e.msg));
+		return builtin__error_with_code(message, e.code);
+	}
+	#else
+	{
+		builtin___v_panic(_S("Win32 API not available on this platform."));
+		VUNREACHABLE();
+	}
+	#endif
+	return (IError){0};
 }
 void os__Result_free(os__Result* result) {
 	builtin__string_free(&result->output);
@@ -7894,6 +9529,12 @@ string os__join_path_single(string base, string elem) {
 VV_LOC void os__normalize_path_in_builder(strings__Builder* sb) {
 	rune fs = '\\';
 	rune rs = '/';
+	#if defined(_WIN32)
+	{
+		fs = '/';
+		rs = '\\';
+	}
+	#endif
 	for (int idx = 0; idx < sb->len; ++idx) {
 		{ // Unsafe block
 			if (((u8*)sb->data)[idx] == fs) {
@@ -7929,6 +9570,8 @@ _result_void os__mkdir_all(string opath, os__MkdirParams params) {
 	}
 	string _t2;
 	#if defined(_WIN32)
+		_t2 = _S("/");
+		;
 	#else
 		_t2 = _S("\\");
 		;
@@ -8005,7 +9648,262 @@ os__Result os__execute(string cmd) {
 	}
 	int fd = os__fileno(f);
 	strings__Builder res = strings__new_builder(1024);
-	Array_fixed_u8_4096 buf = {0};
+	Array_fixed_u8_4096 buf = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	{ // Unsafe block
 		u8* pbuf = &buf[0];
 		for (;;) {
@@ -8033,6 +9931,9 @@ _result_void os__symlink(string target, string link_name) {
 		return (_result_void){0};
 	}
 	return (_result_void){ .is_error=true, .err=builtin___v_error(os__posix_get_error_msg(errno)), .data={E_STRUCT} };
+}
+string os__get_error_msg(int code) {
+	return os__posix_get_error_msg(code);
 }
 void os__File_close(os__File* f) {
 	if (!f->is_opened) {
@@ -8149,7 +10050,7 @@ VV_LOC string main__pad_right(string s, int width) {
 }
 VV_LOC void main__print_banner(void) {
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\255\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("\360\237\233\241\357\270\217  OpenNGFW Package Manager"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = _const_main__c_green}}, {_S("ngpkg v"), 0xfe10, {.d_s = _const_main__version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(")                 "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("OpenNGFW Package Manager"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = _const_main__c_green}}, {_S("ngpkg v"), 0xfe10, {.d_s = _const_main__version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(")                 "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Prefix: /mnt/usb/opt  \342\200\242  Binaries: ~/.ngpkg-bin"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("             "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 }
@@ -8196,44 +10097,46 @@ VV_LOC main__Config main__load_config(void) {
 	return ((main__Config){.repo_url = builtin__string_trim_right(repo_url, _S("/")),.prefix = builtin__string_trim_right(prefix, _S("/")),.db_dir = builtin__string_trim_right(db_dir, _S("/")),});
 }
 VV_LOC Array_string main__get_installed_packages(main__Config cfg) {
-	string inst_dir = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed"), 0, { .d_c = 0 }}}));
-	if (!os__is_dir(inst_dir)) {
-		string alt_dir = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/pkg/installed"), 0, { .d_c = 0 }}}));
-		if (!os__is_dir(alt_dir)) {
-			return builtin____new_array_with_default(0, 0, sizeof(string), 0);
-		}
-		_result_Array_string _t2 = os__ls(alt_dir);
-		if (_t2.is_error) {
-			*(Array_string*) _t2.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-		}
-		
- 		Array_string files = (*(Array_string*)_t2.data);
-		Array_string pkgs = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-		for (int _t3 = 0; _t3 < files.len; ++_t3) {
-			string f = ((string*)files.data)[_t3];
-			if (builtin__string_ends_with(f, _S(".list"))) {
-				builtin__array_push((array*)&pkgs, _MOV((string[]){ builtin__string_trim_string_right(f, _S(".list")) }));
+	Array_string pkgs = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	Array_string dirs = builtin__new_array_from_c_array(5, 5, sizeof(string), _MOV((string[5]){builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg/installed"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/pkg/installed"), 0, { .d_c = 0 }}})), _S("/var/lib/pkg/installed"), _S("/var/lib/ngpkg/installed")}));
+	for (int _t1 = 0; _t1 < dirs.len; ++_t1) {
+		string d = ((string*)dirs.data)[_t1];
+		if (os__is_dir(d)) {
+			_result_Array_string _t2 = os__ls(d);
+			if (_t2.is_error) {
+				*(Array_string*) _t2.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+			}
+			
+ 			Array_string files = (*(Array_string*)_t2.data);
+			for (int _t3 = 0; _t3 < files.len; ++_t3) {
+				string f = ((string*)files.data)[_t3];
+				if (builtin__string_ends_with(f, _S(".list"))) {
+					string name = builtin__string_trim_string_right(f, _S(".list"));
+					if (!Array_string_contains(pkgs, name)) {
+						builtin__array_push((array*)&pkgs, _MOV((string[]){ builtin__string_clone(name) }));
+					}
+				}
 			}
 		}
-		return pkgs;
 	}
-	_result_Array_string _t6 = os__ls(inst_dir);
-	if (_t6.is_error) {
-		*(Array_string*) _t6.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-	}
-	
- 	Array_string files = (*(Array_string*)_t6.data);
-	Array_string pkgs = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-	for (int _t7 = 0; _t7 < files.len; ++_t7) {
-		string f = ((string*)files.data)[_t7];
-		if (builtin__string_ends_with(f, _S(".list"))) {
-			builtin__array_push((array*)&pkgs, _MOV((string[]){ builtin__string_trim_string_right(f, _S(".list")) }));
+	if (os__is_dir(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})))) {
+		_result_Array_string _t5 = os__ls(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})));
+		if (_t5.is_error) {
+			*(Array_string*) _t5.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+		}
+		
+ 		Array_string bin_files = (*(Array_string*)_t5.data);
+		for (int _t6 = 0; _t6 < bin_files.len; ++_t6) {
+			string b = ((string*)bin_files.data)[_t6];
+			if (!Array_string_contains(pkgs, b) && os__is_executable(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
+				builtin__array_push((array*)&pkgs, _MOV((string[]){ builtin__string_clone(b) }));
+			}
 		}
 	}
 	return pkgs;
 }
 VV_LOC bool main__is_installed(main__Config cfg, string pkg_name) {
-	return os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/pkg/installed/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}})));
+	return os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg/installed/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/pkg/installed/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/var/lib/pkg/installed/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin/"), 0xfe10, {.d_s = pkg_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
 }
 VV_LOC Array_main__PackageMeta main__fetch_index(main__Config cfg) {
 	string index_file = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/cache/index.txt"), 0, { .d_c = 0 }}}));
@@ -8542,89 +10445,101 @@ VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
 	_result_void _t16 = os__write_file(meta_file, builtin__str_intp(5, _MOV((StrIntpData[]){{_S("NAME="), 0xfe10, {.d_s = target_pkg.name}}, {_S("\nVERSION="), 0xfe10, {.d_s = target_pkg.version}}, {_S("\nDESCRIPTION="), 0xfe10, {.d_s = target_pkg.description}}, {_S("\nCATEGORY="), 0xfe10, {.d_s = target_pkg.category}}, {_S("\n"), 0, { .d_c = 0 }}})));
 	(void)_t16;
  ;
+	if (os__is_dir(cfg.prefix)) {
+		string usb_db = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg/installed"), 0, { .d_c = 0 }}}));
+		_result_void _t17 = os__mkdir_all(usb_db, ((os__MkdirParams){.mode = 0777,}));
+		(void)_t17;
+ ;
+		_result_void _t18 = os__cp(list_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".list"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
+		(void)_t18;
+ ;
+		_result_void _t19 = os__cp(meta_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".meta"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
+		(void)_t19;
+ ;
+	}
 	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
 	string ngpkg_bin = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = homedir}}, {_S("/.ngpkg-bin"), 0, { .d_c = 0 }}}));
 	builtin__print(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[3/3]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \360\237\224\227 Linking binaries to "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S("..."), 0, { .d_c = 0 }}})));
-	_result_void _t17 = os__mkdir_all(ngpkg_bin, ((os__MkdirParams){.mode = 0777,}));
-	(void)_t17;
+	_result_void _t20 = os__mkdir_all(ngpkg_bin, ((os__MkdirParams){.mode = 0777,}));
+	(void)_t20;
  ;
 	if (_SLIT_NE(homedir.str, homedir.len, "/root")) {
-		_result_void _t18 = os__mkdir_all(_S("/root/.ngpkg-bin"), ((os__MkdirParams){.mode = 0777,}));
-		(void)_t18;
+		_result_void _t21 = os__mkdir_all(_S("/root/.ngpkg-bin"), ((os__MkdirParams){.mode = 0777,}));
+		(void)_t21;
  ;
 	}
 	if (os__is_dir(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})))) {
-		_result_Array_string _t19 = os__ls(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})));
-		if (_t19.is_error) {
-			*(Array_string*) _t19.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+		_result_Array_string _t22 = os__ls(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})));
+		if (_t22.is_error) {
+			*(Array_string*) _t22.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 		}
 		
- 		Array_string bin_files = (*(Array_string*)_t19.data);
-		for (int _t20 = 0; _t20 < bin_files.len; ++_t20) {
-			string b = ((string*)bin_files.data)[_t20];
+ 		Array_string bin_files = (*(Array_string*)_t22.data);
+		for (int _t23 = 0; _t23 < bin_files.len; ++_t23) {
+			string b = ((string*)bin_files.data)[_t23];
 			string target = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}}));
-			_result_void _t21 = os__chmod(target, 0755);
-			(void)_t21;
+			_result_void _t24 = os__chmod(target, 0755);
+			(void)_t24;
  ;
 			string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}}));
 			if (!os__exists(symlink)) {
-				_result_void _t22 = os__symlink(target, symlink);
-				(void)_t22;
+				_result_void _t25 = os__symlink(target, symlink);
+				(void)_t25;
  ;
 			}
 			if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-				_result_void _t23 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}})));
-				(void)_t23;
+				_result_void _t26 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}})));
+				(void)_t26;
  ;
 			}
 		}
 	}
 	if (os__is_dir(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/sbin"), 0, { .d_c = 0 }}})))) {
-		_result_Array_string _t24 = os__ls(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/sbin"), 0, { .d_c = 0 }}})));
-		if (_t24.is_error) {
-			*(Array_string*) _t24.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+		_result_Array_string _t27 = os__ls(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/sbin"), 0, { .d_c = 0 }}})));
+		if (_t27.is_error) {
+			*(Array_string*) _t27.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 		}
 		
- 		Array_string sbin_files = (*(Array_string*)_t24.data);
-		for (int _t25 = 0; _t25 < sbin_files.len; ++_t25) {
-			string b = ((string*)sbin_files.data)[_t25];
+ 		Array_string sbin_files = (*(Array_string*)_t27.data);
+		for (int _t28 = 0; _t28 < sbin_files.len; ++_t28) {
+			string b = ((string*)sbin_files.data)[_t28];
 			string target = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/sbin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}}));
-			_result_void _t26 = os__chmod(target, 0755);
-			(void)_t26;
+			_result_void _t29 = os__chmod(target, 0755);
+			(void)_t29;
  ;
 			string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}}));
 			if (!os__exists(symlink)) {
-				_result_void _t27 = os__symlink(target, symlink);
-				(void)_t27;
+				_result_void _t30 = os__symlink(target, symlink);
+				(void)_t30;
  ;
 			}
 			if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-				_result_void _t28 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}})));
-				(void)_t28;
+				_result_void _t31 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = b}}, {_SLIT0, 0, { .d_c = 0 }}})));
+				(void)_t31;
  ;
 			}
 		}
 	}
 	if (os__is_dir(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/etc/init.d"), 0, { .d_c = 0 }}})))) {
-		_result_void _t29 = os__mkdir_all(_S("/etc/init.d"), ((os__MkdirParams){.mode = 0777,}));
-		(void)_t29;
+		_result_void _t32 = os__mkdir_all(_S("/etc/init.d"), ((os__MkdirParams){.mode = 0777,}));
+		(void)_t32;
  ;
-		_result_Array_string _t30 = os__ls(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/etc/init.d"), 0, { .d_c = 0 }}})));
-		if (_t30.is_error) {
-			*(Array_string*) _t30.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+		_result_Array_string _t33 = os__ls(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/etc/init.d"), 0, { .d_c = 0 }}})));
+		if (_t33.is_error) {
+			*(Array_string*) _t33.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 		}
 		
- 		Array_string init_scripts = (*(Array_string*)_t30.data);
-		for (int _t31 = 0; _t31 < init_scripts.len; ++_t31) {
-			string s = ((string*)init_scripts.data)[_t31];
+ 		Array_string init_scripts = (*(Array_string*)_t33.data);
+		for (int _t34 = 0; _t34 < init_scripts.len; ++_t34) {
+			string s = ((string*)init_scripts.data)[_t34];
 			string src = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/etc/init.d/"), 0xfe10, {.d_s = s}}, {_SLIT0, 0, { .d_c = 0 }}}));
 			string dst = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/init.d/"), 0xfe10, {.d_s = s}}, {_SLIT0, 0, { .d_c = 0 }}}));
-			_result_void _t32 = os__chmod(src, 0755);
-			(void)_t32;
+			_result_void _t35 = os__chmod(src, 0755);
+			(void)_t35;
  ;
 			if (!os__exists(dst)) {
-				_result_void _t33 = os__symlink(src, dst);
-				(void)_t33;
+				_result_void _t36 = os__symlink(src, dst);
+				(void)_t36;
  ;
 			}
 		}

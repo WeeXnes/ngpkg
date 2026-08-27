@@ -51,7 +51,7 @@ fn pad_right(s string, width int) string {
 
 fn print_banner() {
 	println('${c_cyan}╭──────────────────────────────────────────────────────────────╮${c_reset}')
-	println('${c_cyan}│${c_reset}  ${c_bold}🛡️  OpenNGFW Package Manager${c_reset} (${c_green}ngpkg v${version}${c_reset})                 ${c_cyan}│${c_reset}')
+	println('${c_cyan}│${c_reset}  ${c_bold}OpenNGFW Package Manager${c_reset} (${c_green}ngpkg v${version}${c_reset})                 ${c_cyan}│${c_reset}')
 	println('${c_cyan}│${c_reset}  ${c_gray}Prefix: /mnt/usb/opt  •  Binaries: ~/.ngpkg-bin${c_reset}             ${c_cyan}│${c_reset}')
 	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯${c_reset}')
 }
@@ -107,34 +107,48 @@ fn load_config() Config {
 }
 
 fn get_installed_packages(cfg Config) []string {
-	inst_dir := '${cfg.db_dir}/installed'
-	if !os.is_dir(inst_dir) {
-		alt_dir := '${cfg.prefix}/var/lib/pkg/installed'
-		if !os.is_dir(alt_dir) {
-			return []
-		}
-		files := os.ls(alt_dir) or { []string{} }
-		mut pkgs := []string{}
-		for f in files {
-			if f.ends_with('.list') {
-				pkgs << f.trim_string_right('.list')
+	mut pkgs := []string{}
+	dirs := [
+		'${cfg.db_dir}/installed',
+		'${cfg.prefix}/var/lib/ngpkg/installed',
+		'${cfg.prefix}/var/lib/pkg/installed',
+		'/var/lib/pkg/installed',
+		'/var/lib/ngpkg/installed',
+	]
+
+	for d in dirs {
+		if os.is_dir(d) {
+			files := os.ls(d) or { []string{} }
+			for f in files {
+				if f.ends_with('.list') {
+					name := f.trim_string_right('.list')
+					if !pkgs.contains(name) {
+						pkgs << name
+					}
+				}
 			}
 		}
-		return pkgs
 	}
-	files := os.ls(inst_dir) or { []string{} }
-	mut pkgs := []string{}
-	for f in files {
-		if f.ends_with('.list') {
-			pkgs << f.trim_string_right('.list')
+
+	// Also detect packages directly present in prefix/bin
+	if os.is_dir('${cfg.prefix}/bin') {
+		bin_files := os.ls('${cfg.prefix}/bin') or { []string{} }
+		for b in bin_files {
+			if !pkgs.contains(b) && os.is_executable('${cfg.prefix}/bin/${b}') {
+				pkgs << b
+			}
 		}
 	}
+
 	return pkgs
 }
 
 fn is_installed(cfg Config, pkg_name string) bool {
 	return os.exists('${cfg.db_dir}/installed/${pkg_name}.list') ||
-		os.exists('${cfg.prefix}/var/lib/pkg/installed/${pkg_name}.list')
+		os.exists('${cfg.prefix}/var/lib/ngpkg/installed/${pkg_name}.list') ||
+		os.exists('${cfg.prefix}/var/lib/pkg/installed/${pkg_name}.list') ||
+		os.exists('/var/lib/pkg/installed/${pkg_name}.list') ||
+		os.exists('${cfg.prefix}/bin/${pkg_name}')
 }
 
 fn fetch_index(cfg Config) []PackageMeta {
@@ -471,6 +485,13 @@ fn cmd_install(cfg Config, pkg_name string) int {
 
 	meta_file := '${cfg.db_dir}/installed/${target_pkg.name}.meta'
 	os.write_file(meta_file, 'NAME=${target_pkg.name}\nVERSION=${target_pkg.version}\nDESCRIPTION=${target_pkg.description}\nCATEGORY=${target_pkg.category}\n') or {}
+
+	if os.is_dir(cfg.prefix) {
+		usb_db := '${cfg.prefix}/var/lib/ngpkg/installed'
+		os.mkdir_all(usb_db) or {}
+		os.cp(list_file, '${usb_db}/${target_pkg.name}.list') or {}
+		os.cp(meta_file, '${usb_db}/${target_pkg.name}.meta') or {}
+	}
 
 	// Step 3: Symlink
 	homedir := if os.getenv('HOME') != '' { os.getenv('HOME') } else { '/root' }
