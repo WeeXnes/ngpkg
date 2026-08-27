@@ -1,0 +1,12 @@
+{
+  "name": "htop",
+  "version": "3.3.0",
+  "description": "Interactive process viewer and system monitor",
+  "category": "monitoring",
+  "license": "GPL-2.0-or-later",
+  "homepage": "https://htop.dev",
+  "type": "buildroot",
+  "buildroot_package": "htop",
+  "binaries": ["bin/htop"],
+  "libraries": ["libncurses.so"]
+}

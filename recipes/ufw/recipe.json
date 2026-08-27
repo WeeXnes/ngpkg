@@ -1,0 +1,9 @@
+{
+  "name": "ufw",
+  "version": "0.36.2",
+  "description": "Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall",
+  "category": "security",
+  "license": "GPL-3.0",
+  "homepage": "https://launchpad.net/ufw",
+  "type": "python"
+}

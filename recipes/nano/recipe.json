@@ -1,0 +1,12 @@
+{
+  "name": "nano",
+  "version": "7.2",
+  "description": "Lightweight CLI text editor with syntax highlighting",
+  "category": "editors",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://www.nano-editor.org",
+  "type": "buildroot",
+  "buildroot_package": "nano",
+  "binaries": ["bin/nano"],
+  "libraries": ["libncurses.so"]
+}

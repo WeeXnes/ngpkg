@@ -1,0 +1,9 @@
+{
+  "name": "git",
+  "version": "2.43.5",
+  "description": "Fast, scalable, distributed revision control system (with HTTPS support)",
+  "category": "development",
+  "license": "GPL-2.0-only",
+  "homepage": "https://git-scm.com",
+  "type": "custom"
+}

@@ -1,0 +1,44 @@
+# ==============================================================================
+# ngpkg (OpenNGFW Package Manager) .gitignore
+# ==============================================================================
+
+# Compiled Binaries
+client/ngpkg
+client/ngpkg_host
+client/pkg
+server/pkg_server
+ngpkg
+pkg_server
+
+# Generated Package Archives (built by ngpkg-build)
+repo/packages/*.ngpkg
+repo/packages/*.apkg
+repo/packages/ngpkg
+repo/packages/apkg
+*.ngpkg
+*.apkg
+
+# Build Caches & Downloads
+build/
+dl/
+dist/
+target/
+staging/
+*.tar.gz
+*.tar.xz
+*.tar.bz2
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Temporary and Editor Files
+*.swp
+*.swo
+*~
+.DS_Store
+.vscode/
+.idea/
+*.log

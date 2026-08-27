@@ -1,0 +1,9 @@
+{
+  "name": "bareiron",
+  "version": "1.21.8",
+  "description": "Ultra-lightweight Minecraft server written in C for embedded devices",
+  "category": "gaming",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/BareIron/BareIron",
+  "type": "source"
+}
