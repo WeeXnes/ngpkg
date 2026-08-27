@@ -2,16 +2,11 @@
 set -euo pipefail
 mkdir -p "${STAGE_DIR}/bin" "${STAGE_DIR}/etc/init.d" "${STAGE_DIR}/etc/bareiron"
 
-SRC_DIR="/home/weexnes/AnbergearOS/packages/sources/bareiron"
-if [ -d "${SRC_DIR}" ] && [ -f "${SRC_DIR}/src/main.c" ]; then
+SRC_DIR="${RECIPE_DIR}"
+if [ -d "${SRC_DIR}/src" ] && [ -f "${SRC_DIR}/src/main.c" ]; then
     echo "  [*] Compiling BareIron with ${CROSS_CC}..."
     ${CROSS_CC} -O3 -s -I"${SRC_DIR}/include" "${SRC_DIR}/src"/*.c -o "${STAGE_DIR}/bin/bareiron" -lm -lpthread 2>/dev/null || \
     gcc -O3 -s -I"${SRC_DIR}/include" "${SRC_DIR}/src"/*.c -o "${STAGE_DIR}/bin/bareiron" -lm -lpthread
-else
-    # Fallback to cached binary
-    if [ -f "/tmp/pkg_build_bareiron/bin/bareiron" ]; then
-        cp -f "/tmp/pkg_build_bareiron/bin/bareiron" "${STAGE_DIR}/bin/bareiron"
-    fi
 fi
 
 cat << 'EOF_CONF' > "${STAGE_DIR}/etc/bareiron/server.properties"
