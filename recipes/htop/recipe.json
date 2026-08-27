@@ -5,8 +5,6 @@
   "category": "monitoring",
   "license": "GPL-2.0-or-later",
   "homepage": "https://htop.dev",
-  "type": "buildroot",
-  "buildroot_package": "htop",
-  "binaries": ["bin/htop"],
-  "libraries": ["libncurses.so"]
+  "type": "source",
+  "binaries": ["bin/htop"]
 }

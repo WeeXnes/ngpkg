@@ -1,9 +1,9 @@
 bareiron|1.21.8|46KB|Ultra-lightweight Minecraft server written in C for embedded devices|gaming
-bash|5.2.21|701KB|GNU Bourne-Again SHell - powerful interactive command language|utilities
+bash|5.2.21|821KB|GNU Bourne-Again SHell - powerful interactive command language|utilities
 btop|1.4.7|859KB|Modern and beautiful resource monitor with GPU/CPU/MEM graphs and themes|monitoring
-git|2.43.5|10.6MB|Fast, scalable, distributed revision control system (with HTTPS support)|development
+git|2.43.5|10.0MB|Fast, scalable, distributed revision control system (with HTTPS support)|development
 htop|3.3.0|248KB|Interactive process viewer and system monitor|monitoring
-nano|7.2|213KB|Lightweight CLI text editor with syntax highlighting|editors
+nano|7.2|302KB|Lightweight CLI text editor with syntax highlighting|editors
 netclient|1.1.0|5.3MB|Fast, automated WireGuard overlay mesh network client|networking
-screen|4.9.1|349KB|Full-screen terminal multiplexer and window manager|utilities
-ufw|0.36.2|13.9MB|Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall|security
+screen|4.9.1|352KB|Full-screen terminal multiplexer and window manager|utilities
+ufw|0.36.2|7.3MB|Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall|security

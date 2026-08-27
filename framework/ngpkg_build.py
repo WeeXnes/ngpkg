@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ==============================================================================
 # ngpkg Build Framework (ngpkg-build)
-# Modular package build system & repository generator for OpenNGFW
+# Modular, Standalone Package Build System & Repository Generator for OpenNGFW
 # ==============================================================================
 
 import argparse
@@ -19,25 +19,38 @@ RECIPES_DIR = NGPKG_ROOT / "recipes"
 REPO_DIR = NGPKG_ROOT / "repo" / "packages"
 TEMPLATES_DIR = FRAMEWORK_DIR / "templates"
 
-# Auto-detect OpenNGFW Buildroot path (sibling directory or standard path)
-CANDIDATE_BUILDROOT_DIRS = [
-    NGPKG_ROOT.parent / "AnbergearOS" / "build" / "r6300v2",
-    NGPKG_ROOT.parent / "OpenNGFW" / "build" / "r6300v2",
-    NGPKG_ROOT / "buildroot_target",
-    Path("/home/weexnes/AnbergearOS/build/r6300v2")
-]
+# Auto-detect cross-compiler toolchain
+def detect_toolchain():
+    # 1. Check explicit environment variables
+    env_cc = os.getenv("CROSS_CC")
+    env_strip = os.getenv("CROSS_STRIP")
+    if env_cc and os.path.isfile(env_cc):
+        return Path(env_cc), Path(env_strip) if env_strip else Path(env_cc).with_name(Path(env_cc).name.replace("-gcc", "-strip"))
 
-BUILD_DIR = None
-for c in CANDIDATE_BUILDROOT_DIRS:
-    if c.exists() and (c / "host" / "bin").exists():
-        BUILD_DIR = c
-        break
+    # 2. Check candidate paths
+    candidates = [
+        Path("/home/weexnes/AnbergearOS/build/r6300v2/host/bin/arm-buildroot-linux-musleabi-gcc"),
+        NGPKG_ROOT.parent / "AnbergearOS" / "build" / "r6300v2" / "host" / "bin" / "arm-buildroot-linux-musleabi-gcc",
+        NGPKG_ROOT.parent / "OpenNGFW" / "build" / "r6300v2" / "host" / "bin" / "arm-buildroot-linux-musleabi-gcc",
+    ]
+    for cc in candidates:
+        if cc.is_file():
+            strip = cc.with_name(cc.name.replace("-gcc", "-strip"))
+            return cc, strip
 
-if not BUILD_DIR:
-    BUILD_DIR = CANDIDATE_BUILDROOT_DIRS[0]
+    # 3. Check system PATH
+    for name in ["arm-buildroot-linux-musleabi-gcc", "arm-linux-musleabi-gcc", "arm-linux-gnueabihf-gcc"]:
+        p = shutil.which(name)
+        if p:
+            strip = shutil.which(name.replace("-gcc", "-strip")) or "strip"
+            return Path(p), Path(strip)
 
-STRIP_TOOL = BUILD_DIR / "host" / "bin" / "arm-buildroot-linux-musleabi-strip"
-CROSS_CC = BUILD_DIR / "host" / "bin" / "arm-buildroot-linux-musleabi-gcc"
+    # 4. Fallback to host gcc
+    return Path(shutil.which("gcc") or "/usr/bin/gcc"), Path(shutil.which("strip") or "/usr/bin/strip")
+
+
+CROSS_CC, STRIP_TOOL = detect_toolchain()
+CROSS_HOST = CROSS_CC.name.replace("-gcc", "") if "-gcc" in CROSS_CC.name else "arm-buildroot-linux-musleabi"
 
 
 def log(msg, symbol="*"):
@@ -59,40 +72,10 @@ def error(msg):
 def strip_file(path):
     if os.path.islink(path) or not os.path.exists(path):
         return
-    if STRIP_TOOL.exists():
+    if STRIP_TOOL and Path(STRIP_TOOL).exists():
         subprocess.run([str(STRIP_TOOL), "--strip-all", str(path)], check=False, stderr=subprocess.DEVNULL)
     else:
         subprocess.run(["strip", "--strip-unneeded", str(path)], check=False, stderr=subprocess.DEVNULL)
-
-
-def copy_library(lib_pattern, dest_lib_dir):
-    """Copies library and its symlink chain from Buildroot staging/target."""
-    os.makedirs(dest_lib_dir, exist_ok=True)
-    search_dirs = [
-        BUILD_DIR / "staging" / "usr" / "lib",
-        BUILD_DIR / "staging" / "lib",
-        BUILD_DIR / "target" / "lib",
-        BUILD_DIR / "target" / "usr" / "lib",
-    ]
-    found = False
-    for sdir in search_dirs:
-        if not sdir.exists():
-            continue
-        for f in os.listdir(sdir):
-            if f.startswith(lib_pattern):
-                src = sdir / f
-                dest = Path(dest_lib_dir) / f
-                if src.is_symlink():
-                    target = os.readlink(src)
-                    if os.path.lexists(str(dest)):
-                        dest.unlink()
-                    os.symlink(target, dest)
-                else:
-                    shutil.copy2(src, dest)
-                    strip_file(dest)
-                found = True
-    if not found:
-        warn(f"Shared library '{lib_pattern}' not found in Buildroot search paths.")
 
 
 def package_payload(pkg_name, version, description, stage_dir, category="utilities"):
@@ -106,8 +89,7 @@ def package_payload(pkg_name, version, description, stage_dir, category="utiliti
         for f in files:
             p = Path(root) / f
             if not p.is_symlink():
-                # Check if executable or in bin/sbin/lib
-                if any(k in str(p) for k in ["/bin/", "/sbin/", "/lib/"]):
+                if any(k in str(p) for k in ["/bin/", "/sbin/", "/lib/", "/libexec/"]):
                     strip_file(p)
 
     with tarfile.open(pkg_file, "w:gz") as tar:
@@ -152,10 +134,10 @@ def resolve_recipe_dir(recipe_input):
         return p.resolve()
     return RECIPES_DIR / recipe_input
 
-def build_recipe(recipe_name_or_path):
-    """Builds a single recipe into a package."""
-    recipe_dir = resolve_recipe_dir(recipe_name_or_path)
 
+def build_recipe(recipe_name_or_path):
+    """Builds a single recipe into a package using its standalone build.sh script."""
+    recipe_dir = resolve_recipe_dir(recipe_name_or_path)
     manifest_file = recipe_dir / "recipe.json"
     if not manifest_file.exists():
         error(f"Recipe manifest not found at: {manifest_file}")
@@ -168,78 +150,38 @@ def build_recipe(recipe_name_or_path):
     version = meta["version"]
     desc = meta.get("description", "")
     category = meta.get("category", "utilities")
-    pkg_type = meta.get("type", "custom")
 
-    log(f"Processing recipe: \033[1;36m{name}\033[0m (\033[1;33mv{version}\033[0m, type: {pkg_type})")
+    log(f"Building standalone recipe: \033[1;36m{name}\033[0m (\033[1;33mv{version}\033[0m)")
 
     stage_dir = Path(f"/tmp/ngpkg_stage_{name}")
     if stage_dir.exists():
         shutil.rmtree(stage_dir)
     stage_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Handle build hook script if present
     build_script = recipe_dir / "build.sh"
-    if build_script.exists():
-        os.chmod(build_script, 0o755)
-        env = os.environ.copy()
-        env.update({
-            "PKG_NAME": name,
-            "PKG_VERSION": version,
-            "STAGE_DIR": str(stage_dir),
-            "CROSS_CC": str(CROSS_CC),
-            "CROSS_STRIP": str(STRIP_TOOL),
-            "BUILDROOT_DIR": str(BUILD_DIR),
-            "RECIPE_DIR": str(recipe_dir),
-            "NGPKG_ROOT": str(NGPKG_ROOT),
-        })
-        res = subprocess.run([str(build_script)], env=env, check=False)
-        if res.returncode != 0:
-            error(f"build.sh for {name} failed with exit code {res.returncode}")
-            return None
+    if not build_script.exists():
+        error(f"build.sh missing in recipe directory: {recipe_dir}")
+        return None
 
-    # 2. Handle built-in recipe types if build.sh didn't populate everything
-    if pkg_type == "buildroot":
-        br_pkg = meta.get("buildroot_package", name)
-        # Search for binaries in Buildroot build dir or target dir
-        for b in meta.get("binaries", []):
-            dest_b = stage_dir / b
-            dest_b.parent.mkdir(parents=True, exist_ok=True)
-            found = False
-            bin_name = Path(b).name
-            for p in (BUILD_DIR / "build").glob(f"{br_pkg}*/{bin_name}"):
-                if p.is_file() and os.access(p, os.X_OK):
-                    shutil.copy2(p, dest_b)
-                    found = True
-                    break
-            if not found:
-                for p in (BUILD_DIR / "build").glob(f"{br_pkg}*/**/{bin_name}"):
-                    if p.is_file() and os.access(p, os.X_OK):
-                        shutil.copy2(p, dest_b)
-                        found = True
-                        break
-            if not found:
-                for target_path in [BUILD_DIR / "target" / b, BUILD_DIR / "staging" / "usr" / b, BUILD_DIR / "target" / "usr" / b]:
-                    if target_path.exists():
-                        shutil.copy2(target_path, dest_b)
-                        found = True
-                        break
-            if not found and not dest_b.exists():
-                warn(f"Binary '{b}' not found for package '{name}'")
+    os.chmod(build_script, 0o755)
+    env = os.environ.copy()
+    env.update({
+        "PKG_NAME": name,
+        "PKG_VERSION": version,
+        "STAGE_DIR": str(stage_dir),
+        "CROSS_CC": str(CROSS_CC),
+        "CROSS_STRIP": str(STRIP_TOOL),
+        "CROSS_HOST": str(CROSS_HOST),
+        "RECIPE_DIR": str(recipe_dir),
+        "NGPKG_ROOT": str(NGPKG_ROOT),
+    })
 
-        # Copy required libraries
-        for lib in meta.get("libraries", []):
-            copy_library(lib, stage_dir / "lib")
+    res = subprocess.run([str(build_script)], env=env, check=False)
+    if res.returncode != 0:
+        error(f"build.sh for {name} failed with exit code {res.returncode}")
+        return None
 
-        # Copy config files
-        for cfg in meta.get("config_files", []):
-            dest_c = stage_dir / cfg
-            dest_c.parent.mkdir(parents=True, exist_ok=True)
-            for p in (BUILD_DIR / "build").glob(f"{br_pkg}*/{Path(cfg).name}"):
-                if p.is_file():
-                    shutil.copy2(p, dest_c)
-                    break
-
-    # Copy metadata into package
+    # Write manifest into package
     meta_dir = stage_dir / "share" / "ngpkg"
     meta_dir.mkdir(parents=True, exist_ok=True)
     with open(meta_dir / "manifest.json", "w") as f:
@@ -254,12 +196,10 @@ def update_repository_index(entries):
     index_txt = REPO_DIR / "index.txt"
     index_json = REPO_DIR / "index.json"
 
-    # 1. index.txt (name|version|size|description)
     with open(index_txt, "w") as f:
         for e in entries:
             f.write(f"{e['name']}|{e['version']}|{e['size']}|{e['description']}|{e['category']}\n")
 
-    # 2. index.json (rich metadata)
     with open(index_json, "w") as f:
         json.dump({
             "schema_version": "1.0",
@@ -271,7 +211,7 @@ def update_repository_index(entries):
 
 
 def cmd_build_all():
-    """Scans and builds all recipes in recipes/ directory."""
+    """Scans and builds all standalone recipes in recipes/ directory."""
     if not RECIPES_DIR.exists():
         error(f"Recipes directory does not exist: {RECIPES_DIR}")
         return 1
@@ -294,7 +234,7 @@ def cmd_build_all():
 
 
 def cmd_new(pkg_name):
-    """Generates a new package recipe scaffold."""
+    """Generates a new standalone package recipe scaffold."""
     target_dir = RECIPES_DIR / pkg_name
     if target_dir.exists():
         error(f"Recipe '{pkg_name}' already exists at {target_dir}")
@@ -311,10 +251,10 @@ def cmd_new(pkg_name):
     shutil.copy2(TEMPLATES_DIR / "build.sh", target_dir / "build.sh")
     os.chmod(target_dir / "build.sh", 0o755)
 
-    success(f"Created new package recipe scaffold at \033[1;36m{target_dir}\033[0m")
+    success(f"Created new standalone package recipe at \033[1;36m{target_dir}\033[0m")
     print("Files created:")
-    print(f"  - {target_dir}/recipe.json  (Package metadata & dependencies)")
-    print(f"  - {target_dir}/build.sh     (Build hook script)")
+    print(f"  - {target_dir}/recipe.json  (Package metadata)")
+    print(f"  - {target_dir}/build.sh     (Standalone build script)")
     return 0
 
 
@@ -322,8 +262,14 @@ def cmd_validate(recipe_name):
     """Validates a recipe's schema and files."""
     recipe_dir = resolve_recipe_dir(recipe_name)
     manifest = recipe_dir / "recipe.json"
+    build_script = recipe_dir / "build.sh"
+
     if not manifest.exists():
         error(f"recipe.json missing in {recipe_dir}")
+        return 1
+
+    if not build_script.exists():
+        error(f"build.sh missing in {recipe_dir}")
         return 1
 
     try:
@@ -333,7 +279,7 @@ def cmd_validate(recipe_name):
         error(f"Invalid JSON in {manifest}: {e}")
         return 1
 
-    required_fields = ["name", "version", "description", "category", "type"]
+    required_fields = ["name", "version", "description", "category"]
     missing = [k for k in required_fields if k not in data]
     if missing:
         error(f"Missing required fields in recipe.json: {', '.join(missing)}")
@@ -356,6 +302,7 @@ def cmd_list_recipes():
             try:
                 with open(r / "recipe.json", "r") as f:
                     d = json.load(f)
+                has_build = "✓" if (r / "build.sh").exists() else "✗"
                 print(f"\033[1;36m{d.get('name', r.name):<16}\033[0m {d.get('version', '-'):<10} \033[1;35m{d.get('category', 'general'):<14}\033[0m {d.get('type', 'custom'):<12} {d.get('description', '')[:35]}")
             except Exception:
                 print(f"{r.name:<16} [Invalid recipe.json]")
@@ -364,25 +311,20 @@ def cmd_list_recipes():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ngpkg Build Framework - OpenNGFW Package Builder")
+    parser = argparse.ArgumentParser(description="ngpkg Build Framework - OpenNGFW Standalone Package Builder")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
-    # new
-    p_new = subparsers.add_parser("new", help="Create a new package recipe scaffold")
+    p_new = subparsers.add_parser("new", help="Create a new standalone package recipe scaffold")
     p_new.add_argument("name", help="Package name (e.g. redis, ripgrep)")
 
-    # build
     p_build = subparsers.add_parser("build", help="Build an individual package recipe")
     p_build.add_argument("recipe", help="Recipe name or directory path")
 
-    # build-all
-    subparsers.add_parser("build-all", help="Build all recipes and generate repository index")
+    subparsers.add_parser("build-all", help="Build all standalone recipes and generate repository index")
 
-    # validate
-    p_val = subparsers.add_parser("validate", help="Validate a recipe manifest")
+    p_val = subparsers.add_parser("validate", help="Validate a recipe manifest and build.sh")
     p_val.add_argument("recipe", help="Recipe name or directory path")
 
-    # list
     subparsers.add_parser("list", help="List all available recipes")
 
     args = parser.parse_args()

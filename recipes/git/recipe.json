@@ -5,5 +5,6 @@
   "category": "development",
   "license": "GPL-2.0-only",
   "homepage": "https://git-scm.com",
-  "type": "custom"
+  "type": "source",
+  "binaries": ["bin/git"]
 }

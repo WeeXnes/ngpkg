@@ -6,7 +6,7 @@
       "name": "bareiron",
       "version": "1.21.8",
       "size": "46KB",
-      "size_bytes": 46807,
+      "size_bytes": 46791,
       "description": "Ultra-lightweight Minecraft server written in C for embedded devices",
       "category": "gaming",
       "filename": "bareiron-1.21.8.ngpkg"
@@ -14,8 +14,8 @@
     {
       "name": "bash",
       "version": "5.2.21",
-      "size": "701KB",
-      "size_bytes": 717388,
+      "size": "821KB",
+      "size_bytes": 841012,
       "description": "GNU Bourne-Again SHell - powerful interactive command language",
       "category": "utilities",
       "filename": "bash-5.2.21.ngpkg"
@@ -24,7 +24,7 @@
       "name": "btop",
       "version": "1.4.7",
       "size": "859KB",
-      "size_bytes": 879744,
+      "size_bytes": 879746,
       "description": "Modern and beautiful resource monitor with GPU/CPU/MEM graphs and themes",
       "category": "monitoring",
       "filename": "btop-1.4.7.ngpkg"
@@ -32,8 +32,8 @@
     {
       "name": "git",
       "version": "2.43.5",
-      "size": "10.6MB",
-      "size_bytes": 11092752,
+      "size": "10.0MB",
+      "size_bytes": 10494252,
       "description": "Fast, scalable, distributed revision control system (with HTTPS support)",
       "category": "development",
       "filename": "git-2.43.5.ngpkg"
@@ -42,7 +42,7 @@
       "name": "htop",
       "version": "3.3.0",
       "size": "248KB",
-      "size_bytes": 254358,
+      "size_bytes": 254431,
       "description": "Interactive process viewer and system monitor",
       "category": "monitoring",
       "filename": "htop-3.3.0.ngpkg"
@@ -50,8 +50,8 @@
     {
       "name": "nano",
       "version": "7.2",
-      "size": "213KB",
-      "size_bytes": 217806,
+      "size": "302KB",
+      "size_bytes": 309335,
       "description": "Lightweight CLI text editor with syntax highlighting",
       "category": "editors",
       "filename": "nano-7.2.ngpkg"
@@ -60,7 +60,7 @@
       "name": "netclient",
       "version": "1.1.0",
       "size": "5.3MB",
-      "size_bytes": 5553056,
+      "size_bytes": 5553042,
       "description": "Fast, automated WireGuard overlay mesh network client",
       "category": "networking",
       "filename": "netclient-1.1.0.ngpkg"
@@ -68,8 +68,8 @@
     {
       "name": "screen",
       "version": "4.9.1",
-      "size": "349KB",
-      "size_bytes": 357551,
+      "size": "352KB",
+      "size_bytes": 360838,
       "description": "Full-screen terminal multiplexer and window manager",
       "category": "utilities",
       "filename": "screen-4.9.1.ngpkg"
@@ -77,8 +77,8 @@
     {
       "name": "ufw",
       "version": "0.36.2",
-      "size": "13.9MB",
-      "size_bytes": 14556572,
+      "size": "7.3MB",
+      "size_bytes": 7686909,
       "description": "Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall",
       "category": "security",
       "filename": "ufw-0.36.2.ngpkg"

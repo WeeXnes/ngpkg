@@ -5,9 +5,6 @@
   "category": "utilities",
   "license": "GPL-3.0-or-later",
   "homepage": "https://www.gnu.org/software/screen/",
-  "type": "buildroot",
-  "buildroot_package": "screen",
-  "binaries": ["bin/screen"],
-  "libraries": ["libncurses.so"],
-  "config_files": ["etc/screenrc"]
+  "type": "source",
+  "binaries": ["bin/screen"]
 }
