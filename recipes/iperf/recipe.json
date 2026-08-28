@@ -1,0 +1,8 @@
+{
+  "name": "iperf",
+  "version": "3.17.1",
+  "description": "Active bandwidth measurement tool for TCP, UDP and SCTP throughput testing",
+  "category": "networking",
+  "dependencies": [],
+  "binaries": ["iperf3", "iperf"]
+}

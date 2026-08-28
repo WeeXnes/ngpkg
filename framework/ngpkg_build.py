@@ -89,12 +89,15 @@ def package_payload(pkg_name, version, description, stage_dir, category="utiliti
         for f in files:
             p = Path(root) / f
             if not p.is_symlink() and any(k in str(p) for k in ["/bin/", "/sbin/", "/lib/", "/libexec/"]):
+                if p.suffix in [".o", ".a"]:
+                    continue
                 if p.stat().st_size > 4:
                     with open(p, "rb") as check_f:
                         header = check_f.read(4)
                         if header == b"\x7fELF":
                             if STRIP_TOOL and Path(STRIP_TOOL).exists():
-                                subprocess.run([str(STRIP_TOOL), "--strip-all", str(p)], check=False, stderr=subprocess.DEVNULL)
+                                strip_flag = "--strip-unneeded" if ".so" in p.name else "--strip-all"
+                                subprocess.run([str(STRIP_TOOL), strip_flag, str(p)], check=False, stderr=subprocess.DEVNULL)
 
     with tarfile.open(pkg_file, "w:gz") as tar:
         for item in os.listdir(stage_dir):

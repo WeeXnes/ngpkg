@@ -1,12 +1,11 @@
 {
   "schema_version": "1.0",
-  "package_count": 13,
+  "package_count": 21,
   "packages": [
     {
       "name": "bareiron",
       "version": "1.21.8",
       "size": "46KB",
-      "size_bytes": 46800,
       "description": "Ultra-lightweight Minecraft server written in C for embedded devices",
       "category": "gaming",
       "filename": "bareiron-1.21.8.ngpkg"
@@ -15,7 +14,6 @@
       "name": "bash",
       "version": "5.2.21",
       "size": "821KB",
-      "size_bytes": 841061,
       "description": "GNU Bourne-Again SHell - powerful interactive command language",
       "category": "utilities",
       "filename": "bash-5.2.21.ngpkg"
@@ -24,16 +22,30 @@
       "name": "btop",
       "version": "1.4.7",
       "size": "859KB",
-      "size_bytes": 879754,
       "description": "Modern and beautiful resource monitor with GPU/CPU/MEM graphs and themes",
       "category": "monitoring",
       "filename": "btop-1.4.7.ngpkg"
     },
     {
+      "name": "caddy",
+      "version": "2.8.4",
+      "size": "17.0MB",
+      "description": "Fast, multi-platform web server with automatic HTTPS and Layer 4 TCP/UDP streaming proxy (caddy-l4)",
+      "category": "networking",
+      "filename": "caddy-2.8.4.ngpkg"
+    },
+    {
+      "name": "gcc",
+      "version": "12.2.0",
+      "size": "69.6MB",
+      "description": "GNU Compiler Collection (gcc & g++) with C/C++ standard library headers and binutils",
+      "category": "development",
+      "filename": "gcc-12.2.0.ngpkg"
+    },
+    {
       "name": "git",
       "version": "2.43.5",
       "size": "10.0MB",
-      "size_bytes": 10494280,
       "description": "Fast, scalable, distributed revision control system (with HTTPS support)",
       "category": "development",
       "filename": "git-2.43.5.ngpkg"
@@ -42,16 +54,38 @@
       "name": "htop",
       "version": "3.3.0",
       "size": "248KB",
-      "size_bytes": 254447,
       "description": "Interactive process viewer and system monitor",
       "category": "monitoring",
       "filename": "htop-3.3.0.ngpkg"
     },
     {
+      "name": "iperf",
+      "version": "3.17.1",
+      "size": "65KB",
+      "description": "Active bandwidth measurement tool for TCP, UDP and SCTP throughput testing",
+      "category": "networking",
+      "filename": "iperf-3.17.1.ngpkg"
+    },
+    {
+      "name": "lua",
+      "version": "5.4.7",
+      "size": "350KB",
+      "description": "Powerful, fast, lightweight, embeddable scripting language",
+      "category": "development",
+      "filename": "lua-5.4.7.ngpkg"
+    },
+    {
+      "name": "micro",
+      "version": "2.0.14",
+      "size": "5.1MB",
+      "description": "Modern and intuitive terminal-based text editor with syntax highlighting",
+      "category": "editors",
+      "filename": "micro-2.0.14.ngpkg"
+    },
+    {
       "name": "nano",
       "version": "7.2",
       "size": "302KB",
-      "size_bytes": 309341,
       "description": "Lightweight CLI text editor with syntax highlighting",
       "category": "editors",
       "filename": "nano-7.2.ngpkg"
@@ -60,52 +94,70 @@
       "name": "netclient",
       "version": "1.1.0",
       "size": "5.3MB",
-      "size_bytes": 5553118,
       "description": "Fast, automated WireGuard overlay mesh network client",
       "category": "networking",
       "filename": "netclient-1.1.0.ngpkg"
     },
     {
-      "name": "nodejs",
-      "version": "20.15.1",
-      "size": "19.1MB",
-      "size_bytes": 20059809,
-      "description": "JavaScript runtime built on V8 engine (includes npm and npx package managers)",
-      "category": "development",
-      "filename": "nodejs-20.15.1.ngpkg"
+      "name": "nmap",
+      "version": "7.93",
+      "size": "14.5MB",
+      "description": "Network exploration tool and security / port scanner with NSE Lua scripts and Ncat",
+      "category": "networking",
+      "filename": "nmap-7.93.ngpkg"
     },
     {
-      "name": "npm",
-      "version": "10.9.1",
-      "size": "2.8MB",
-      "size_bytes": 2970341,
-      "description": "The package manager for JavaScript (npm and npx command line utilities)",
-      "category": "development",
-      "filename": "npm-10.9.1.ngpkg"
+      "name": "openssl",
+      "version": "3.3.1",
+      "size": "2.1MB",
+      "description": "Robust, commercial-grade TLS/SSL cryptography toolkit and certificate manager",
+      "category": "security",
+      "filename": "openssl-3.3.1.ngpkg"
     },
     {
-      "name": "nvm",
-      "version": "0.40.1",
-      "size": "33KB",
-      "size_bytes": 34102,
-      "description": "Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions",
+      "name": "quickjs",
+      "version": "2024-01-13",
+      "size": "891KB",
+      "description": "Fast, lightweight ES2020 JavaScript engine and compiler (qjs & qjsc)",
       "category": "development",
-      "filename": "nvm-0.40.1.ngpkg"
+      "filename": "quickjs-2024-01-13.ngpkg"
+    },
+    {
+      "name": "rsync",
+      "version": "3.3.0",
+      "size": "274KB",
+      "description": "Fast and versatile remote file-copying and synchronization tool",
+      "category": "utilities",
+      "filename": "rsync-3.3.0.ngpkg"
+    },
+    {
+      "name": "samba",
+      "version": "4.17.12",
+      "size": "38.3MB",
+      "description": "Samba SMB/CIFS file and print server (with full SMB1/LANMAN PS2 OPL legacy support)",
+      "category": "networking",
+      "filename": "samba-4.17.12.ngpkg"
     },
     {
       "name": "screen",
       "version": "4.9.1",
       "size": "352KB",
-      "size_bytes": 360853,
       "description": "Full-screen terminal multiplexer and window manager",
       "category": "utilities",
       "filename": "screen-4.9.1.ngpkg"
     },
     {
+      "name": "tcc",
+      "version": "0.9.28",
+      "size": "5.2MB",
+      "description": "Tiny C Compiler - ultra-fast native C99/GNU C compiler for embedded devices",
+      "category": "development",
+      "filename": "tcc-0.9.28.ngpkg"
+    },
+    {
       "name": "ufw",
       "version": "0.36.2",
-      "size": "8.0MB",
-      "size_bytes": 8375509,
+      "size": "9.2MB",
       "description": "Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall",
       "category": "security",
       "filename": "ufw-0.36.2.ngpkg"
@@ -114,7 +166,6 @@
       "name": "v",
       "version": "0.5.2",
       "size": "17.1MB",
-      "size_bytes": 17976461,
       "description": "Simple, fast, safe, compiled language for developing maintainable software",
       "category": "development",
       "filename": "v-0.5.2.ngpkg"

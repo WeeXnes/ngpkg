@@ -1,0 +1,10 @@
+{
+  "name": "openssl",
+  "version": "3.3.1",
+  "category": "security",
+  "description": "Robust, commercial-grade TLS/SSL cryptography toolkit and certificate manager",
+  "homepage": "https://www.openssl.org",
+  "maintainer": "weexnes",
+  "arch": "armhf-musl",
+  "dependencies": []
+}

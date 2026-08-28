@@ -1,0 +1,8 @@
+{
+  "name": "gcc",
+  "version": "12.2.0",
+  "description": "GNU Compiler Collection (gcc & g++) with C/C++ standard library headers and binutils",
+  "category": "development",
+  "dependencies": [],
+  "binaries": ["gcc", "g++", "c++", "cpp", "as", "ld", "ar", "nm", "strip"]
+}

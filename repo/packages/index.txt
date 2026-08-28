@@ -1,13 +1,21 @@
 bareiron|1.21.8|46KB|Ultra-lightweight Minecraft server written in C for embedded devices|gaming
 bash|5.2.21|821KB|GNU Bourne-Again SHell - powerful interactive command language|utilities
 btop|1.4.7|859KB|Modern and beautiful resource monitor with GPU/CPU/MEM graphs and themes|monitoring
+caddy|2.8.4|17.0MB|Fast, multi-platform web server with automatic HTTPS and Layer 4 TCP/UDP streaming proxy (caddy-l4)|networking
+gcc|12.2.0|69.6MB|GNU Compiler Collection (gcc & g++) with C/C++ standard library headers and binutils|development
 git|2.43.5|10.0MB|Fast, scalable, distributed revision control system (with HTTPS support)|development
 htop|3.3.0|248KB|Interactive process viewer and system monitor|monitoring
+iperf|3.17.1|65KB|Active bandwidth measurement tool for TCP, UDP and SCTP throughput testing|networking
+lua|5.4.7|350KB|Powerful, fast, lightweight, embeddable scripting language|development
+micro|2.0.14|5.1MB|Modern and intuitive terminal-based text editor with syntax highlighting|editors
 nano|7.2|302KB|Lightweight CLI text editor with syntax highlighting|editors
 netclient|1.1.0|5.3MB|Fast, automated WireGuard overlay mesh network client|networking
-nodejs|20.15.1|19.1MB|JavaScript runtime built on V8 engine (includes npm and npx package managers)|development
-npm|10.9.1|2.8MB|The package manager for JavaScript (npm and npx command line utilities)|development
-nvm|0.40.1|33KB|Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions|development
+nmap|7.93|14.5MB|Network exploration tool and security / port scanner with NSE Lua scripts and Ncat|networking
+openssl|3.3.1|2.1MB|Robust, commercial-grade TLS/SSL cryptography toolkit and certificate manager|security
+quickjs|2024-01-13|891KB|Fast, lightweight ES2020 JavaScript engine and compiler (qjs & qjsc)|development
+rsync|3.3.0|274KB|Fast and versatile remote file-copying and synchronization tool|utilities
+samba|4.17.12|38.3MB|Samba SMB/CIFS file and print server (with full SMB1/LANMAN PS2 OPL legacy support)|networking
 screen|4.9.1|352KB|Full-screen terminal multiplexer and window manager|utilities
-ufw|0.36.2|8.0MB|Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall|security
+tcc|0.9.28|5.2MB|Tiny C Compiler - ultra-fast native C99/GNU C compiler for embedded devices|development
+ufw|0.36.2|9.2MB|Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall|security
 v|0.5.2|17.1MB|Simple, fast, safe, compiled language for developing maintainable software|development

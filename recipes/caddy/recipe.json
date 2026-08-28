@@ -1,0 +1,7 @@
+{
+  "name": "caddy",
+  "version": "2.8.4",
+  "description": "Fast, multi-platform web server with automatic HTTPS and Layer 4 TCP/UDP streaming proxy (caddy-l4)",
+  "category": "networking",
+  "depends": []
+}
