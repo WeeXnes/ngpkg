@@ -5,5 +5,9 @@ git|2.43.5|10.0MB|Fast, scalable, distributed revision control system (with HTTP
 htop|3.3.0|248KB|Interactive process viewer and system monitor|monitoring
 nano|7.2|302KB|Lightweight CLI text editor with syntax highlighting|editors
 netclient|1.1.0|5.3MB|Fast, automated WireGuard overlay mesh network client|networking
+nodejs|20.15.1|19.1MB|JavaScript runtime built on V8 engine (includes npm and npx package managers)|development
+npm|10.9.1|2.8MB|The package manager for JavaScript (npm and npx command line utilities)|development
+nvm|0.40.1|33KB|Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions|development
 screen|4.9.1|352KB|Full-screen terminal multiplexer and window manager|utilities
-ufw|0.36.2|7.3MB|Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall|security
+ufw|0.36.2|8.0MB|Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall|security
+v|0.5.2|17.1MB|Simple, fast, safe, compiled language for developing maintainable software|development

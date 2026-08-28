@@ -1,17 +1,18 @@
 // ==============================================================================
 // OpenNGFW Package Repository Server (Written in V)
-// High-performance, standalone package server for OpenNGFW routers
+// High-performance, streaming standalone package server for OpenNGFW routers
 // ==============================================================================
 
 module main
 
-import net.http
+import io
+import net
 import os
 import strings
 import time
 
 const default_port = 8000
-const version = "1.2.0"
+const server_version = "1.3.0"
 
 struct PkgInfo {
 	name        string
@@ -20,12 +21,6 @@ struct PkgInfo {
 	description string
 	category    string
 	filename    string
-}
-
-struct PkgServer {
-pub mut:
-	repo_dir string
-	port     int
 }
 
 fn get_local_ips() []string {
@@ -83,9 +78,9 @@ fn load_packages(repo_dir string) []PkgInfo {
 }
 
 fn generate_html_dashboard(pkgs []PkgInfo, ips []string, port int) string {
-	primary_ip := if ips.len > 0 { ips[0] } else { '192.168.1.2' }
+	primary_ip := if ips.len > 0 { ips[0] } else { '192.168.1.1' }
 	
-	mut rows := strings.new_builder(1024)
+	mut rows := strings.new_builder(2048)
 	for p in pkgs {
 		rows.write_string('
         <tr>
@@ -412,7 +407,7 @@ fn generate_html_dashboard(pkgs []PkgInfo, ips []string, port int) string {
                 <div class="logo-icon">🛡️</div>
                 <div>
                     <h1>OpenNGFW Package Repository</h1>
-                    <div class="subtitle">Next-Generation Embedded Package System • v' + version + '</div>
+                    <div class="subtitle">Next-Generation Streaming Package Server • v' + server_version + '</div>
                 </div>
             </div>
             <div class="endpoints">
@@ -453,7 +448,7 @@ fn generate_html_dashboard(pkgs []PkgInfo, ips []string, port int) string {
         </div>
 
         <footer class="footer">
-            OpenNGFW Package Repository Server • Built with V for blazing speed and zero memory footprint.
+            OpenNGFW Package Repository Server • Built with V with zero memory leaks and buffered streaming.
         </footer>
     </div>
 
@@ -489,8 +484,29 @@ fn generate_html_dashboard(pkgs []PkgInfo, ips []string, port int) string {
 </html>'
 }
 
-fn (mut s PkgServer) handle(req http.Request) http.Response {
-	raw_url := req.url.split('?')[0]
+fn handle_client(mut conn net.TcpConn, repo_dir string, port int, start_time time.Time) {
+	defer {
+		conn.close() or {}
+	}
+
+	conn.set_read_timeout(10 * time.second)
+	conn.set_write_timeout(120 * time.second)
+
+	mut reader := io.new_buffered_reader(reader: conn)
+	req_line := reader.read_line() or { return }
+	parts := req_line.split(' ')
+	if parts.len < 2 {
+		return
+	}
+
+	method := parts[0]
+	if method != 'GET' && method != 'HEAD' {
+		not_impl := 'HTTP/1.1 501 Not Implemented\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'
+		conn.write_string(not_impl) or {}
+		return
+	}
+
+	raw_url := parts[1].split('?')[0]
 	mut clean_path := raw_url.trim_left('/')
 
 	now_str := time.now().format_ss()
@@ -501,89 +517,105 @@ fn (mut s PkgServer) handle(req http.Request) http.Response {
 		clean_path = ''
 	}
 
-	// Route 1: Dashboard
+	// 1. Dashboard Route
 	if clean_path == '' || clean_path == 'index.html' || clean_path == 'dashboard' {
-		pkgs := load_packages(s.repo_dir)
+		pkgs := load_packages(repo_dir)
 		ips := get_local_ips()
-		html := generate_html_dashboard(pkgs, ips, s.port)
-
-		println('[$now_str] 200 GET / (Dashboard)')
-		mut resp := http.Response{
-			status_code: 200
-			status_msg: 'OK'
-			body: html
+		html := generate_html_dashboard(pkgs, ips, port)
+		header := 'HTTP/1.1 200 OK\r\nServer: OpenNGFW-PkgServer/${server_version}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: ${html.len}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n'
+		conn.write_string(header) or { return }
+		if method == 'GET' {
+			conn.write_string(html) or { return }
 		}
-		resp.header.set(.content_type, 'text/html; charset=utf-8')
-		resp.header.set(.content_length, '${html.len}')
-		return resp
+		println('[$now_str] 200 GET / (Dashboard)')
+		return
 	}
 
-	// Route 2: Package JSON API
+	// 2. Health check API
+	if clean_path == 'api/health' || clean_path == 'health' {
+		uptime := (time.now() - start_time).seconds()
+		pkgs := load_packages(repo_dir)
+		body := '{"status":"healthy","uptime_seconds":${uptime},"packages_count":${pkgs.len},"version":"${server_version}"}\n'
+		header := 'HTTP/1.1 200 OK\r\nServer: OpenNGFW-PkgServer/${server_version}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: ${body.len}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n'
+		conn.write_string(header) or { return }
+		if method == 'GET' {
+			conn.write_string(body) or { return }
+		}
+		println('[$now_str] 200 GET /api/health')
+		return
+	}
+
+	// 3. JSON API
 	if clean_path == 'api/packages' || clean_path == 'index.json' || clean_path == 'packages.json' {
-		json_path := os.join_path(s.repo_dir, 'index.json')
+		json_path := os.join_path(repo_dir, 'index.json')
 		if os.exists(json_path) {
 			content := os.read_file(json_path) or { '{}' }
-			println('[$now_str] 200 GET /index.json')
-			mut resp := http.Response{
-				status_code: 200
-				status_msg: 'OK'
-				body: content
+			header := 'HTTP/1.1 200 OK\r\nServer: OpenNGFW-PkgServer/${server_version}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: ${content.len}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n'
+			conn.write_string(header) or { return }
+			if method == 'GET' {
+				conn.write_string(content) or { return }
 			}
-			resp.header.set(.content_type, 'application/json')
-			resp.header.set(.content_length, '${content.len}')
-			return resp
+			println('[$now_str] 200 GET /${clean_path}')
+			return
 		}
 	}
 
-	// Route 3: File Serving (index.txt or *.ngpkg / *.apkg / ngpkg)
-	target_file := os.join_path(s.repo_dir, clean_path)
+	// 4. File Serving (Streaming mode in 64KB blocks)
+	target_file := os.join_path(repo_dir, clean_path)
 
 	if !os.exists(target_file) || os.is_dir(target_file) {
-		println('[$now_str] 404 GET /$clean_path (Not Found)')
-		mut not_found := http.Response{
-			status_code: 404
-			status_msg: 'Not Found'
-			body: '404 Not Found: ${clean_path}\n'
-		}
-		not_found.header.set(.content_type, 'text/plain')
-		return not_found
+		println('[$now_str] 404 GET /${clean_path} (Not Found)')
+		err_body := '404 Not Found: ${clean_path}\n'
+		not_found := 'HTTP/1.1 404 Not Found\r\nServer: OpenNGFW-PkgServer/${server_version}\r\nContent-Type: text/plain\r\nContent-Length: ${err_body.len}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n${err_body}'
+		conn.write_string(not_found) or {}
+		return
 	}
 
-	data := os.read_bytes(target_file) or {
-		println('[$now_str] 500 GET /$clean_path (Read Error)')
-		mut err_resp := http.Response{
-			status_code: 500
-			status_msg: 'Internal Server Error'
-			body: '500 Failed to read package file\n'
-		}
-		return err_resp
-	}
+	file_size := os.file_size(target_file)
 
-	println('[$now_str] 200 GET /$clean_path (${data.len} bytes)')
-	mut resp := http.Response{
-		status_code: 200
-		status_msg: 'OK'
-	}
-
+	mut content_type := 'application/octet-stream'
 	if clean_path.ends_with('.ngpkg') || clean_path.ends_with('.apkg') || clean_path.ends_with('.tar.gz') {
-		resp.header.set(.content_type, 'application/gzip')
+		content_type = 'application/gzip'
 	} else if clean_path.ends_with('.txt') {
-		resp.header.set(.content_type, 'text/plain; charset=utf-8')
+		content_type = 'text/plain; charset=utf-8'
 	} else if clean_path.ends_with('.json') {
-		resp.header.set(.content_type, 'application/json; charset=utf-8')
-	} else {
-		resp.header.set(.content_type, 'application/octet-stream')
+		content_type = 'application/json; charset=utf-8'
 	}
 
-	resp.header.set(.content_length, '${data.len}')
-	resp.header.set(.access_control_allow_origin, '*')
-	resp.body = data.bytestr()
-	return resp
+	header := 'HTTP/1.1 200 OK\r\nServer: OpenNGFW-PkgServer/${server_version}\r\nContent-Type: ${content_type}\r\nContent-Length: ${file_size}\r\nAccept-Ranges: bytes\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n'
+	conn.write_string(header) or { return }
+
+	if method == 'GET' {
+		mut f := os.open(target_file) or {
+			println('[$now_str] 500 GET /${clean_path} (File Open Error)')
+			return
+		}
+		defer {
+			f.close()
+		}
+
+		mut buf := []u8{len: 65536}
+		mut total_sent := u64(0)
+		for {
+			n := f.read(mut buf) or { break }
+			if n <= 0 {
+				break
+			}
+			conn.write(buf[..n]) or {
+				println('[$now_str] ! Connection reset by client during transfer: ${clean_path} (${total_sent}/${file_size} bytes sent)')
+				return
+			}
+			total_sent += u64(n)
+		}
+		println('[$now_str] 200 GET /${clean_path} (${total_sent} bytes streamed)')
+	} else {
+		println('[$now_str] 200 HEAD /${clean_path} (${file_size} bytes)')
+	}
 }
 
 fn kill_port_conflict(port int) {
 	os.execute('fuser -k ${port}/tcp 2>/dev/null')
-	time.sleep(500 * time.millisecond)
+	time.sleep(300 * time.millisecond)
 }
 
 fn main() {
@@ -599,12 +631,10 @@ fn main() {
 	}
 
 	if repo_dir == '' {
-		script_dir := os.dir(os.real_path(os.args[0]))
 		candidates := [
-			os.join_path(script_dir, '../repo/packages'),
-			os.join_path(script_dir, 'repo/packages'),
 			'/home/weexnes/ngpkg/repo/packages',
-			'/home/weexnes/AnbergearOS/packages/repo/packages',
+			os.join_path(os.dir(os.real_path(os.args[0])), '../repo/packages'),
+			os.join_path(os.dir(os.real_path(os.args[0])), 'repo/packages'),
 		]
 		for c in candidates {
 			if os.exists(c) {
@@ -624,7 +654,7 @@ fn main() {
 	pkgs := load_packages(repo_dir)
 
 	println('=======================================================================')
-	println('  🛡️  OpenNGFW Package Server (Vlang Edition v${version})')
+	println('  🛡️  OpenNGFW Streaming Package Server (Vlang Edition v${server_version})')
 	println('=======================================================================')
 	println('  Serving Directory : ${repo_dir}')
 	println('  Indexed Packages  : ${pkgs.len} available')
@@ -640,15 +670,19 @@ fn main() {
 	println('=======================================================================')
 	println('Press Ctrl+C to stop the server.\n')
 
-	mut handler := PkgServer{
-		repo_dir: repo_dir
-		port: port
+	start_time := time.now()
+	mut listener := net.listen_tcp(.ip, '0.0.0.0:${port}') or {
+		eprintln('Failed to bind on port ${port}: ${err}')
+		return
+	}
+	defer {
+		listener.close() or {}
 	}
 
-	mut server := &http.Server{
-		addr: '0.0.0.0:${port}'
-		handler: handler
+	for {
+		mut conn := listener.accept() or {
+			continue
+		}
+		spawn handle_client(mut conn, repo_dir, port, start_time)
 	}
-
-	server.listen_and_serve()
 }

@@ -8,7 +8,7 @@ module main
 import os
 import strings
 
-const version = '1.2.0'
+const version = '1.3.0'
 const default_repo_url = 'http://192.168.1.1:8000/packages'
 const default_install_prefix = '/mnt/usb/opt'
 const default_db_dir = '/var/lib/ngpkg'
@@ -78,11 +78,11 @@ fn load_config() Config {
 					continue
 				}
 				if trimmed.starts_with('REPO_URL=') && repo_url == '' {
-					repo_url = trimmed.all_after('REPO_URL=').trim(' "\'')
+					repo_url = trimmed.all_after('REPO_URL=').trim(" \"\x27")
 				} else if trimmed.starts_with('INSTALL_PREFIX=') && prefix == '' {
-					prefix = trimmed.all_after('INSTALL_PREFIX=').trim(' "\'')
+					prefix = trimmed.all_after('INSTALL_PREFIX=').trim(" \"\x27")
 				} else if trimmed.starts_with('PKG_DB=') && db_dir == '' {
-					db_dir = trimmed.all_after('PKG_DB=').trim(' "\'')
+					db_dir = trimmed.all_after('PKG_DB=').trim(" \"\x27")
 				}
 			}
 			break
@@ -106,15 +106,19 @@ fn load_config() Config {
 	}
 }
 
-fn get_installed_packages(cfg Config) []string {
-	mut pkgs := []string{}
-	dirs := [
+fn get_installed_db_dirs(cfg Config) []string {
+	return [
 		'${cfg.db_dir}/installed',
 		'${cfg.prefix}/var/lib/ngpkg/installed',
 		'${cfg.prefix}/var/lib/pkg/installed',
-		'/var/lib/pkg/installed',
 		'/var/lib/ngpkg/installed',
+		'/var/lib/pkg/installed',
 	]
+}
+
+fn get_installed_packages(cfg Config) []string {
+	mut pkgs := []string{}
+	dirs := get_installed_db_dirs(cfg)
 
 	for d in dirs {
 		if os.is_dir(d) {
@@ -130,25 +134,16 @@ fn get_installed_packages(cfg Config) []string {
 		}
 	}
 
-	// Also detect packages directly present in prefix/bin
-	if os.is_dir('${cfg.prefix}/bin') {
-		bin_files := os.ls('${cfg.prefix}/bin') or { []string{} }
-		for b in bin_files {
-			if !pkgs.contains(b) && os.is_executable('${cfg.prefix}/bin/${b}') {
-				pkgs << b
-			}
-		}
-	}
-
 	return pkgs
 }
 
 fn is_installed(cfg Config, pkg_name string) bool {
-	return os.exists('${cfg.db_dir}/installed/${pkg_name}.list') ||
-		os.exists('${cfg.prefix}/var/lib/ngpkg/installed/${pkg_name}.list') ||
-		os.exists('${cfg.prefix}/var/lib/pkg/installed/${pkg_name}.list') ||
-		os.exists('/var/lib/pkg/installed/${pkg_name}.list') ||
-		os.exists('${cfg.prefix}/bin/${pkg_name}')
+	for d in get_installed_db_dirs(cfg) {
+		if os.exists('${d}/${pkg_name}.list') || os.exists('${d}/${pkg_name}.meta') {
+			return true
+		}
+	}
+	return false
 }
 
 fn fetch_index(cfg Config) []PackageMeta {
@@ -197,7 +192,7 @@ fn cmd_update(cfg Config) int {
 
 	mut success := false
 	for url in urls_to_try {
-		cmd := 'wget -q -O "${target_file}" "${url}"'
+		cmd := 'wget -q -T 15 -O "${target_file}" "${url}" 2>/dev/null || curl -fsSL --connect-timeout 10 -o "${target_file}" "${url}" 2>/dev/null'
 		res := os.execute(cmd)
 		if res.exit_code == 0 && os.exists(target_file) && os.file_size(target_file) > 0 {
 			success = true
@@ -211,15 +206,22 @@ fn cmd_update(cfg Config) int {
 		return 1
 	}
 
+	if os.is_dir(cfg.prefix) {
+		os.mkdir_all('${cfg.prefix}/var/lib/ngpkg') or {}
+		os.cp(target_file, '${cfg.prefix}/var/lib/ngpkg/index.txt') or {}
+	}
+
 	pkgs := fetch_index(cfg)
-	println('${c_green}✓ Repository updated successfully!${c_reset} (${c_bold}${pkgs.len}${c_reset} packages available)\n')
+	println('${c_green}✓ Repository updated successfully!${c_reset} (${c_bold}${pkgs.len}${c_reset} packages available)
+')
 	return 0
 }
 
 fn cmd_list(cfg Config) int {
 	pkgs := fetch_index(cfg)
 	if pkgs.len == 0 {
-		println('${c_yellow}[! Hot Tip]${c_reset} No local index found. Running ${c_bold}pkg update${c_reset} first...\n')
+		println('${c_yellow}[! Hot Tip]${c_reset} No local index found. Running ${c_bold}pkg update${c_reset} first...
+')
 		if cmd_update(cfg) != 0 {
 			return 1
 		}
@@ -256,7 +258,8 @@ fn cmd_list(cfg Config) int {
 		println('  ${name_fmt} ${ver_fmt} ${size_fmt} ${status_fmt} ${p.description}')
 	}
 	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}')
-	println('  ${c_gray}Total:${c_reset} ${fresh_pkgs.len} packages  (${c_green}${inst_count} installed${c_reset}, ${c_cyan}${fresh_pkgs.len - inst_count} available${c_reset})\n')
+	println('  ${c_gray}Total:${c_reset} ${fresh_pkgs.len} packages  (${c_green}${inst_count} installed${c_reset}, ${c_cyan}${fresh_pkgs.len - inst_count} available${c_reset})
+')
 	return 0
 }
 
@@ -289,7 +292,8 @@ fn cmd_search(cfg Config, query string) int {
 	if matches == 0 {
 		println('  ${c_gray}No matching packages found.${c_reset}')
 	}
-	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}\n')
+	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}
+')
 	return 0
 }
 
@@ -348,7 +352,8 @@ fn cmd_info(cfg Config, pkg_name string) int {
 		}
 	}
 
-	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯${c_reset}\n')
+	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯${c_reset}
+')
 	return 0
 }
 
@@ -377,7 +382,8 @@ fn cmd_status(cfg Config) int {
 			println('${c_cyan}│${c_reset}    Total: ${total}  •  Used: ${used} (${percent})  •  Free: ${avail}')
 		}
 	}
-	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯${c_reset}\n')
+	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯${c_reset}
+')
 	return 0
 }
 
@@ -415,23 +421,25 @@ fn cmd_install(cfg Config, pkg_name string) int {
 
 	// Step 1: Download
 	print('  ${c_blue}[1/3]${c_reset} ⬇ Downloading payload...')
-	os.mkdir_all('${cfg.db_dir}/cache') or {}
-	archive_file := '${cfg.db_dir}/cache/${target_pkg.name}-${target_pkg.version}.ngpkg'
+	cache_dir := '${cfg.prefix}/cache'
+	os.mkdir_all(cache_dir) or {}
+	archive_file := '${cache_dir}/${target_pkg.name}-${target_pkg.version}.ngpkg'
 
 	base_url := cfg.repo_url.trim_string_right('/packages').trim_right('/')
 	candidate_urls := [
 		'${cfg.repo_url}/${target_pkg.name}-${target_pkg.version}.ngpkg',
-		'${cfg.repo_url}/${target_pkg.name}-${target_pkg.version}.apkg',
 		'${cfg.repo_url}/${target_pkg.name}.ngpkg',
-		'${base_url}/${target_pkg.name}-${target_pkg.version}.ngpkg',
-		'${base_url}/${target_pkg.name}.ngpkg',
+		'${base_url}/packages/${target_pkg.name}-${target_pkg.version}.ngpkg',
+		'${base_url}/packages/${target_pkg.name}.ngpkg',
+		'${cfg.repo_url}/${target_pkg.name}-${target_pkg.version}.apkg',
+		'${cfg.repo_url}/${target_pkg.name}.apkg',
 	]
 
 	mut downloaded := false
 	for url in candidate_urls {
-		dl_cmd := 'wget -q -O "${archive_file}" "${url}"'
+		dl_cmd := 'wget -q -T 30 -O "${archive_file}" "${url}" 2>/dev/null || curl -fsSL --connect-timeout 10 -o "${archive_file}" "${url}" 2>/dev/null'
 		dl_res := os.execute(dl_cmd)
-		if dl_res.exit_code == 0 && os.exists(archive_file) && os.file_size(archive_file) > 0 {
+		if dl_res.exit_code == 0 && os.exists(archive_file) && os.file_size(archive_file) > 100 {
 			downloaded = true
 			break
 		}
@@ -492,58 +500,72 @@ fn cmd_install(cfg Config, pkg_name string) int {
 		os.cp(list_file, '${usb_db}/${target_pkg.name}.list') or {}
 		os.cp(meta_file, '${usb_db}/${target_pkg.name}.meta') or {}
 	}
+	os.rm(archive_file) or {}
 
-	// Step 3: Symlink
+	// Step 3: Symlink & Hooks
 	homedir := if os.getenv('HOME') != '' { os.getenv('HOME') } else { '/root' }
 	ngpkg_bin := '${homedir}/.ngpkg-bin'
-	print('  ${c_blue}[3/3]${c_reset} 🔗 Linking binaries to ${c_bold}${ngpkg_bin}${c_reset}...')
+	print('  ${c_blue}[3/3]${c_reset} 🔗 Linking package binaries & running hooks...')
 
 	os.mkdir_all(ngpkg_bin) or {}
 	if homedir != '/root' {
 		os.mkdir_all('/root/.ngpkg-bin') or {}
 	}
 
-	if os.is_dir('${cfg.prefix}/bin') {
-		bin_files := os.ls('${cfg.prefix}/bin') or { []string{} }
-		for b in bin_files {
-			target := '${cfg.prefix}/bin/${b}'
-			os.chmod(target, 0o755) or {}
-			symlink := '${ngpkg_bin}/${b}'
-			if !os.exists(symlink) {
-				os.symlink(target, symlink) or {}
-			}
-			if homedir != '/root' && !os.exists('/root/.ngpkg-bin/${b}') {
-				os.symlink(target, '/root/.ngpkg-bin/${b}') or {}
+	// Symlink ONLY the files installed by this specific package
+	if os.exists(list_file) {
+		installed_files := os.read_lines(list_file) or { []string{} }
+		for rel in installed_files {
+			trimmed := rel.trim_space()
+			if trimmed == '' { continue }
+			if trimmed.starts_with('bin/') {
+				bin_name := trimmed.all_after('bin/')
+				if bin_name.contains('/') { continue }
+				target := '${cfg.prefix}/${trimmed}'
+				os.chmod(target, 0o755) or {}
+				symlink := '${ngpkg_bin}/${bin_name}'
+				if !os.exists(symlink) && !os.is_link(symlink) {
+					os.symlink(target, symlink) or {}
+				}
+				if homedir != '/root' && !os.exists('/root/.ngpkg-bin/${bin_name}') && !os.is_link('/root/.ngpkg-bin/${bin_name}') {
+					os.symlink(target, '/root/.ngpkg-bin/${bin_name}') or {}
+				}
+			} else if trimmed.starts_with('sbin/') {
+				sbin_name := trimmed.all_after('sbin/')
+				if sbin_name.contains('/') { continue }
+				target := '${cfg.prefix}/${trimmed}'
+				os.chmod(target, 0o755) or {}
+				symlink := '${ngpkg_bin}/${sbin_name}'
+				if !os.exists(symlink) && !os.is_link(symlink) {
+					os.symlink(target, symlink) or {}
+				}
+				if homedir != '/root' && !os.exists('/root/.ngpkg-bin/${sbin_name}') && !os.is_link('/root/.ngpkg-bin/${sbin_name}') {
+					os.symlink(target, '/root/.ngpkg-bin/${sbin_name}') or {}
+				}
+			} else if trimmed.starts_with('etc/init.d/') {
+				svc_name := trimmed.all_after('etc/init.d/')
+				if svc_name.contains('/') { continue }
+				os.mkdir_all('/etc/init.d') or {}
+				src := '${cfg.prefix}/${trimmed}'
+				dst := '/etc/init.d/${svc_name}'
+				os.chmod(src, 0o755) or {}
+				if !os.exists(dst) && !os.is_link(dst) {
+					os.symlink(src, dst) or {}
+				}
 			}
 		}
 	}
 
-	if os.is_dir('${cfg.prefix}/sbin') {
-		sbin_files := os.ls('${cfg.prefix}/sbin') or { []string{} }
-		for b in sbin_files {
-			target := '${cfg.prefix}/sbin/${b}'
-			os.chmod(target, 0o755) or {}
-			symlink := '${ngpkg_bin}/${b}'
-			if !os.exists(symlink) {
-				os.symlink(target, symlink) or {}
-			}
-			if homedir != '/root' && !os.exists('/root/.ngpkg-bin/${b}') {
-				os.symlink(target, '/root/.ngpkg-bin/${b}') or {}
-			}
-		}
-	}
-
-	// Link init scripts
-	if os.is_dir('${cfg.prefix}/etc/init.d') {
-		os.mkdir_all('/etc/init.d') or {}
-		init_scripts := os.ls('${cfg.prefix}/etc/init.d') or { []string{} }
-		for s in init_scripts {
-			src := '${cfg.prefix}/etc/init.d/${s}'
-			dst := '/etc/init.d/${s}'
-			os.chmod(src, 0o755) or {}
-			if !os.exists(dst) {
-				os.symlink(src, dst) or {}
-			}
+	// Execute post-install hook if present
+	post_install_hooks := [
+		'${cfg.prefix}/share/ngpkg/${target_pkg.name}/install.sh',
+		'${cfg.prefix}/share/ngpkg/install.sh',
+	]
+	for hook in post_install_hooks {
+		if os.exists(hook) {
+			os.chmod(hook, 0o755) or {}
+			os.execute('/bin/sh "${hook}" 2>/dev/null || true')
+			break
 		}
 	}
 
@@ -570,6 +592,19 @@ fn cmd_remove(cfg Config, pkg_name string) int {
 
 	println('${c_cyan}◈${c_reset} Removing package ${c_bold}${pkg_name}${c_reset}...')
 
+	// Execute pre-remove teardown hook if present
+	pre_remove_hooks := [
+		'${cfg.prefix}/share/ngpkg/${pkg_name}/uninstall.sh',
+		'${cfg.prefix}/share/ngpkg/uninstall.sh',
+	]
+	for hook in pre_remove_hooks {
+		if os.exists(hook) {
+			os.chmod(hook, 0o755) or {}
+			os.execute('/bin/sh "${hook}" 2>/dev/null || true')
+			break
+		}
+	}
+
 	// Stop service if present
 	service_file := '/etc/systemd/system/${pkg_name}.service'
 	if os.exists(service_file) {
@@ -580,88 +615,79 @@ fn cmd_remove(cfg Config, pkg_name string) int {
 	homedir := if os.getenv('HOME') != '' { os.getenv('HOME') } else { '/root' }
 	ngpkg_bin := '${homedir}/.ngpkg-bin'
 
-	mut list_file := '${cfg.db_dir}/installed/${pkg_name}.list'
-	if !os.exists(list_file) {
-		list_file = '${cfg.prefix}/var/lib/pkg/installed/${pkg_name}.list'
-	}
+	dirs := get_installed_db_dirs(cfg)
 
-	if os.exists(list_file) {
-		lines := os.read_lines(list_file) or { []string{} }
-		for i := lines.len - 1; i >= 0; i-- {
-			rel_path := lines[i].trim_space()
-			if rel_path.len == 0 {
-				continue
+	for d in dirs {
+		list_file := '${d}/${pkg_name}.list'
+		if os.exists(list_file) {
+			lines := os.read_lines(list_file) or { []string{} }
+			for i := lines.len - 1; i >= 0; i-- {
+				rel_path := lines[i].trim_space()
+				if rel_path.len == 0 {
+					continue
+				}
+				full_path := '${cfg.prefix}/${rel_path}'
+				if os.is_file(full_path) || os.is_link(full_path) {
+					os.rm(full_path) or {}
+				} else if os.is_dir(full_path) {
+					os.rmdir(full_path) or {}
+				}
+				// Unlink .ngpkg-bin
+				if rel_path.starts_with('bin/') {
+					bin_name := rel_path.all_after('bin/')
+					if !bin_name.contains('/') {
+						symlink := '${ngpkg_bin}/${bin_name}'
+						if os.is_link(symlink) || os.exists(symlink) {
+							os.rm(symlink) or {}
+						}
+						if os.is_link('/root/.ngpkg-bin/${bin_name}') || os.exists('/root/.ngpkg-bin/${bin_name}') {
+							os.rm('/root/.ngpkg-bin/${bin_name}') or {}
+						}
+					}
+				} else if rel_path.starts_with('sbin/') {
+					sbin_name := rel_path.all_after('sbin/')
+					if !sbin_name.contains('/') {
+						symlink := '${ngpkg_bin}/${sbin_name}'
+						if os.is_link(symlink) || os.exists(symlink) {
+							os.rm(symlink) or {}
+						}
+						if os.is_link('/root/.ngpkg-bin/${sbin_name}') || os.exists('/root/.ngpkg-bin/${sbin_name}') {
+							os.rm('/root/.ngpkg-bin/${sbin_name}') or {}
+						}
+					}
+				} else if rel_path.starts_with('etc/init.d/') {
+					svc_name := rel_path.all_after('etc/init.d/')
+					if !svc_name.contains('/') {
+						init_link := '/etc/init.d/${svc_name}'
+						if os.is_link(init_link) || os.exists(init_link) {
+							os.rm(init_link) or {}
+						}
+					}
+				}
 			}
-			full_path := '${cfg.prefix}/${rel_path}'
-			if os.is_file(full_path) || os.is_link(full_path) {
-				os.rm(full_path) or {}
-			} else if os.is_dir(full_path) {
-				os.rmdir(full_path) or {}
-			}
-			// Unlink .ngpkg-bin
-			if rel_path.starts_with('bin/') {
-				bin_name := rel_path.all_after('bin/')
-				symlink := '${ngpkg_bin}/${bin_name}'
-				if os.is_link(symlink) {
-					os.rm(symlink) or {}
-				}
-				if os.is_link('/root/.ngpkg-bin/${bin_name}') {
-					os.rm('/root/.ngpkg-bin/${bin_name}') or {}
-				}
-			} else if rel_path.starts_with('sbin/') {
-				sbin_name := rel_path.all_after('sbin/')
-				symlink := '${ngpkg_bin}/${sbin_name}'
-				if os.is_link(symlink) {
-					os.rm(symlink) or {}
-				}
-				if os.is_link('/root/.ngpkg-bin/${sbin_name}') {
-					os.rm('/root/.ngpkg-bin/${sbin_name}') or {}
-				}
-			} else if rel_path.starts_with('etc/init.d/') {
-				svc_name := rel_path.all_after('etc/init.d/')
-				init_link := '/etc/init.d/${svc_name}'
-				if os.is_link(init_link) {
-					os.rm(init_link) or {}
-				}
-			}
+			os.rm(list_file) or {}
 		}
-		os.rm(list_file) or {}
+
+		meta_file := '${d}/${pkg_name}.meta'
+		if os.exists(meta_file) {
+			os.rm(meta_file) or {}
+		}
 	}
 
-	meta_file := '${cfg.db_dir}/installed/${pkg_name}.meta'
-	if os.exists(meta_file) {
-		os.rm(meta_file) or {}
+	// Always cleanup direct binary symlinks in ~/.ngpkg-bin for this pkg
+	for bin_cand in [pkg_name, '${pkg_name}.bin'] {
+		if os.is_link('${ngpkg_bin}/${bin_cand}') || os.exists('${ngpkg_bin}/${bin_cand}') {
+			os.rm('${ngpkg_bin}/${bin_cand}') or {}
+		}
+		if os.is_link('/root/.ngpkg-bin/${bin_cand}') || os.exists('/root/.ngpkg-bin/${bin_cand}') {
+			os.rm('/root/.ngpkg-bin/${bin_cand}') or {}
+		}
 	}
 
 	println('${c_green}✓ Package "${pkg_name}" removed successfully.${c_reset}\n')
 	return 0
 }
 
-fn cmd_self_update(cfg Config) int {
-	println('${c_cyan}◈${c_reset} Checking for ngpkg client updates...')
-	update_url := '${cfg.repo_url}/ngpkg'
-	tmp_binary := '/tmp/ngpkg_new'
-
-	dl_res := os.execute('wget -q -O "${tmp_binary}" "${update_url}"')
-	if dl_res.exit_code != 0 || !os.exists(tmp_binary) || os.file_size(tmp_binary) < 1000 {
-		eprintln('${c_red}✗ Could not fetch update binary from ${update_url}${c_reset}')
-		return 1
-	}
-
-	os.chmod(tmp_binary, 0o755) or {}
-	dest_path := '/usr/bin/ngpkg'
-	if os.exists(dest_path) {
-		os.cp(tmp_binary, dest_path) or {
-			eprintln('${c_red}✗ Failed to overwrite ${dest_path}: read-only or permission error${c_reset}')
-			return 1
-		}
-		os.chmod(dest_path, 0o755) or {}
-	}
-	os.rm(tmp_binary) or {}
-
-	println('${c_green}✓ ngpkg updated successfully!${c_reset}\n')
-	return 0
-}
 
 fn print_help() {
 	print_banner()
@@ -675,7 +701,6 @@ fn print_help() {
 	println('  ${c_cyan}install${c_reset} <package>   Install an application to USB storage (/mnt/usb/opt)')
 	println('  ${c_cyan}remove${c_reset} <package>    Uninstall an application and clean symlinks')
 	println('  ${c_cyan}status${c_reset}              Display USB storage, prefix, and repository info')
-	println('  ${c_cyan}self-update${c_reset}         Update ngpkg package manager to the latest version')
 	println('  ${c_cyan}help${c_reset}                Show this reference manual\n')
 	println('${c_bold}EXAMPLES:${c_reset}')
 	println('  pkg update')
@@ -732,9 +757,6 @@ fn main() {
 		}
 		'status', 'stat', 'df' {
 			exit(cmd_status(cfg))
-		}
-		'self-update', 'selfupdate', 'upgrade-pkg' {
-			exit(cmd_self_update(cfg))
 		}
 		'help', '--help', '-h' {
 			print_help()

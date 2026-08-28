@@ -4,7 +4,7 @@
 
 PORT ?= 8000
 
-.PHONY: all client client-host client-arm server packages build-all serve test clean help new
+.PHONY: all client client-host client-arm server packages rebuild-all clean-packages serve test clean help new
 
 all: client-host server packages
 
@@ -19,8 +19,14 @@ client-arm:
 server:
 	$(MAKE) -C server server
 
-packages build-all:
+packages:
 	python3 framework/ngpkg_build.py build-all
+
+rebuild-all:
+	python3 framework/ngpkg_build.py rebuild-all
+
+clean-packages:
+	python3 framework/ngpkg_build.py clean
 
 new:
 	@if [ -z "$(PKG)" ]; then \
@@ -31,7 +37,7 @@ new:
 list-recipes:
 	python3 framework/ngpkg_build.py list
 
-serve:
+serve: server
 	./server/pkg_server --port $(PORT)
 
 test:
@@ -40,13 +46,16 @@ test:
 	python3 framework/ngpkg_build.py validate recipes/htop
 	python3 framework/ngpkg_build.py validate recipes/screen
 	python3 framework/ngpkg_build.py validate recipes/bareiron
+	python3 framework/ngpkg_build.py validate recipes/nvm
+	python3 framework/ngpkg_build.py validate recipes/nodejs
+	python3 framework/ngpkg_build.py validate recipes/v
 	./client/ngpkg_host --version
 	@echo "[✓] All tests passed successfully!"
 
 clean:
 	$(MAKE) -C client clean
 	$(MAKE) -C server clean
-	rm -rf repo/packages/*.ngpkg repo/packages/*.apkg repo/packages/index.txt repo/packages/index.json
+	python3 framework/ngpkg_build.py clean
 
 help:
 	@echo "ngpkg Top-Level Build Targets:"
@@ -54,10 +63,13 @@ help:
 	@echo "  make client               Build client for host and ARM target"
 	@echo "  make client-host          Build native host client binary (client/ngpkg_host)"
 	@echo "  make client-arm           Build cross-compiled ARM client binary (client/ngpkg)"
-	@echo "  make server               Build repository HTTP server (server/pkg_server)"
-	@echo "  make packages             Build all recipes in recipes/ into repo/packages/"
+	@echo "  make server               Build streaming repository HTTP server (server/pkg_server)"
+	@echo "  make packages             Build newly modified recipes in recipes/ into repo/packages/"
+	@echo "  make rebuild-all          Clean-slate rebuild of ALL recipes from scratch"
+	@echo "  make clean-packages       Purge all generated .ngpkg archives and indexes"
 	@echo "  make new PKG=<name>       Scaffold a new recipe under recipes/<name>/"
 	@echo "  make list-recipes         List all available package recipes"
-	@echo "  make serve [PORT=8000]    Launch repository server and web dashboard"
+	@echo "  make serve [PORT=8000]    Launch streaming repository server and web dashboard"
 	@echo "  make test                 Run framework and client test suite"
 	@echo "  make clean                Clean binaries and generated packages"
+

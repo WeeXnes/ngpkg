@@ -29,8 +29,9 @@ UFW_SRC="${CACHE_DIR}/ufw-0.36.2"
 
 if [ ! -f "${UFW_TAR}" ]; then
     echo "  [*] Downloading UFW 0.36.2..."
+    curl -fsSL "https://deb.debian.org/debian/pool/main/u/ufw/ufw_0.36.2.orig.tar.gz" -o "${UFW_TAR}" 2>/dev/null || \
     curl -fsSL "https://launchpad.net/ufw/0.36/0.36.2/+download/ufw-0.36.2.tar.gz" -o "${UFW_TAR}" 2>/dev/null || \
-    wget -q -O "${UFW_TAR}" "https://launchpad.net/ufw/0.36/0.36.2/+download/ufw-0.36.2.tar.gz"
+    wget -q -O "${UFW_TAR}" "https://deb.debian.org/debian/pool/main/u/ufw/ufw_0.36.2.orig.tar.gz"
 fi
 
 if [ ! -d "${UFW_SRC}" ]; then

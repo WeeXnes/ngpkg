@@ -5,19 +5,13 @@
   "category": "utilities",
   "license": "MIT",
   "homepage": "https://example.com",
-  "maintainer": "OpenNGFW Community <community@openngfw.org>",
-  "type": "binary",
-  "source": {
-    "url": "https://github.com/example/example-app/releases/download/v1.0.0/example-armv7.tar.gz",
-    "sha256": ""
-  },
-  "dependencies": [],
+  "type": "source",
   "binaries": [
     "bin/example-app"
   ],
-  "libraries": [],
-  "config_files": [
-    "etc/example.conf"
-  ],
-  "service": ""
+  "dependencies": [],
+  "hooks": {
+    "post_install": "install.sh",
+    "pre_remove": "uninstall.sh"
+  }
 }

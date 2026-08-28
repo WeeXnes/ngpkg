@@ -73,7 +73,7 @@ def strip_file(path):
     if os.path.islink(path) or not os.path.exists(path):
         return
     if STRIP_TOOL and Path(STRIP_TOOL).exists():
-        subprocess.run([str(STRIP_TOOL), "--strip-all", str(path)], check=False, stderr=subprocess.DEVNULL)
+        subprocess.run([str(STRIP_TOOL), "--strip-all"], check=False, stderr=subprocess.DEVNULL)
     else:
         subprocess.run(["strip", "--strip-unneeded", str(path)], check=False, stderr=subprocess.DEVNULL)
 
@@ -84,13 +84,17 @@ def package_payload(pkg_name, version, description, stage_dir, category="utiliti
     pkg_file = REPO_DIR / f"{pkg_name}-{version}.ngpkg"
     apkg_file = REPO_DIR / f"{pkg_name}-{version}.apkg"
 
-    # Strip all binaries in staged directory
+    # Strip all binaries in staged directory (skip non-ELF or wrapper scripts)
     for root, _, files in os.walk(stage_dir):
         for f in files:
             p = Path(root) / f
-            if not p.is_symlink():
-                if any(k in str(p) for k in ["/bin/", "/sbin/", "/lib/", "/libexec/"]):
-                    strip_file(p)
+            if not p.is_symlink() and any(k in str(p) for k in ["/bin/", "/sbin/", "/lib/", "/libexec/"]):
+                if p.stat().st_size > 4:
+                    with open(p, "rb") as check_f:
+                        header = check_f.read(4)
+                        if header == b"\x7fELF":
+                            if STRIP_TOOL and Path(STRIP_TOOL).exists():
+                                subprocess.run([str(STRIP_TOOL), "--strip-all", str(p)], check=False, stderr=subprocess.DEVNULL)
 
     with tarfile.open(pkg_file, "w:gz") as tar:
         for item in os.listdir(stage_dir):
@@ -106,6 +110,17 @@ def package_payload(pkg_name, version, description, stage_dir, category="utiliti
         if os.path.lexists(str(sym)):
             sym.unlink()
         os.symlink(f"{pkg_name}-{version}.ngpkg", sym)
+
+    aliases = {
+        "nodejs": ["node"],
+        "v": ["vlang"],
+    }
+    for alias in aliases.get(pkg_name, []):
+        for ext in ["ngpkg", "apkg"]:
+            asym = REPO_DIR / f"{alias}.{ext}"
+            if os.path.lexists(str(asym)):
+                asym.unlink()
+            os.symlink(f"{pkg_name}-{version}.ngpkg", asym)
 
     sz_bytes = pkg_file.stat().st_size
     sz_str = f"{sz_bytes/(1024*1024):.1f}MB" if sz_bytes > 1024 * 1024 else f"{sz_bytes/1024:.0f}KB"
@@ -181,11 +196,18 @@ def build_recipe(recipe_name_or_path):
         error(f"build.sh for {name} failed with exit code {res.returncode}")
         return None
 
-    # Write manifest into package
-    meta_dir = stage_dir / "share" / "ngpkg"
+    # Write manifest & package lifecycle hooks into stage
+    meta_dir = stage_dir / "share" / "ngpkg" / name
     meta_dir.mkdir(parents=True, exist_ok=True)
     with open(meta_dir / "manifest.json", "w") as f:
         json.dump(meta, f, indent=2)
+
+    # Copy optional lifecycle scripts if present in recipe
+    for hook_name in ["install.sh", "uninstall.sh"]:
+        hook_file = recipe_dir / hook_name
+        if hook_file.exists():
+            shutil.copy2(hook_file, meta_dir / hook_name)
+            os.chmod(meta_dir / hook_name, 0o755)
 
     return package_payload(name, version, desc, stage_dir, category)
 
@@ -208,6 +230,18 @@ def update_repository_index(entries):
         }, f, indent=2)
 
     success(f"Generated repository index at: \033[1;36m{index_txt}\033[0m ({len(entries)} packages)")
+
+
+def cmd_clean():
+    """Purges all compiled package archives and indexes."""
+    if REPO_DIR.exists():
+        for item in REPO_DIR.iterdir():
+            if item.is_file() or item.is_symlink():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+    success("Cleaned all previous packages from repo/packages/")
+    return 0
 
 
 def cmd_build_all():
@@ -233,6 +267,13 @@ def cmd_build_all():
     return 0
 
 
+def cmd_rebuild_all():
+    """Clean slate rebuild: purges previous builds and builds all recipes from scratch."""
+    log("Starting complete clean rebuild of all packages...")
+    cmd_clean()
+    return cmd_build_all()
+
+
 def cmd_new(pkg_name):
     """Generates a new standalone package recipe scaffold."""
     target_dir = RECIPES_DIR / pkg_name
@@ -251,10 +292,14 @@ def cmd_new(pkg_name):
     shutil.copy2(TEMPLATES_DIR / "build.sh", target_dir / "build.sh")
     os.chmod(target_dir / "build.sh", 0o755)
 
+    shutil.copy2(TEMPLATES_DIR / "uninstall.sh", target_dir / "uninstall.sh")
+    os.chmod(target_dir / "uninstall.sh", 0o755)
+
     success(f"Created new standalone package recipe at \033[1;36m{target_dir}\033[0m")
     print("Files created:")
-    print(f"  - {target_dir}/recipe.json  (Package metadata)")
-    print(f"  - {target_dir}/build.sh     (Standalone build script)")
+    print(f"  - {target_dir}/recipe.json    (Package metadata manifest)")
+    print(f"  - {target_dir}/build.sh       (Standalone cross-compilation script)")
+    print(f"  - {target_dir}/uninstall.sh   (Router pre-remove cleanup hook)")
     return 0
 
 
@@ -302,7 +347,6 @@ def cmd_list_recipes():
             try:
                 with open(r / "recipe.json", "r") as f:
                     d = json.load(f)
-                has_build = "✓" if (r / "build.sh").exists() else "✗"
                 print(f"\033[1;36m{d.get('name', r.name):<16}\033[0m {d.get('version', '-'):<10} \033[1;35m{d.get('category', 'general'):<14}\033[0m {d.get('type', 'custom'):<12} {d.get('description', '')[:35]}")
             except Exception:
                 print(f"{r.name:<16} [Invalid recipe.json]")
@@ -321,6 +365,8 @@ def main():
     p_build.add_argument("recipe", help="Recipe name or directory path")
 
     subparsers.add_parser("build-all", help="Build all standalone recipes and generate repository index")
+    subparsers.add_parser("rebuild-all", help="Clean slate rebuild of all standalone recipes")
+    subparsers.add_parser("clean", help="Clean all generated packages and indexes in repo/packages/")
 
     p_val = subparsers.add_parser("validate", help="Validate a recipe manifest and build.sh")
     p_val.add_argument("recipe", help="Recipe name or directory path")
@@ -336,6 +382,10 @@ def main():
         sys.exit(0 if info else 1)
     elif args.command == "build-all":
         sys.exit(cmd_build_all())
+    elif args.command == "rebuild-all":
+        sys.exit(cmd_rebuild_all())
+    elif args.command == "clean":
+        sys.exit(cmd_clean())
     elif args.command == "validate":
         sys.exit(cmd_validate(args.recipe))
     elif args.command == "list":

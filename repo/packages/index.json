@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "package_count": 9,
+  "package_count": 13,
   "packages": [
     {
       "name": "bareiron",
       "version": "1.21.8",
       "size": "46KB",
-      "size_bytes": 46804,
+      "size_bytes": 46800,
       "description": "Ultra-lightweight Minecraft server written in C for embedded devices",
       "category": "gaming",
       "filename": "bareiron-1.21.8.ngpkg"
@@ -15,7 +15,7 @@
       "name": "bash",
       "version": "5.2.21",
       "size": "821KB",
-      "size_bytes": 841027,
+      "size_bytes": 841061,
       "description": "GNU Bourne-Again SHell - powerful interactive command language",
       "category": "utilities",
       "filename": "bash-5.2.21.ngpkg"
@@ -24,7 +24,7 @@
       "name": "btop",
       "version": "1.4.7",
       "size": "859KB",
-      "size_bytes": 879746,
+      "size_bytes": 879754,
       "description": "Modern and beautiful resource monitor with GPU/CPU/MEM graphs and themes",
       "category": "monitoring",
       "filename": "btop-1.4.7.ngpkg"
@@ -33,7 +33,7 @@
       "name": "git",
       "version": "2.43.5",
       "size": "10.0MB",
-      "size_bytes": 10494221,
+      "size_bytes": 10494280,
       "description": "Fast, scalable, distributed revision control system (with HTTPS support)",
       "category": "development",
       "filename": "git-2.43.5.ngpkg"
@@ -42,7 +42,7 @@
       "name": "htop",
       "version": "3.3.0",
       "size": "248KB",
-      "size_bytes": 254418,
+      "size_bytes": 254447,
       "description": "Interactive process viewer and system monitor",
       "category": "monitoring",
       "filename": "htop-3.3.0.ngpkg"
@@ -51,7 +51,7 @@
       "name": "nano",
       "version": "7.2",
       "size": "302KB",
-      "size_bytes": 309318,
+      "size_bytes": 309341,
       "description": "Lightweight CLI text editor with syntax highlighting",
       "category": "editors",
       "filename": "nano-7.2.ngpkg"
@@ -60,16 +60,43 @@
       "name": "netclient",
       "version": "1.1.0",
       "size": "5.3MB",
-      "size_bytes": 5553052,
+      "size_bytes": 5553118,
       "description": "Fast, automated WireGuard overlay mesh network client",
       "category": "networking",
       "filename": "netclient-1.1.0.ngpkg"
     },
     {
+      "name": "nodejs",
+      "version": "20.15.1",
+      "size": "19.1MB",
+      "size_bytes": 20059809,
+      "description": "JavaScript runtime built on V8 engine (includes npm and npx package managers)",
+      "category": "development",
+      "filename": "nodejs-20.15.1.ngpkg"
+    },
+    {
+      "name": "npm",
+      "version": "10.9.1",
+      "size": "2.8MB",
+      "size_bytes": 2970341,
+      "description": "The package manager for JavaScript (npm and npx command line utilities)",
+      "category": "development",
+      "filename": "npm-10.9.1.ngpkg"
+    },
+    {
+      "name": "nvm",
+      "version": "0.40.1",
+      "size": "33KB",
+      "size_bytes": 34102,
+      "description": "Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions",
+      "category": "development",
+      "filename": "nvm-0.40.1.ngpkg"
+    },
+    {
       "name": "screen",
       "version": "4.9.1",
       "size": "352KB",
-      "size_bytes": 360811,
+      "size_bytes": 360853,
       "description": "Full-screen terminal multiplexer and window manager",
       "category": "utilities",
       "filename": "screen-4.9.1.ngpkg"
@@ -77,11 +104,20 @@
     {
       "name": "ufw",
       "version": "0.36.2",
-      "size": "7.3MB",
-      "size_bytes": 7686304,
+      "size": "8.0MB",
+      "size_bytes": 8375509,
       "description": "Uncomplicated Firewall (UFW) - Program for managing a netfilter firewall",
       "category": "security",
       "filename": "ufw-0.36.2.ngpkg"
+    },
+    {
+      "name": "v",
+      "version": "0.5.2",
+      "size": "17.1MB",
+      "size_bytes": 17976461,
+      "description": "Simple, fast, safe, compiled language for developing maintainable software",
+      "category": "development",
+      "filename": "v-0.5.2.ngpkg"
     }
   ]
 }

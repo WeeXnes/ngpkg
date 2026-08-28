@@ -1,31 +1,29 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Standalone Recipe Build Script for ngpkg
-# Available Environment Variables:
-#   $PKG_NAME        - Package name
-#   $PKG_VERSION     - Package version
-#   $STAGE_DIR       - Root destination directory (will be packaged into .ngpkg)
-#   $CROSS_CC        - ARM Cross-compiler executable path
-#   $CROSS_STRIP     - ARM Cross-strip tool executable path
-#   $CROSS_HOST      - Target architecture triple (e.g. arm-buildroot-linux-musleabi)
-#   $RECIPE_DIR      - Path to the recipe directory
-#   $NGPKG_ROOT      - Root directory of the ngpkg repository
+# Standalone Build Script for Example App
+# Target: ARMv7 Cortex-A9 (musl)
 # ==============================================================================
-
 set -euo pipefail
 
-echo "[*] Building ${PKG_NAME} ${PKG_VERSION}..."
+# 1. Prepare stage directories (Installs to /mnt/usb/opt hierarchy)
+mkdir -p "${STAGE_DIR}/bin" "${STAGE_DIR}/lib" "${STAGE_DIR}/etc" "${STAGE_DIR}/etc/profile.d"
 
-mkdir -p "${STAGE_DIR}/bin" "${STAGE_DIR}/etc"
+# 2. Compile or download application
+echo "  [*] Compiling ${PKG_NAME} ${PKG_VERSION} with ${CROSS_CC}..."
+${CROSS_CC} -O2 -pipe src/main.c -o "${STAGE_DIR}/bin/${PKG_NAME}"
 
-# Example 1: Compile from C source
-# ${CROSS_CC} -O2 -pipe "${RECIPE_DIR}/src/main.c" -o "${STAGE_DIR}/bin/${PKG_NAME}"
+# 3. Strip binary for minimal storage footprint
+if [ -n "${CROSS_STRIP:-}" ] && [ -x "${CROSS_STRIP:-}" ]; then
+    ${CROSS_STRIP} --strip-all "${STAGE_DIR}/bin/${PKG_NAME}" 2>/dev/null || true
+fi
+chmod 755 "${STAGE_DIR}/bin/${PKG_NAME}"
 
-# Example 2: Download upstream tarball and compile
-# curl -fsSL "https://example.com/${PKG_NAME}-${PKG_VERSION}.tar.gz" -o "/tmp/${PKG_NAME}.tar.gz"
-# tar -xzf "/tmp/${PKG_NAME}.tar.gz" -C /tmp/
-# cd "/tmp/${PKG_NAME}-${PKG_VERSION}" && ./configure --host="${CROSS_HOST}" --prefix=/mnt/usb/opt
-# make -j$(nproc) && make install DESTDIR="${STAGE_DIR}"
+# 4. Copy shared library dependencies from toolchain sysroot if needed
+SYSROOT="$(${CROSS_CC} --print-sysroot 2>/dev/null || true)"
+if [ -d "${SYSROOT}/usr/lib" ]; then
+    for lib in libstdc++ libgcc_s; do
+        cp -P "${SYSROOT}/usr/lib/${lib}".so* "${STAGE_DIR}/lib/" 2>/dev/null || true
+    done
+fi
 
-echo "[+] Staged files for ${PKG_NAME}:"
-ls -la "${STAGE_DIR}/bin" 2>/dev/null || true
+echo "  [✓] ${PKG_NAME} ${PKG_VERSION} packaged successfully."

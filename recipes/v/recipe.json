@@ -1,0 +1,10 @@
+{
+  "name": "v",
+  "version": "0.5.2",
+  "description": "Simple, fast, safe, compiled language for developing maintainable software",
+  "category": "development",
+  "license": "MIT",
+  "homepage": "https://vlang.io",
+  "type": "source",
+  "binaries": ["bin/v"]
+}

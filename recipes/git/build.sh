@@ -42,7 +42,16 @@ fi
 echo "  [*] Compiling git..."
 make -j"$(nproc)" NO_TCLTK=1 NO_GETTEXT=1 NO_PYTHON=1 CC="${CROSS_CC}" > /dev/null 2>&1
 
-cp -f git "${STAGE_DIR}/bin/git"
+cp -f git "${STAGE_DIR}/bin/git.real"
+chmod 755 "${STAGE_DIR}/bin/git.real"
+
+cat << 'EOF_WRAPPER' > "${STAGE_DIR}/bin/git"
+#!/bin/sh
+export GIT_SSL_CAINFO="${GIT_SSL_CAINFO:-/etc/ssl/certs/ca-certificates.crt}"
+export GIT_EXEC_PATH="${GIT_EXEC_PATH:-/mnt/usb/opt/libexec/git-core}"
+export GIT_TEMPLATE_DIR="${GIT_TEMPLATE_DIR:-/mnt/usb/opt/share/git-core/templates}"
+exec /mnt/usb/opt/bin/git.real "$@"
+EOF_WRAPPER
 chmod 755 "${STAGE_DIR}/bin/git"
 
 for b in git-remote-https git-remote-http git-http-fetch git-http-push git-receive-pack git-upload-pack; do
@@ -60,5 +69,24 @@ SYSROOT="$(${CROSS_CC} --print-sysroot 2>/dev/null || true)"
 if [ -d "${SYSROOT}/usr/lib" ]; then
     for lib in libz libcrypto libssl libcurl libexpat; do
         cp -P "${SYSROOT}/usr/lib/${lib}".so* "${STAGE_DIR}/lib/" 2>/dev/null || true
+    done
+fi
+if [ -d "${SYSROOT}/lib" ]; then
+    for lib in libz libcrypto libssl libcurl libexpat; do
+        cp -P "${SYSROOT}/lib/${lib}".so* "${STAGE_DIR}/lib/" 2>/dev/null || true
+    done
+fi
+
+PATCHELF="/home/weexnes/AnbergearOS/build/r6300v2/host/bin/patchelf"
+if [ -x "${PATCHELF}" ]; then
+    echo "  [*] Patching RPATH with patchelf..."
+    "${PATCHELF}" --set-rpath "/mnt/usb/opt/lib:/mnt/usb/opt/usr/lib" "${STAGE_DIR}/bin/git" 2>/dev/null || true
+    for exe in "${STAGE_DIR}/libexec/git-core"/*; do
+        [ -f "$exe" ] && "${PATCHELF}" --set-rpath "/mnt/usb/opt/lib:/mnt/usb/opt/usr/lib" "$exe" 2>/dev/null || true
+    done
+    for so in "${STAGE_DIR}/lib"/*.so*; do
+        if [ -f "$so" ] && [ ! -L "$so" ]; then
+            "${PATCHELF}" --set-rpath "/mnt/usb/opt/lib:/mnt/usb/opt/usr/lib" "$so" 2>/dev/null || true
+        fi
     done
 fi
