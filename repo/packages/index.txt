@@ -2,6 +2,7 @@ bareiron|1.21.8|46KB|Ultra-lightweight Minecraft server written in C for embedde
 bash|5.2.21|821KB|GNU Bourne-Again SHell - powerful interactive command language|utilities
 btop|1.4.7|859KB|Modern and beautiful resource monitor with GPU/CPU/MEM graphs and themes|monitoring
 caddy|2.8.4|17.0MB|Fast, multi-platform web server with automatic HTTPS and Layer 4 TCP/UDP streaming proxy (caddy-l4)|networking
+debian|12.8|43.3MB|Full Debian 12 (Bookworm) armel container environment with apt & dpkg on USB storage|system
 gcc|12.2.0|69.6MB|GNU Compiler Collection (gcc & g++) with C/C++ standard library headers and binutils|development
 git|2.43.5|10.0MB|Fast, scalable, distributed revision control system (with HTTPS support)|development
 htop|3.3.0|248KB|Interactive process viewer and system monitor|monitoring

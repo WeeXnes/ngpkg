@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "package_count": 21,
+  "package_count": 22,
   "packages": [
     {
       "name": "bareiron",
@@ -33,6 +33,14 @@
       "description": "Fast, multi-platform web server with automatic HTTPS and Layer 4 TCP/UDP streaming proxy (caddy-l4)",
       "category": "networking",
       "filename": "caddy-2.8.4.ngpkg"
+    },
+    {
+      "name": "debian",
+      "version": "12.8",
+      "size": "43.3MB",
+      "description": "Full Debian 12 (Bookworm) armel container environment with apt & dpkg on USB storage",
+      "category": "system",
+      "filename": "debian-12.8.ngpkg"
     },
     {
       "name": "gcc",
