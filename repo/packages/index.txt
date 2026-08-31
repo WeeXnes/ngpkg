@@ -2,7 +2,6 @@ bareiron|1.21.8|46KB|Ultra-lightweight Minecraft server written in C for embedde
 bash|5.2.21|821KB|GNU Bourne-Again SHell - powerful interactive command language|utilities
 btop|1.4.7|859KB|Modern and beautiful resource monitor with GPU/CPU/MEM graphs and themes|monitoring
 caddy|2.8.4|17.0MB|Fast, multi-platform web server with automatic HTTPS and Layer 4 TCP/UDP streaming proxy (caddy-l4)|networking
-clyocloud|2.13.3|1.9MB|Modern self-hosted personal cloud and media streaming suite|cloud
 debian|12.8|43.3MB|Full Debian 12 (Bookworm) armel container environment with apt & dpkg on USB storage|system
 ffmpeg|7.0.2|34.7MB|Complete cross-platform solution to record, convert and stream audio and video (includes ffmpeg & ffprobe)|utilities
 gcc|12.2.0|1KB|GNU Compiler Collection (gcc & g++) with C/C++ standard library headers and binutils|development
@@ -14,7 +13,6 @@ micro|2.0.14|4.2MB|Modern and intuitive terminal-based text editor with syntax h
 nano|7.2|302KB|Lightweight CLI text editor with syntax highlighting|editors
 netclient|1.1.0|5.3MB|Fast, automated WireGuard overlay mesh network client|networking
 nmap|7.93|14.5MB|Network exploration tool and security / port scanner with NSE Lua scripts and Ncat|networking
-nodejs|20.15.1|19.8MB|JavaScript runtime built on V8 engine (includes npm and npx package managers)|development
 openssl|3.3.1|2.1MB|Robust, commercial-grade TLS/SSL cryptography toolkit and certificate manager|security
 pkhex|1.0.0|33.9MB|PKHeX.Everywhere - Complete Pokémon save file editor Web UI (Blazor WASM)|gaming
 python3|3.11.12|11.6MB|High-level scripting language with full SSL, zlib, and ctypes support|development

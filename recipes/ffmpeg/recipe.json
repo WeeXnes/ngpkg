@@ -1,0 +1,14 @@
+{
+  "name": "ffmpeg",
+  "version": "7.0.2",
+  "description": "Complete cross-platform solution to record, convert and stream audio and video (includes ffmpeg & ffprobe)",
+  "category": "utilities",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://ffmpeg.org",
+  "type": "binary",
+  "binaries": [
+    "bin/ffmpeg",
+    "bin/ffprobe"
+  ],
+  "dependencies": []
+}

@@ -1,0 +1,17 @@
+{
+  "name": "pkhex",
+  "version": "1.0.0",
+  "description": "PKHeX.Everywhere - Complete Pokémon save file editor Web UI (Blazor WASM)",
+  "category": "gaming",
+  "license": "MIT",
+  "homepage": "https://code.weexnes.dev/PKHeX.Everywhere",
+  "type": "source",
+  "binaries": [
+    "bin/pkhex"
+  ],
+  "dependencies": [],
+  "hooks": {
+    "post_install": "install.sh",
+    "pre_remove": "uninstall.sh"
+  }
+}

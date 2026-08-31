@@ -4,20 +4,78 @@
 
 ---
 
-## 1. Architectural Principles & Repository Boundaries
+## 1. Architectural Principles & Target Hardware Constraints
 
 1. **Primary Workspace:** All `ngpkg` development, client/server code, and recipe authoring **must strictly take place inside `~/ngpkg`**.
 2. **Downstream Firmware Cache:** `AnbergearOS/dl/ngpkg` is a read-only build mirror used by Buildroot firmware generation (`post-build.sh`). Never edit files inside `AnbergearOS/dl/`.
 3. **Target Router Environment:**
    * **Hardware:** Broadcom BCM4708 / ARMv7-A Dual-Core Cortex-A9 (e.g., Netgear R6300v2).
-   * **C Standard Library:** `musl` libc (embedded, lightweight).
+   * **RAM Constraints (128MB RAM Total):**
+     * The root filesystem (`/`) and `/tmp` are in-memory RAM overlays (`tmpfs`).
+     * **CRITICAL:** NEVER download large files (>10MB) or uncompress large tarballs into `/tmp`. Doing so consumes the entire 128MB RAM and triggers a fatal kernel OOM deadlock panic.
+     * All persistent files, runtime databases, download folders, and caches MUST reside on USB storage (`/mnt/usb/`).
+   * **Instruction Set & Float ABI:**
+     * Architecture: ARMv7-A (32-bit little-endian).
+     * C Standard Library: `musl` libc with soft-float ABI (`arm-buildroot-linux-musleabi-gcc.br_real`).
+     * Go Runtime: MUST use `GOARCH=arm GOARM=5` (or soft-float compatible `GOARM=7`).
+     * Binaries requiring ARMv8-A extensions or hard-float instructions will trigger **`SIGILL` (Exit code 132 / Illegal Instruction)**. (e.g., Syncthing v1.29.2 works natively; v2.x requires ARMv8 crypto extensions causing `SIGILL`).
    * **Installation Prefix:** Persistent USB storage mounted at `/mnt/usb/opt`.
    * **User Executables:** Symlinked automatically to `$HOME/.ngpkg-bin/` and `/root/.ngpkg-bin/`.
-   * **Firmware Constraints:** Read-only rootfs in RAM; binaries MUST NOT write directly into `/usr/` or `/etc/` at runtime unless symlinked.
 
 ---
 
-## 2. Recipe Structure & File Layout
+## 2. Unified Service Architecture: `systemctl` (MANDATORY)
+
+OpenNGFW provides `/usr/bin/systemctl` as the unified system service manager across the entire operating system.
+
+### Service Rules for AI Agents:
+1. **Target `systemctl` Exclusively:**
+   * **DO NOT** create, target, or reference legacy `/etc/init.d/` scripts in new or modified packages.
+   * Every daemon or background service MUST be defined as a **systemd service unit file**.
+2. **Staging Unit Files:**
+   * Place unit file in `${STAGE_DIR}/etc/systemd/system/<service-name>.service`.
+3. **Unit File Standard Schema:**
+   ```ini
+   [Unit]
+   Description=My Daemon - Short Service Description
+   After=network.target
+
+   [Service]
+   ExecStart=/mnt/usb/opt/bin/mydaemon --config=/mnt/usb/opt/etc/mydaemon/config.json
+   Restart=on-failure
+   RestartSec=5
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+4. **Lifecycle Hook Integration:**
+   * **`install.sh` (Post-Install Hook):**
+     ```bash
+     #!/bin/sh
+     set -e
+     mkdir -p /etc/systemd/system 2>/dev/null || true
+     ln -sf /mnt/usb/opt/etc/systemd/system/myservice.service /etc/systemd/system/myservice.service 2>/dev/null || true
+     ```
+   * **`uninstall.sh` (Pre-Remove Hook):**
+     ```bash
+     #!/bin/sh
+     set -e
+     systemctl stop myservice 2>/dev/null || true
+     rm -f /etc/systemd/system/myservice.service /var/run/myservice.pid 2>/dev/null || true
+     ```
+5. **Managing Services on the Router:**
+   ```bash
+   systemctl start <service>
+   systemctl stop <service>
+   systemctl restart <service>
+   systemctl status <service>
+   systemctl enable <service>
+   systemctl disable <service>
+   ```
+
+---
+
+## 3. Recipe Structure & File Layout
 
 Every package recipe resides in `recipes/<package-name>/` and adheres to this structure:
 
@@ -25,13 +83,13 @@ Every package recipe resides in `recipes/<package-name>/` and adheres to this st
 recipes/<package-name>/
 ├── recipe.json        # [Mandatory] Package metadata manifest
 ├── build.sh           # [Mandatory] Cross-compilation & staging script
-├── uninstall.sh       # [Optional] Router-side pre-remove teardown hook
-└── install.sh         # [Optional] Router-side post-install setup hook
+├── uninstall.sh       # [Mandatory for daemons] Router-side pre-remove teardown hook
+└── install.sh         # [Mandatory for daemons] Router-side post-install setup hook
 ```
 
 ---
 
-## 3. `recipe.json` Schema Specification
+## 4. `recipe.json` Schema Specification
 
 ```json
 {
@@ -54,14 +112,16 @@ recipes/<package-name>/
 ```
 
 ### Standard Categories
-* `utilities` - General tools (`nano`, `htop`, `screen`, `btop`)
-* `development` - Compilers, interpreters, runtime environments (`nodejs`, `v`, `git`)
-* `networking` - Network daemons and VPN tools (`netclient`, `ufw`)
-* `servers` - Lightweight service daemons (`bareiron`)
+* `utilities` - General tools (`nano`, `screen`, `btop`, `yt-dlp`, `ffmpeg`, `rsync`)
+* `development` - Compilers, interpreters, runtime environments (`python3`, `v`, `git`, `tcc`, `lua`, `quickjs`)
+* `networking` - Network daemons, servers, and VPN tools (`syncthing`, `caddy`, `samba`, `netclient`, `ufw`, `iperf`, `nmap`)
+* `monitoring` - Monitoring tools (`htop`, `btop`)
+* `system` - System environments (`debian`)
+* `gaming` - Server daemons (`bareiron`)
 
 ---
 
-## 4. Cross-Compilation & Staging Rules
+## 5. Cross-Compilation & Staging Rules
 
 ### Environment Variables Provided to `build.sh`
 When `framework/ngpkg_build.py` runs `build.sh`, the following environment variables are exported:
@@ -84,6 +144,7 @@ When `framework/ngpkg_build.py` runs `build.sh`, the following environment varia
    * System Binaries: `${STAGE_DIR}/sbin/`
    * Shared Libraries: `${STAGE_DIR}/lib/`
    * Configuration: `${STAGE_DIR}/etc/`
+   * Systemd Units: `${STAGE_DIR}/etc/systemd/system/`
    * Profile Environment Scripts: `${STAGE_DIR}/etc/profile.d/`
 2. **Binary Stripping:**
    * Always run `${CROSS_STRIP} --strip-all <binary>` on all ELF binaries and `.so` files to keep package archives small.
@@ -97,9 +158,8 @@ When `framework/ngpkg_build.py` runs `build.sh`, the following environment varia
        done
    fi
    ```
-4. **Handling Pre-Compiled ARMv7 Binaries (e.g., Alpine musl):**
-   * Pre-compiled Alpine packages use `/lib/ld-musl-armhf.so.1`.
-   * OpenNGFW rootfs provides `/lib/ld-musl-armhf.so.1 -> libc.so`.
+4. **Handling Pre-Compiled ARM Binaries:**
+   * Pre-compiled Alpine musl packages use `/lib/ld-musl-armhf.so.1 -> libc.so`.
    * In the recipe `build.sh`, write a shell wrapper in `bin/<app>` ensuring `LD_LIBRARY_PATH="/mnt/usb/opt/lib:$LD_LIBRARY_PATH"` is exported before launching the binary:
    ```bash
    cat << 'EOF' > "${STAGE_DIR}/bin/myapp"
@@ -110,28 +170,6 @@ When `framework/ngpkg_build.py` runs `build.sh`, the following environment varia
    EOF
    chmod 755 "${STAGE_DIR}/bin/myapp"
    ```
-
----
-
-## 5. Lifecycle Hooks (`install.sh` & `uninstall.sh`)
-
-### `uninstall.sh` (Pre-Remove Hook)
-Executed on the router by `pkg remove <name>` **before** deleting files.
-```bash
-#!/bin/sh
-set -e
-# Stop daemon if running
-killall myapp 2>/dev/null || true
-```
-
-### `install.sh` (Post-Install Hook)
-Executed on the router by `pkg install <name>` **after** unpacking files.
-```bash
-#!/bin/sh
-set -e
-# Create runtime directories or default state
-mkdir -p /mnt/usb/opt/var/log/myapp 2>/dev/null || true
-```
 
 ---
 
@@ -176,6 +214,8 @@ make rebuild-all
 Before submitting code or finalizing packages, verify:
 - [ ] `python3 framework/ngpkg_build.py validate recipes/<name>` passes with 0 errors.
 - [ ] Binary files in package archive are verified ARM 32-bit ELF (`file` or `readelf -h`).
+- [ ] Any daemons provide a systemd unit in `${STAGE_DIR}/etc/systemd/system/<name>.service`.
+- [ ] `install.sh` and `uninstall.sh` use `systemctl` / `/etc/systemd/system/` (NO `init.d` references).
 - [ ] Executable wrapper scripts have `chmod 755`.
 - [ ] `make test` passes.
 - [ ] Package archive is generated in `repo/packages/<name>-<version>.ngpkg`.

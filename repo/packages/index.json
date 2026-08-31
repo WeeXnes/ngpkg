@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "package_count": 29,
+  "package_count": 27,
   "packages": [
     {
       "name": "bareiron",
@@ -37,15 +37,6 @@
       "description": "Fast, multi-platform web server with automatic HTTPS and Layer 4 TCP/UDP streaming proxy (caddy-l4)",
       "category": "networking",
       "filename": "caddy-2.8.4.ngpkg"
-    },
-    {
-      "name": "clyocloud",
-      "version": "2.13.3",
-      "size": "1.9MB",
-      "size_bytes": 2027150,
-      "description": "Modern self-hosted personal cloud and media streaming suite",
-      "category": "cloud",
-      "filename": "clyocloud-2.13.3.ngpkg"
     },
     {
       "name": "debian",
@@ -145,15 +136,6 @@
       "description": "Network exploration tool and security / port scanner with NSE Lua scripts and Ncat",
       "category": "networking",
       "filename": "nmap-7.93.ngpkg"
-    },
-    {
-      "name": "nodejs",
-      "version": "20.15.1",
-      "size": "19.8MB",
-      "size_bytes": 20779166,
-      "description": "JavaScript runtime built on V8 engine (includes npm and npx package managers)",
-      "category": "development",
-      "filename": "nodejs-20.15.1.ngpkg"
     },
     {
       "name": "openssl",
