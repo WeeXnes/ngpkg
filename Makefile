@@ -46,8 +46,9 @@ test:
 	python3 framework/ngpkg_build.py validate recipes/htop
 	python3 framework/ngpkg_build.py validate recipes/screen
 	python3 framework/ngpkg_build.py validate recipes/bareiron
-	python3 framework/ngpkg_build.py validate recipes/nvm
+	python3 framework/ngpkg_build.py validate recipes/ffmpeg
 	python3 framework/ngpkg_build.py validate recipes/nodejs
+	python3 framework/ngpkg_build.py validate recipes/clyocloud
 	python3 framework/ngpkg_build.py validate recipes/v
 	./client/ngpkg_host --version
 	@echo "[✓] All tests passed successfully!"
