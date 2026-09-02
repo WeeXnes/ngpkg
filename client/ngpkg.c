@@ -65,6 +65,7 @@ typedef struct _result_string _result_string;
 typedef struct _result_os__Stat _result_os__Stat;
 typedef struct _result_Array_string _result_Array_string;
 typedef struct _option_string _option_string;
+typedef struct _option_main__PackageMeta _option_main__PackageMeta;
 
  // V preincludes:
 #define _GNU_SOURCE
@@ -1246,6 +1247,12 @@ struct _option_string {
 	byte data[sizeof(string) > 1 ? sizeof(string) : 1];
 };
 
+struct _option_main__PackageMeta {
+	byte state;
+	IError err;
+	byte data[sizeof(main__PackageMeta) > 1 ? sizeof(main__PackageMeta) : 1];
+};
+
 
 // V result_xxx definitions:
 struct _result_os__File {
@@ -1382,6 +1389,7 @@ VV_LOC void builtin__array_prepend_many(array* a, voidptr val, int size);
 void builtin__array_clear(array* a);
 VV_LOC voidptr builtin__array_get_unsafe(array a, int i);
 VV_LOC voidptr builtin__array_get(array a, int i);
+VV_LOC voidptr builtin__array_get_with_check(array a, int i);
 VV_LOC array builtin__array_slice(array a, int start, int _end);
 VV_LOC array builtin__array_clone_static_to_depth(array a, int depth);
 array builtin__array_clone(array* a);
@@ -1571,9 +1579,12 @@ string builtin__string_trim_right(string s, string cutset);
 string builtin__string_trim_string_right(string s, string str);
 string builtin__string_str(string s);
 VV_LOC u8 builtin__string_at(string s, int idx);
+bool builtin__u8_is_digit(u8 c);
 void builtin__string_free(string* s);
+string builtin__string_all_before(string s, string sub);
 string builtin__string_all_after(string s, string sub);
 string builtin__string_all_after_last(string s, string sub);
+string Array_string_join(Array_string a, string sep);
 Array_string builtin__string_fields(string s);
 string builtin__charptr_vstring_literal(charptr cp);
 string builtin__StrIntpType_str(StrIntpType x);
@@ -1640,18 +1651,25 @@ os__FileType os__Stat_get_filetype(os__Stat st);
 bool os__is_dir(string path);
 bool os__is_link(string path);
 VV_LOC string main__pad_right(string s, int width);
+VV_LOC string main__format_bytes(u64 bytes);
+VV_LOC string main__parse_json_value(string json_str, string key);
 VV_LOC void main__print_banner(void);
 VV_LOC main__Config main__load_config(void);
 VV_LOC Array_string main__get_installed_db_dirs(main__Config cfg);
 VV_LOC Array_string main__get_installed_packages(main__Config cfg);
 VV_LOC bool main__is_installed(main__Config cfg, string pkg_name);
+VV_LOC _option_main__PackageMeta main__get_installed_meta(main__Config cfg, string pkg_name);
 VV_LOC Array_main__PackageMeta main__fetch_index(main__Config cfg);
+VV_LOC main__PackageMeta main__inspect_archive_meta(string archive_path);
 VV_LOC int main__cmd_update(main__Config cfg);
 VV_LOC int main__cmd_list(main__Config cfg);
 VV_LOC int main__cmd_search(main__Config cfg, string query);
 VV_LOC int main__cmd_info(main__Config cfg, string pkg_name);
 VV_LOC int main__cmd_status(main__Config cfg);
+VV_LOC int main__install_payload(main__Config cfg, string archive_file, main__PackageMeta target_pkg, bool is_local_file);
+VV_LOC int main__cmd_install_file(main__Config cfg, string raw_path);
 VV_LOC int main__cmd_install(main__Config cfg, string pkg_name);
+VV_LOC int main__cmd_install_dispatcher(main__Config cfg, Array_string args);
 VV_LOC int main__cmd_remove(main__Config cfg, string pkg_name);
 VV_LOC void main__print_help(void);
 VV_LOC void main__main(void);
@@ -4099,6 +4117,15 @@ VV_LOC voidptr builtin__array_get(array a, int i) {
 	}
 	return 0;
 }
+VV_LOC voidptr builtin__array_get_with_check(array a, int i) {
+	if (i < 0 || i >= a.len) {
+		return 0;
+	}
+	{ // Unsafe block
+		return ((u8*)(a.data)) + (u64)(((u64)(i)) * ((u64)(a.element_size)));
+	}
+	return 0;
+}
 VV_LOC array builtin__array_slice(array a, int start, int _end) {
 	int end = (_end == _const_max_i64 || _end == _const_max_i32 ? (a.len) : (_end));
 	#if !defined(CUSTOM_DEFINE_no_bounds_checking)
@@ -6517,6 +6544,9 @@ VV_LOC u8 builtin__string_at(string s, int idx) {
 	#endif
 	return s.str[idx];
 }
+inline bool builtin__u8_is_digit(u8 c) {
+	return c >= '0' && c <= '9';
+}
 void builtin__string_free(string* s) {
 	if (s->is_lit == -98761234) {
 		u8* double_free_msg = ((u8*)("double string.free() detected\n"));
@@ -6540,6 +6570,13 @@ void builtin__string_free(string* s) {
 	}
 	s->is_lit = -98761234;
 }
+string builtin__string_all_before(string s, string sub) {
+	int pos = builtin__string_index_(s, sub);
+	if (pos == -1) {
+		return builtin__string_clone(s);
+	}
+	return builtin__string_substr(s, 0, pos);
+}
 string builtin__string_all_after(string s, string sub) {
 	int pos = builtin__string_index_(s, sub);
 	if (pos == -1) {
@@ -6553,6 +6590,36 @@ string builtin__string_all_after_last(string s, string sub) {
 		return builtin__string_clone(s);
 	}
 	return builtin__string_substr(s, (int)(pos + sub.len), 2147483647);
+}
+string Array_string_join(Array_string a, string sep) {
+	if (a.len == 0) {
+		return _S("");
+	}
+	int len = 0;
+	for (int _t2 = 0; _t2 < a.len; ++_t2) {
+		string val = ((string*)a.data)[_t2];
+		len += (int)(val.len + sep.len);
+	}
+	len -= sep.len;
+	string res = ((string){.str = builtin__malloc_noscan((int)(len + 1)), .len = len});
+	int idx = 0;
+	for (int i = 0; i < a.len; ++i) {
+		string val = ((string*)a.data)[i];
+		{ // Unsafe block
+			builtin__vmemcpy(((voidptr)(res.str + idx)), val.str, val.len);
+			idx += val.len;
+		}
+		if (i != (int)(a.len - 1)) {
+			{ // Unsafe block
+				builtin__vmemcpy(((voidptr)(res.str + idx)), sep.str, sep.len);
+				idx += sep.len;
+			}
+		}
+	}
+	{ // Unsafe block
+		res.str[res.len] = 0;
+	}
+	return res;
 }
 Array_string builtin__string_fields(string s) {
 	Array_string res = builtin____new_array_with_default(0, 0, sizeof(string), 0);
@@ -8147,6 +8214,31 @@ VV_LOC string main__pad_right(string s, int width) {
 	}
 	return builtin__string__plus(s, strings__repeat(' ', (int)(width - s.len)));
 }
+VV_LOC string main__format_bytes(u64 bytes) {
+	if (bytes >= 1048576) {
+		f64 mb = (f64)(((f64)(bytes)) / ((f64)(1.048576e+06)));
+		return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0x20d, {.d_f64 = mb}}, {_S("MB"), 0, { .d_c = 0 }}}));
+	} else if (bytes >= 1024) {
+		f64 kb = (f64)(((f64)(bytes)) / ((f64)(1024.0)));
+		return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xd, {.d_f64 = kb}}, {_S("KB"), 0, { .d_c = 0 }}}));
+	}
+	return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe08, {.d_u64 = bytes}}, {_S("B"), 0, { .d_c = 0 }}}));
+}
+VV_LOC string main__parse_json_value(string json_str, string key) {
+	string search_key = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("\""), 0xfe10, {.d_s = key}}, {_S("\""), 0, { .d_c = 0 }}}));
+	if (!builtin__string_contains(json_str, search_key)) {
+		return _S("");
+	}
+	string after_key = builtin__string_trim_space(builtin__string_all_after(json_str, search_key));
+	if (!builtin__string_starts_with(after_key, _S(":"))) {
+		return _S("");
+	}
+	string val_part = builtin__string_trim_space(builtin__string_all_after(after_key, _S(":")));
+	if (builtin__string_starts_with(val_part, _S("\""))) {
+		return builtin__string_all_before(builtin__string_all_after(val_part, _S("\"")), _S("\""));
+	}
+	return builtin__string_trim_space(builtin__string_all_before(builtin__string_all_before(builtin__string_all_before(val_part, _S(",")), _S("}")), _S("\n")));
+}
 VV_LOC void main__print_banner(void) {
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\255\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("OpenNGFW Package Manager"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = _const_main__c_green}}, {_S("ngpkg v"), 0xfe10, {.d_s = _const_main__version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(")                 "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
@@ -8233,6 +8325,62 @@ VV_LOC bool main__is_installed(main__Config cfg, string pkg_name) {
 	}
 	return false;
 }
+VV_LOC _option_main__PackageMeta main__get_installed_meta(main__Config cfg, string pkg_name) {
+	Array_string _t1 = main__get_installed_db_dirs(cfg);
+	for (int _t2 = 0; _t2 < _t1.len; ++_t2) {
+		string d = ((string*)_t1.data)[_t2];
+		string meta_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = d}}, {_S("/"), 0xfe10, {.d_s = pkg_name}}, {_S(".meta"), 0, { .d_c = 0 }}}));
+		if (os__exists(meta_file)) {
+			_result_Array_string _t3 = os__read_lines(meta_file);
+			if (_t3.is_error) {
+				*(Array_string*) _t3.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+			}
+			
+ 			Array_string lines = (*(Array_string*)_t3.data);
+			string name = pkg_name;
+			string ver = _S("unknown");
+			string desc = _S("Custom installed package");
+			string cat = _S("custom");
+			for (int _t4 = 0; _t4 < lines.len; ++_t4) {
+				string line = ((string*)lines.data)[_t4];
+				string trimmed = builtin__string_trim_space(line);
+				if (builtin__string_starts_with(trimmed, _S("NAME="))) {
+					name = builtin__string_trim_space(builtin__string_all_after(trimmed, _S("NAME=")));
+				} else if (builtin__string_starts_with(trimmed, _S("VERSION="))) {
+					ver = builtin__string_trim_space(builtin__string_all_after(trimmed, _S("VERSION=")));
+				} else if (builtin__string_starts_with(trimmed, _S("DESCRIPTION="))) {
+					desc = builtin__string_trim_space(builtin__string_all_after(trimmed, _S("DESCRIPTION=")));
+				} else if (builtin__string_starts_with(trimmed, _S("CATEGORY="))) {
+					cat = builtin__string_trim_space(builtin__string_all_after(trimmed, _S("CATEGORY=")));
+				}
+			}
+			_option_main__PackageMeta _t5;
+			builtin___option_ok(&(main__PackageMeta[]) { ((main__PackageMeta){.name = name,.version = ver,.size = _S("installed"),.description = desc,.category = cat,}) }, (_option*)(&_t5), sizeof(main__PackageMeta));
+			 
+			return _t5;
+		}
+	}
+	string manifest_path = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = pkg_name}}, {_S("/manifest.json"), 0, { .d_c = 0 }}}));
+	if (os__exists(manifest_path)) {
+		_result_string _t6 = os__read_file(manifest_path);
+		if (_t6.is_error) {
+			*(string*) _t6.data = _S("");
+		}
+		
+ 		string content = (*(string*)_t6.data);
+		if ((content).len != 0) {
+			string name = main__parse_json_value(content, _S("name"));
+			string ver = main__parse_json_value(content, _S("version"));
+			string desc = main__parse_json_value(content, _S("description"));
+			string cat = main__parse_json_value(content, _S("category"));
+			_option_main__PackageMeta _t7;
+			builtin___option_ok(&(main__PackageMeta[]) { ((main__PackageMeta){.name = ((name).len != 0 ? (name) : (pkg_name)),.version = ((ver).len != 0 ? (ver) : (_S("unknown"))),.size = _S("installed"),.description = ((desc).len != 0 ? (desc) : (_S("Custom installed package"))),.category = ((cat).len != 0 ? (cat) : (_S("custom"))),}) }, (_option*)(&_t7), sizeof(main__PackageMeta));
+			 
+			return _t7;
+		}
+	}
+	return (_option_main__PackageMeta){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+}
 VV_LOC Array_main__PackageMeta main__fetch_index(main__Config cfg) {
 	string index_file = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/cache/index.txt"), 0, { .d_c = 0 }}}));
 	if (!os__exists(index_file)) {
@@ -8258,6 +8406,35 @@ VV_LOC Array_main__PackageMeta main__fetch_index(main__Config cfg) {
 		}
 	}
 	return pkgs;
+}
+VV_LOC main__PackageMeta main__inspect_archive_meta(string archive_path) {
+	u64 sz_bytes = os__file_size(archive_path);
+	string sz_str = main__format_bytes(((u64)(sz_bytes)));
+	string dump_cmd = builtin__str_intp(9, _MOV((StrIntpData[]){{_S("(gzip -dc \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = archive_path}}, {_S("\") | tar -xOf - $( (gzip -dc \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = archive_path}}, {_S("\") | tar -tf - 2>/dev/null | grep \"manifest.json\" | head -n 1) 2>/dev/null || tar -xOf \""), 0xfe10, {.d_s = archive_path}}, {_S("\" $(tar -tf \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null | grep \"manifest.json\" | head -n 1) 2>/dev/null"), 0, { .d_c = 0 }}}));
+	os__Result res = os__execute(dump_cmd);
+	if (res.exit_code == 0 && (builtin__string_trim_space(res.output)).len != 0) {
+		string manifest_content = res.output;
+		string name = main__parse_json_value(manifest_content, _S("name"));
+		string ver = main__parse_json_value(manifest_content, _S("version"));
+		string description = main__parse_json_value(manifest_content, _S("description"));
+		string category = main__parse_json_value(manifest_content, _S("category"));
+		if ((name).len != 0) {
+			return ((main__PackageMeta){.name = name,.version = ((ver).len != 0 ? (ver) : (_S("1.0.0"))),.size = sz_str,.description = ((description).len != 0 ? (description) : (_S("Custom standalone package"))),.category = ((category).len != 0 ? (category) : (_S("custom"))),});
+		}
+	}
+	string base = os__file_name(archive_path);
+	string clean = builtin__string_trim_string_right(builtin__string_trim_string_right(builtin__string_trim_string_right(builtin__string_trim_string_right(base, _S(".ngpkg")), _S(".apkg")), _S(".tar.gz")), _S(".tgz"));
+	string pkg_name = clean;
+	string pkg_version = _S("1.0.0");
+	if (builtin__string_contains(clean, _S("-"))) {
+		Array_string parts = builtin__string_split(clean, _S("-"));
+		string last = (*(string*)builtin__array_get(parts, (int)(parts.len - 1)));
+		if (last.len > 0 && (builtin__u8_is_digit(builtin__string_at(last, 0)) || builtin__string_starts_with(last, _S("v")))) {
+			pkg_version = last;
+			pkg_name = Array_string_join(builtin__array_slice(parts, 0, (int)(parts.len - 1)), _S("-"));
+		}
+	}
+	return ((main__PackageMeta){.name = pkg_name,.version = pkg_version,.size = sz_str,.description = _S("Custom standalone package"),.category = _S("custom"),});
 }
 VV_LOC int main__cmd_update(main__Config cfg) {
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Updating repository package index..."), 0, { .d_c = 0 }}})));
@@ -8299,9 +8476,7 @@ VV_LOC int main__cmd_list(main__Config cfg) {
 	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
 	if (pkgs.len == 0) {
 		builtin__println(builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[! Hot Tip]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" No local index found. Running "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg update"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" first...\n"), 0, { .d_c = 0 }}})));
-		if (main__cmd_update(cfg) != 0) {
-			return 1;
-		}
+		main__cmd_update(cfg);
 	}
 	Array_main__PackageMeta fresh_pkgs = main__fetch_index(cfg);
 	Array_string installed = main__get_installed_packages(cfg);
@@ -8314,11 +8489,13 @@ VV_LOC int main__cmd_list(main__Config cfg) {
 	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = header_name}}, {_S(" "), 0xfe10, {.d_s = header_ver}}, {_S(" "), 0xfe10, {.d_s = header_size}}, {_S(" "), 0xfe10, {.d_s = header_status}}, {_S(" DESCRIPTION"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	int inst_count = 0;
-	for (int _t2 = 0; _t2 < fresh_pkgs.len; ++_t2) {
-		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t2];
+	Array_string listed_installed = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	for (int _t1 = 0; _t1 < fresh_pkgs.len; ++_t1) {
+		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t1];
 		bool is_inst = Array_string_contains(installed, p.name);
 		if (is_inst) {
 			inst_count++;
+			builtin__array_push((array*)&listed_installed, _MOV((string[]){ builtin__string_clone(p.name) }));
 		}
 		string status_badge = (is_inst ? (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\227\217 installed"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\213 available"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))));
 		string name_fmt = (is_inst ? (builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(p.name, 16)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(p.name, 16)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))));
@@ -8327,8 +8504,26 @@ VV_LOC int main__cmd_list(main__Config cfg) {
 		string status_fmt = main__pad_right(status_badge, 23);
 		builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = name_fmt}}, {_S(" "), 0xfe10, {.d_s = ver_fmt}}, {_S(" "), 0xfe10, {.d_s = size_fmt}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = p.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	}
+	for (int _t3 = 0; _t3 < installed.len; ++_t3) {
+		string inst_name = ((string*)installed.data)[_t3];
+		if (!Array_string_contains(listed_installed, inst_name)) {
+			inst_count++;
+			_option_main__PackageMeta _t4 = main__get_installed_meta(cfg, inst_name);
+			if (_t4.state != 0) {
+				*(main__PackageMeta*) _t4.data = ((main__PackageMeta){.name = inst_name,.version = _S("local"),.size = _S("installed"),.description = _S("Custom standalone package"),.category = _S("custom"),});
+			}
+			
+ 			main__PackageMeta meta = (*(main__PackageMeta*)_t4.data);
+			string status_badge = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\227\217 installed (local)"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
+			string name_fmt = builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(meta.name, 16)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
+			string ver_fmt = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(meta.version, 10)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
+			string size_fmt = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(meta.size, 9)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
+			string status_fmt = main__pad_right(status_badge, 31);
+			builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = name_fmt}}, {_S(" "), 0xfe10, {.d_s = ver_fmt}}, {_S(" "), 0xfe10, {.d_s = size_fmt}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = meta.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		}
+	}
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Total:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe07, {.d_i32 = fresh_pkgs.len}}, {_S(" packages  ("), 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe07, {.d_i32 = inst_count}}, {_S(" installed"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(", "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_SLIT0, 0xfe07, {.d_i32 = (int)(fresh_pkgs.len - inst_count)}}, {_S(" available"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(")\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Total:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe07, {.d_i32 = fresh_pkgs.len}}, {_S(" repository packages  ("), 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe07, {.d_i32 = inst_count}}, {_S(" installed"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(", "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_SLIT0, 0xfe07, {.d_i32 = (int)(fresh_pkgs.len - listed_installed.len)}}, {_S(" available repo packages"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(")\n"), 0, { .d_c = 0 }}})));
 	return 0;
 }
 VV_LOC int main__cmd_search(main__Config cfg, string query) {
@@ -8342,17 +8537,41 @@ VV_LOC int main__cmd_search(main__Config cfg, string query) {
 	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Search results for \""), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = query}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S("\":"), 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	int matches = 0;
+	Array_string found_installed = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 	for (int _t1 = 0; _t1 < fresh_pkgs.len; ++_t1) {
 		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t1];
 		if (builtin__string_contains(builtin__string_to_lower(p.name), q) || builtin__string_contains(builtin__string_to_lower(p.description), q) || builtin__string_contains(builtin__string_to_lower(p.category), q)) {
 			matches++;
 			bool is_inst = Array_string_contains(installed, p.name);
+			if (is_inst) {
+				builtin__array_push((array*)&found_installed, _MOV((string[]){ builtin__string_clone(p.name) }));
+			}
 			string status_badge = (is_inst ? (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("[installed]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("[available]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))));
 			string name_fmt = main__pad_right(p.name, 14);
 			string ver_fmt = main__pad_right(p.version, 8);
 			string size_fmt = main__pad_right(p.size, 8);
 			string status_fmt = main__pad_right(status_badge, 21);
 			builtin__println(builtin__str_intp(12, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = name_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = ver_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_gray}}, {_SLIT0, 0xfe10, {.d_s = size_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = p.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		}
+	}
+	for (int _t3 = 0; _t3 < installed.len; ++_t3) {
+		string inst_name = ((string*)installed.data)[_t3];
+		if (!Array_string_contains(found_installed, inst_name)) {
+			_option_main__PackageMeta _t4 = main__get_installed_meta(cfg, inst_name);
+			if (_t4.state != 0) {
+				*(main__PackageMeta*) _t4.data = ((main__PackageMeta){.name = inst_name,.version = _S("local"),.size = _S("installed"),.description = _S("Custom standalone package"),.category = _S("custom"),});
+			}
+			
+ 			main__PackageMeta meta = (*(main__PackageMeta*)_t4.data);
+			if (builtin__string_contains(builtin__string_to_lower(meta.name), q) || builtin__string_contains(builtin__string_to_lower(meta.description), q) || builtin__string_contains(builtin__string_to_lower(meta.category), q)) {
+				matches++;
+				string status_badge = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("[installed]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
+				string name_fmt = main__pad_right(meta.name, 14);
+				string ver_fmt = main__pad_right(meta.version, 8);
+				string size_fmt = main__pad_right(meta.size, 8);
+				string status_fmt = main__pad_right(status_badge, 21);
+				builtin__println(builtin__str_intp(12, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = name_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = ver_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_gray}}, {_SLIT0, 0xfe10, {.d_s = size_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = meta.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			}
 		}
 	}
 	if (matches == 0) {
@@ -8377,36 +8596,45 @@ VV_LOC int main__cmd_info(main__Config cfg, string pkg_name) {
 			break;
 		}
 	}
+	if (!found && main__is_installed(cfg, pkg_name)) {
+		_option_main__PackageMeta meta_opt = main__get_installed_meta(cfg, pkg_name);
+		_option_main__PackageMeta _t2;
+		if (_t2 = meta_opt, _t2.state == 0) {
+			main__PackageMeta m = *(main__PackageMeta*)_t2.data;
+			target = m;
+			found = true;
+		}
+	}
 	if (!found) {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" not found in repository index."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" not found in repository index or installed database."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 		return 1;
 	}
-	bool is_inst = main__is_installed(cfg, pkg_name);
+	bool is_inst = main__is_installed(cfg, target.name);
 	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
 	string ngpkg_bin = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = homedir}}, {_S("/.ngpkg-bin"), 0, { .d_c = 0 }}}));
 	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\255\342\224\200 Package Information: "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = target.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Name:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("         "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = target.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Version:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("      "), 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = target.version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Category:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("     "), 0xfe10, {.d_s = _const_main__c_purple}}, {_SLIT0, 0xfe10, {.d_s = target.category}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Payload Size:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = target.size}}, {_S(" (Compressed)"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Payload Size:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = target.size}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__string__plus(builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Status:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("       "), 0, { .d_c = 0 }}})), (is_inst ? (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\227\217 Installed"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\213 Available for installation"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))))));
 	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Prefix:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("       "), 0xfe10, {.d_s = cfg.prefix}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Binary Path:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = target.name}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Description:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = target.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	if (is_inst) {
-		string list_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}));
+		string list_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = target.name}}, {_S(".list"), 0, { .d_c = 0 }}}));
 		if (os__exists(list_file)) {
-			_result_Array_string _t3 = os__read_lines(list_file);
-			if (_t3.is_error) {
-				*(Array_string*) _t3.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+			_result_Array_string _t4 = os__read_lines(list_file);
+			if (_t4.is_error) {
+				*(Array_string*) _t4.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 			}
 			
- 			Array_string lines = (*(Array_string*)_t3.data);
+ 			Array_string lines = (*(Array_string*)_t4.data);
 			builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 			builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("Installed Files:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe07, {.d_i32 = lines.len}}, {_S(" files)"), 0, { .d_c = 0 }}})));
 			int count = 0;
-			for (int _t4 = 0; _t4 < lines.len; ++_t4) {
-				string l = ((string*)lines.data)[_t4];
+			for (int _t5 = 0; _t5 < lines.len; ++_t5) {
+				string l = ((string*)lines.data)[_t5];
 				if ((builtin__string_trim_space(l)).len != 0 && count < 8) {
 					builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("    "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\200\242"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = builtin__string_trim_space(l)}}, {_SLIT0, 0, { .d_c = 0 }}})));
 					count++;
@@ -8417,7 +8645,7 @@ VV_LOC int main__cmd_info(main__Config cfg, string pkg_name) {
 			}
 		}
 	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257\n"), 0, { .d_c = 0 }}})));
 	return 0;
 }
 VV_LOC int main__cmd_status(main__Config cfg) {
@@ -8442,85 +8670,38 @@ VV_LOC int main__cmd_status(main__Config cfg) {
 			builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("    Total: "), 0xfe10, {.d_s = total}}, {_S("  \342\200\242  Used: "), 0xfe10, {.d_s = used}}, {_S(" ("), 0xfe10, {.d_s = percent}}, {_S(")  \342\200\242  Free: "), 0xfe10, {.d_s = avail}}, {_SLIT0, 0, { .d_c = 0 }}})));
 		}
 	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257\n"), 0, { .d_c = 0 }}})));
 	return 0;
 }
-VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
-	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
-	if (pkgs.len == 0) {
-		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[! No index]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Updating repository index first..."), 0, { .d_c = 0 }}})));
-		if (main__cmd_update(cfg) != 0) {
-			return 1;
-		}
-	}
-	Array_main__PackageMeta fresh_pkgs = main__fetch_index(cfg);
-	main__PackageMeta target_pkg = ((main__PackageMeta){.name = (string){.str=(byteptr)"", .is_lit=1},.version = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.description = (string){.str=(byteptr)"", .is_lit=1},.category = (string){.str=(byteptr)"", .is_lit=1},});
-	bool found = false;
-	for (int _t2 = 0; _t2 < fresh_pkgs.len; ++_t2) {
-		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t2];
-		if (builtin__string__eq(p.name, pkg_name)) {
-			target_pkg = p;
-			found = true;
-			break;
-		}
-	}
-	if (!found) {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" not found in repository index."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  Run "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg list"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" to see all available applications."), 0, { .d_c = 0 }}})));
-		return 1;
-	}
-	if (main__is_installed(cfg, pkg_name)) {
-		builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[!] Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" is already installed."), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Reinstalling..."), 0, { .d_c = 0 }}})));
+VV_LOC int main__install_payload(main__Config cfg, string archive_file, main__PackageMeta target_pkg, bool is_local_file) {
+	if (main__is_installed(cfg, target_pkg.name)) {
+		builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[!] Package \""), 0xfe10, {.d_s = target_pkg.name}}, {_S("\" is already installed."), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Reinstalling/Upgrading..."), 0, { .d_c = 0 }}})));
 	}
 	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Installing "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = target_pkg.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("v"), 0xfe10, {.d_s = target_pkg.version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(", "), 0xfe10, {.d_s = target_pkg.size}}, {_S(")..."), 0, { .d_c = 0 }}})));
-	builtin__print(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[1/3]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \342\254\207 Downloading payload..."), 0, { .d_c = 0 }}})));
-	string cache_dir = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/cache"), 0, { .d_c = 0 }}}));
-	_result_void _t4 = os__mkdir_all(cache_dir, ((os__MkdirParams){.mode = 0777,}));
+	builtin__print(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[1/2]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \360\237\223\246 Unpacking to "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S("..."), 0, { .d_c = 0 }}})));
+	_result_void _t1 = os__mkdir_all(cfg.prefix, ((os__MkdirParams){.mode = 0777,}));
+	(void)_t1;
+ ;
+	_result_void _t2 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t2;
+ ;
+	_result_void _t3 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/sbin"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t3;
+ ;
+	_result_void _t4 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/lib"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
 	(void)_t4;
  ;
-	string archive_file = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cache_dir}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}}));
-	string base_url = builtin__string_trim_right(builtin__string_trim_string_right(cfg.repo_url, _S("/packages")), _S("/"));
-	Array_string candidate_urls = builtin__new_array_from_c_array(6, 6, sizeof(string), _MOV((string[6]){builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/packages/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/packages/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".apkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".apkg"), 0, { .d_c = 0 }}}))}));
-	bool downloaded = false;
-	for (int _t5 = 0; _t5 < candidate_urls.len; ++_t5) {
-		string url = ((string*)candidate_urls.data)[_t5];
-		string dl_cmd = builtin__str_intp(5, _MOV((StrIntpData[]){{_S("wget -q -T 30 -O \""), 0xfe10, {.d_s = archive_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null || curl -fsSL --connect-timeout 10 -o \""), 0xfe10, {.d_s = archive_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null"), 0, { .d_c = 0 }}}));
-		os__Result dl_res = os__execute(dl_cmd);
-		if (dl_res.exit_code == 0 && os__exists(archive_file) && os__file_size(archive_file) > 100) {
-			downloaded = true;
-			break;
-		}
-	}
-	if (!downloaded) {
-		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_red}}, {_S("FAILED"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Failed to download package "), 0xfe10, {.d_s = target_pkg.name}}, {_S(" from repository."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		return 1;
-	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_green}}, {_S("DONE"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__print(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[2/3]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \360\237\223\246 Unpacking to "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S("..."), 0, { .d_c = 0 }}})));
-	_result_void _t7 = os__mkdir_all(cfg.prefix, ((os__MkdirParams){.mode = 0777,}));
+	_result_void _t5 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/libexec"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t5;
+ ;
+	_result_void _t6 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/etc"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t6;
+ ;
+	_result_void _t7 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
 	(void)_t7;
  ;
-	_result_void _t8 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
+	_result_void _t8 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
 	(void)_t8;
- ;
-	_result_void _t9 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/sbin"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t9;
- ;
-	_result_void _t10 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/lib"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t10;
- ;
-	_result_void _t11 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/libexec"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t11;
- ;
-	_result_void _t12 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/etc"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t12;
- ;
-	_result_void _t13 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t13;
- ;
-	_result_void _t14 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t14;
  ;
 	string unpack_cmd = builtin__str_intp(3, _MOV((StrIntpData[]){{_S("gzip -dc \""), 0xfe10, {.d_s = archive_file}}, {_S("\" 2>/dev/null | tar -xf - -C \""), 0xfe10, {.d_s = cfg.prefix}}, {_S("\""), 0, { .d_c = 0 }}}));
 	os__Result unpack_res = os__execute(unpack_cmd);
@@ -8545,45 +8726,76 @@ VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
 	string list_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".list"), 0, { .d_c = 0 }}}));
 	string list_cmd = builtin__str_intp(7, _MOV((StrIntpData[]){{_S("(gzip -dc \""), 0xfe10, {.d_s = archive_file}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = archive_file}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = archive_file}}, {_S("\") | tar -tf - > \""), 0xfe10, {.d_s = list_file}}, {_S("\" 2>/dev/null || tar -tf \""), 0xfe10, {.d_s = archive_file}}, {_S("\" > \""), 0xfe10, {.d_s = list_file}}, {_S("\" 2>/dev/null || true"), 0, { .d_c = 0 }}}));
 	os__execute(list_cmd);
-	string meta_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".meta"), 0, { .d_c = 0 }}}));
-	_result_void _t16 = os__write_file(meta_file, builtin__str_intp(5, _MOV((StrIntpData[]){{_S("NAME="), 0xfe10, {.d_s = target_pkg.name}}, {_S("\nVERSION="), 0xfe10, {.d_s = target_pkg.version}}, {_S("\nDESCRIPTION="), 0xfe10, {.d_s = target_pkg.description}}, {_S("\nCATEGORY="), 0xfe10, {.d_s = target_pkg.category}}, {_S("\n"), 0, { .d_c = 0 }}})));
-	(void)_t16;
+	main__PackageMeta final_meta = target_pkg;
+	string manifest_path = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("/manifest.json"), 0, { .d_c = 0 }}}));
+	if (os__exists(manifest_path)) {
+		_result_string _t10 = os__read_file(manifest_path);
+		if (_t10.is_error) {
+			*(string*) _t10.data = _S("");
+		}
+		
+ 		string m_content = (*(string*)_t10.data);
+		if ((m_content).len != 0) {
+			string m_name = main__parse_json_value(m_content, _S("name"));
+			string m_ver = main__parse_json_value(m_content, _S("version"));
+			string m_desc = main__parse_json_value(m_content, _S("description"));
+			string m_cat = main__parse_json_value(m_content, _S("category"));
+			if ((m_name).len != 0) {
+				final_meta.name = m_name;
+			}
+			if ((m_ver).len != 0) {
+				final_meta.version = m_ver;
+			}
+			if ((m_desc).len != 0) {
+				final_meta.description = m_desc;
+			}
+			if ((m_cat).len != 0) {
+				final_meta.category = m_cat;
+			}
+		}
+	}
+	string meta_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".meta"), 0, { .d_c = 0 }}}));
+	_result_void _t11 = os__write_file(meta_file, builtin__str_intp(5, _MOV((StrIntpData[]){{_S("NAME="), 0xfe10, {.d_s = final_meta.name}}, {_S("\nVERSION="), 0xfe10, {.d_s = final_meta.version}}, {_S("\nDESCRIPTION="), 0xfe10, {.d_s = final_meta.description}}, {_S("\nCATEGORY="), 0xfe10, {.d_s = final_meta.category}}, {_S("\n"), 0, { .d_c = 0 }}})));
+	(void)_t11;
  ;
 	if (os__is_dir(cfg.prefix)) {
 		string usb_db = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg/installed"), 0, { .d_c = 0 }}}));
-		_result_void _t17 = os__mkdir_all(usb_db, ((os__MkdirParams){.mode = 0777,}));
-		(void)_t17;
+		_result_void _t12 = os__mkdir_all(usb_db, ((os__MkdirParams){.mode = 0777,}));
+		(void)_t12;
  ;
-		_result_void _t18 = os__cp(list_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".list"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
-		(void)_t18;
+		_result_void _t13 = os__cp(list_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".list"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
+		(void)_t13;
  ;
-		_result_void _t19 = os__cp(meta_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".meta"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
-		(void)_t19;
+		_result_void _t14 = os__cp(meta_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".meta"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
+		(void)_t14;
  ;
 	}
-	_result_void _t20 = os__rm(archive_file);
-	(void)_t20;
+	if (!is_local_file) {
+		_result_void _t15 = os__rm(archive_file);
+		(void)_t15;
  ;
+	}
 	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
 	string ngpkg_bin = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = homedir}}, {_S("/.ngpkg-bin"), 0, { .d_c = 0 }}}));
-	builtin__print(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[3/3]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \360\237\224\227 Linking package binaries & running hooks..."), 0, { .d_c = 0 }}})));
-	_result_void _t21 = os__mkdir_all(ngpkg_bin, ((os__MkdirParams){.mode = 0777,}));
-	(void)_t21;
+	builtin__print(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[2/2]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \360\237\224\227 Linking package binaries, systemd units & running hooks..."), 0, { .d_c = 0 }}})));
+	_result_void _t16 = os__mkdir_all(ngpkg_bin, ((os__MkdirParams){.mode = 0777,}));
+	(void)_t16;
  ;
 	if (_SLIT_NE(homedir.str, homedir.len, "/root")) {
-		_result_void _t22 = os__mkdir_all(_S("/root/.ngpkg-bin"), ((os__MkdirParams){.mode = 0777,}));
-		(void)_t22;
+		_result_void _t17 = os__mkdir_all(_S("/root/.ngpkg-bin"), ((os__MkdirParams){.mode = 0777,}));
+		(void)_t17;
  ;
 	}
+	Array_string service_units = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 	if (os__exists(list_file)) {
-		_result_Array_string _t23 = os__read_lines(list_file);
-		if (_t23.is_error) {
-			*(Array_string*) _t23.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+		_result_Array_string _t18 = os__read_lines(list_file);
+		if (_t18.is_error) {
+			*(Array_string*) _t18.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 		}
 		
- 		Array_string installed_files = (*(Array_string*)_t23.data);
-		for (int _t24 = 0; _t24 < installed_files.len; ++_t24) {
-			string rel = ((string*)installed_files.data)[_t24];
+ 		Array_string installed_files = (*(Array_string*)_t18.data);
+		for (int _t19 = 0; _t19 < installed_files.len; ++_t19) {
+			string rel = ((string*)installed_files.data)[_t19];
 			string trimmed = builtin__string_trim_space(rel);
 			if ((trimmed).len == 0) {
 				continue;
@@ -8594,18 +8806,18 @@ VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
 					continue;
 				}
 				string target = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				_result_void _t25 = os__chmod(target, 0755);
-				(void)_t25;
+				_result_void _t20 = os__chmod(target, 0755);
+				(void)_t20;
  ;
 				string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
 				if (!os__exists(symlink) && !os__is_link(symlink)) {
-					_result_void _t26 = os__symlink(target, symlink);
-					(void)_t26;
+					_result_void _t21 = os__symlink(target, symlink);
+					(void)_t21;
  ;
 				}
 				if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}}))) && !os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-					_result_void _t27 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
-					(void)_t27;
+					_result_void _t22 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
+					(void)_t22;
  ;
 				}
 			} else if (builtin__string_starts_with(trimmed, _S("sbin/"))) {
@@ -8614,62 +8826,185 @@ VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
 					continue;
 				}
 				string target = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				_result_void _t28 = os__chmod(target, 0755);
-				(void)_t28;
+				_result_void _t23 = os__chmod(target, 0755);
+				(void)_t23;
  ;
 				string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
 				if (!os__exists(symlink) && !os__is_link(symlink)) {
-					_result_void _t29 = os__symlink(target, symlink);
-					(void)_t29;
+					_result_void _t24 = os__symlink(target, symlink);
+					(void)_t24;
  ;
 				}
 				if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}}))) && !os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-					_result_void _t30 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
-					(void)_t30;
+					_result_void _t25 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
+					(void)_t25;
  ;
+				}
+			} else if (builtin__string_starts_with(trimmed, _S("etc/systemd/system/")) && builtin__string_ends_with(trimmed, _S(".service"))) {
+				string svc_file = builtin__string_all_after(trimmed, _S("etc/systemd/system/"));
+				if (!builtin__string_contains(svc_file, _S("/"))) {
+					_result_void _t26 = os__mkdir_all(_S("/etc/systemd/system"), ((os__MkdirParams){.mode = 0777,}));
+					(void)_t26;
+ ;
+					string src = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
+					string dst = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = svc_file}}, {_SLIT0, 0, { .d_c = 0 }}}));
+					if (!os__exists(dst) && !os__is_link(dst)) {
+						_result_void _t27 = os__symlink(src, dst);
+						(void)_t27;
+ ;
+					}
+					string unit_name = builtin__string_trim_string_right(svc_file, _S(".service"));
+					if (!Array_string_contains(service_units, unit_name)) {
+						builtin__array_push((array*)&service_units, _MOV((string[]){ builtin__string_clone(unit_name) }));
+					}
 				}
 			} else if (builtin__string_starts_with(trimmed, _S("etc/init.d/"))) {
 				string svc_name = builtin__string_all_after(trimmed, _S("etc/init.d/"));
 				if (builtin__string_contains(svc_name, _S("/"))) {
 					continue;
 				}
-				_result_void _t31 = os__mkdir_all(_S("/etc/init.d"), ((os__MkdirParams){.mode = 0777,}));
-				(void)_t31;
+				_result_void _t29 = os__mkdir_all(_S("/etc/init.d"), ((os__MkdirParams){.mode = 0777,}));
+				(void)_t29;
  ;
 				string src = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
 				string dst = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/init.d/"), 0xfe10, {.d_s = svc_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				_result_void _t32 = os__chmod(src, 0755);
-				(void)_t32;
+				_result_void _t30 = os__chmod(src, 0755);
+				(void)_t30;
  ;
 				if (!os__exists(dst) && !os__is_link(dst)) {
-					_result_void _t33 = os__symlink(src, dst);
-					(void)_t33;
+					_result_void _t31 = os__symlink(src, dst);
+					(void)_t31;
  ;
 				}
 			}
 		}
 	}
-	Array_string post_install_hooks = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("/install.sh"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/install.sh"), 0, { .d_c = 0 }}}))}));
-	for (int _t34 = 0; _t34 < post_install_hooks.len; ++_t34) {
-		string hook = ((string*)post_install_hooks.data)[_t34];
+	Array_string post_install_hooks = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = final_meta.name}}, {_S("/install.sh"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/install.sh"), 0, { .d_c = 0 }}}))}));
+	for (int _t32 = 0; _t32 < post_install_hooks.len; ++_t32) {
+		string hook = ((string*)post_install_hooks.data)[_t32];
 		if (os__exists(hook)) {
-			_result_void _t35 = os__chmod(hook, 0755);
-			(void)_t35;
+			_result_void _t33 = os__chmod(hook, 0755);
+			(void)_t33;
  ;
 			os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/bin/sh \""), 0xfe10, {.d_s = hook}}, {_S("\" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
 			break;
 		}
 	}
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_green}}, {_S("DONE"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	string service_file = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".service"), 0, { .d_c = 0 }}}));
-	if (os__exists(service_file)) {
-		builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_purple}}, {_S("\342\232\241 Registering system service:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = target_pkg.name}}, {_S(".service"), 0, { .d_c = 0 }}})));
-		os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl enable "), 0xfe10, {.d_s = target_pkg.name}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
-		os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl start "), 0xfe10, {.d_s = target_pkg.name}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+	if (os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".service"), 0, { .d_c = 0 }}})))) {
+		if (!Array_string_contains(service_units, final_meta.name)) {
+			builtin__array_push((array*)&service_units, _MOV((string[]){ builtin__string_clone(final_meta.name) }));
+		}
 	}
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("\n"), 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\234\223 Successfully installed "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = target_pkg.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = target_pkg.version}}, {_S(")!"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Executables:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" (ready to run)\n"), 0, { .d_c = 0 }}})));
+	if (service_units.len > 0) {
+		os__execute(_S("systemctl daemon-reload 2>/dev/null || true"));
+		for (int _t35 = 0; _t35 < service_units.len; ++_t35) {
+			string svc = ((string*)service_units.data)[_t35];
+			builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_purple}}, {_S("\342\232\241 Registering system service:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = svc}}, {_S(".service"), 0, { .d_c = 0 }}})));
+			os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl enable "), 0xfe10, {.d_s = svc}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+			os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl start "), 0xfe10, {.d_s = svc}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+		}
+	}
+	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("\n"), 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\234\223 Successfully installed "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = final_meta.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = final_meta.version}}, {_S(")!"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Executables:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = final_meta.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" (ready to run)\n"), 0, { .d_c = 0 }}})));
 	return 0;
+}
+VV_LOC int main__cmd_install_file(main__Config cfg, string raw_path) {
+	string file_path = os__real_path(raw_path);
+	if (!os__exists(file_path)) {
+		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package archive file not found: "), 0xfe10, {.d_s = raw_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		return 1;
+	}
+	if (os__is_dir(file_path)) {
+		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Path is a directory, expected a .ngpkg package file: "), 0xfe10, {.d_s = raw_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		return 1;
+	}
+	string test_cmd = builtin__str_intp(5, _MOV((StrIntpData[]){{_S("(gzip -dc \""), 0xfe10, {.d_s = file_path}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = file_path}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = file_path}}, {_S("\") | tar -tf - >/dev/null 2>&1 || tar -tf \""), 0xfe10, {.d_s = file_path}}, {_S("\" >/dev/null 2>&1"), 0, { .d_c = 0 }}}));
+	os__Result test_res = os__execute(test_cmd);
+	if (test_res.exit_code != 0) {
+		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Invalid or corrupted package archive: "), 0xfe10, {.d_s = raw_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		return 1;
+	}
+	main__PackageMeta meta = main__inspect_archive_meta(file_path);
+	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Installing custom local package: "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = file_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	return main__install_payload(cfg, file_path, meta, true);
+}
+VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
+	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
+	if (pkgs.len == 0) {
+		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[! No index]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Updating repository index first..."), 0, { .d_c = 0 }}})));
+		if (main__cmd_update(cfg) != 0) {
+			return 1;
+		}
+	}
+	Array_main__PackageMeta fresh_pkgs = main__fetch_index(cfg);
+	main__PackageMeta target_pkg = ((main__PackageMeta){.name = (string){.str=(byteptr)"", .is_lit=1},.version = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.description = (string){.str=(byteptr)"", .is_lit=1},.category = (string){.str=(byteptr)"", .is_lit=1},});
+	bool found = false;
+	for (int _t2 = 0; _t2 < fresh_pkgs.len; ++_t2) {
+		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t2];
+		if (builtin__string__eq(p.name, pkg_name)) {
+			target_pkg = p;
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		Array_string local_candidates = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_S(".apkg"), 0, { .d_c = 0 }}}))}));
+		for (int _t3 = 0; _t3 < local_candidates.len; ++_t3) {
+			string cand = ((string*)local_candidates.data)[_t3];
+			if (os__exists(cand) && !os__is_dir(cand)) {
+				builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[*] Found matching local package archive: "), 0xfe10, {.d_s = cand}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+				return main__cmd_install_file(cfg, cand);
+			}
+		}
+		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" not found in repository index."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  Run "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg list"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" to see all available applications, or"), 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  Run "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg install /path/to/custom.ngpkg"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" to install a custom package file."), 0, { .d_c = 0 }}})));
+		return 1;
+	}
+	builtin__print(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[1/2]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \342\254\207 Downloading payload..."), 0, { .d_c = 0 }}})));
+	string cache_dir = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/cache"), 0, { .d_c = 0 }}}));
+	_result_void _t6 = os__mkdir_all(cache_dir, ((os__MkdirParams){.mode = 0777,}));
+	(void)_t6;
+ ;
+	string archive_file = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cache_dir}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}}));
+	string base_url = builtin__string_trim_right(builtin__string_trim_string_right(cfg.repo_url, _S("/packages")), _S("/"));
+	Array_string candidate_urls = builtin__new_array_from_c_array(6, 6, sizeof(string), _MOV((string[6]){builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/packages/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/packages/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".apkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".apkg"), 0, { .d_c = 0 }}}))}));
+	bool downloaded = false;
+	for (int _t7 = 0; _t7 < candidate_urls.len; ++_t7) {
+		string url = ((string*)candidate_urls.data)[_t7];
+		string dl_cmd = builtin__str_intp(5, _MOV((StrIntpData[]){{_S("wget -q -T 30 -O \""), 0xfe10, {.d_s = archive_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null || curl -fsSL --connect-timeout 10 -o \""), 0xfe10, {.d_s = archive_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null"), 0, { .d_c = 0 }}}));
+		os__Result dl_res = os__execute(dl_cmd);
+		if (dl_res.exit_code == 0 && os__exists(archive_file) && os__file_size(archive_file) > 100) {
+			downloaded = true;
+			break;
+		}
+	}
+	if (!downloaded) {
+		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_red}}, {_S("FAILED"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Failed to download package "), 0xfe10, {.d_s = target_pkg.name}}, {_S(" from repository."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		return 1;
+	}
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_green}}, {_S("DONE"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	return main__install_payload(cfg, archive_file, target_pkg, false);
+}
+VV_LOC int main__cmd_install_dispatcher(main__Config cfg, Array_string args) {
+	if (args.len == 0) {
+		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install <package-name|path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		return 1;
+	}
+	string first = (*(string*)builtin__array_get(args, 0));
+	if (_SLIT_EQ(first.str, first.len, "-f") || _SLIT_EQ(first.str, first.len, "--file")) {
+		if (args.len < 2) {
+			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install -f <path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			return 1;
+		}
+		return main__cmd_install_file(cfg, (*(string*)builtin__array_get(args, 1)));
+	}
+	if (builtin__string_ends_with(first, _S(".ngpkg")) || builtin__string_ends_with(first, _S(".apkg")) || builtin__string_ends_with(first, _S(".tar.gz")) || builtin__string_ends_with(first, _S(".tgz")) || builtin__string_contains(first, _S("/")) || (os__exists(first) && !os__is_dir(first))) {
+		return main__cmd_install_file(cfg, first);
+	}
+	return main__cmd_install(cfg, first);
 }
 VV_LOC int main__cmd_remove(main__Config cfg, string pkg_name) {
 	if (!main__is_installed(cfg, pkg_name)) {
@@ -8751,43 +9086,57 @@ VV_LOC int main__cmd_remove(main__Config cfg, string pkg_name) {
  ;
 						}
 					}
+				} else if (builtin__string_starts_with(rel_path, _S("etc/systemd/system/")) && builtin__string_ends_with(rel_path, _S(".service"))) {
+					string svc_file = builtin__string_all_after(rel_path, _S("etc/systemd/system/"));
+					if (!builtin__string_contains(svc_file, _S("/"))) {
+						string svc_unit = builtin__string_trim_string_right(svc_file, _S(".service"));
+						os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl stop "), 0xfe10, {.d_s = svc_unit}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+						os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl disable "), 0xfe10, {.d_s = svc_unit}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+						string systemd_link = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = svc_file}}, {_SLIT0, 0, { .d_c = 0 }}}));
+						if (os__is_link(systemd_link) || os__exists(systemd_link)) {
+							_result_void _t12 = os__rm(systemd_link);
+							(void)_t12;
+ ;
+						}
+					}
 				} else if (builtin__string_starts_with(rel_path, _S("etc/init.d/"))) {
 					string svc_name = builtin__string_all_after(rel_path, _S("etc/init.d/"));
 					if (!builtin__string_contains(svc_name, _S("/"))) {
 						string init_link = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/init.d/"), 0xfe10, {.d_s = svc_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
 						if (os__is_link(init_link) || os__exists(init_link)) {
-							_result_void _t12 = os__rm(init_link);
-							(void)_t12;
+							_result_void _t13 = os__rm(init_link);
+							(void)_t13;
  ;
 						}
 					}
 				}
 			}
-			_result_void _t13 = os__rm(list_file);
-			(void)_t13;
+			_result_void _t14 = os__rm(list_file);
+			(void)_t14;
  ;
 		}
 		string meta_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = d}}, {_S("/"), 0xfe10, {.d_s = pkg_name}}, {_S(".meta"), 0, { .d_c = 0 }}}));
 		if (os__exists(meta_file)) {
-			_result_void _t14 = os__rm(meta_file);
-			(void)_t14;
+			_result_void _t15 = os__rm(meta_file);
+			(void)_t15;
  ;
 		}
 	}
-	Array_string _t15 = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__string_clone(pkg_name), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_S(".bin"), 0, { .d_c = 0 }}}))}));
-	for (int _t16 = 0; _t16 < _t15.len; ++_t16) {
-		string bin_cand = ((string*)_t15.data)[_t16];
+	Array_string _t16 = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__string_clone(pkg_name), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_S(".bin"), 0, { .d_c = 0 }}}))}));
+	for (int _t17 = 0; _t17 < _t16.len; ++_t17) {
+		string bin_cand = ((string*)_t16.data)[_t17];
 		if (os__is_link(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-			_result_void _t17 = os__rm(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			(void)_t17;
- ;
-		}
-		if (os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-			_result_void _t18 = os__rm(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			_result_void _t18 = os__rm(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})));
 			(void)_t18;
  ;
 		}
+		if (os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
+			_result_void _t19 = os__rm(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			(void)_t19;
+ ;
+		}
 	}
+	os__execute(_S("systemctl daemon-reload 2>/dev/null || true"));
 	builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\234\223 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" removed successfully."), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("\n"), 0, { .d_c = 0 }}})));
 	return 0;
 }
@@ -8796,20 +9145,22 @@ VV_LOC void main__print_help(void) {
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_S("USAGE:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(_S("  pkg <command> [arguments]\n"));
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_S("COMMANDS:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("update"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("              Sync latest package index from repository"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("list"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                List all available & installed packages"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("search"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <query>      Search packages by name, description, or category"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("info"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <package>      Inspect package details, size, and installed files"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("install"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <package>   Install an application to USB storage (/mnt/usb/opt)"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("remove"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <package>    Uninstall an application and clean symlinks"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("status"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("              Display USB storage, prefix, and repository info"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("help"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                Show this reference manual\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("update"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                      Sync latest package index from repository"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("list"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                        List all available & installed packages"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("search"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <query>              Search packages by name, description, or category"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("info"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <package>              Inspect package details, size, and installed files"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("install"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <pkg|file.ngpkg>   Install package from repo or custom .ngpkg file"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("install-file"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <file.ngpkg>   Install directly from a standalone .ngpkg archive"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("remove"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <package>            Uninstall an application and clean symlinks/services"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("status"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                      Display USB storage, prefix, and repository info"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("help"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                        Show this reference manual\n"), 0, { .d_c = 0 }}})));
 	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_S("EXAMPLES:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 	builtin__println(_S("  pkg update"));
 	builtin__println(_S("  pkg install btop"));
-	builtin__println(_S("  pkg install screen"));
-	builtin__println(_S("  pkg info git"));
-	builtin__println(_S("  pkg search wireguard\n"));
+	builtin__println(_S("  pkg install ./custom-app-1.0.0.ngpkg"));
+	builtin__println(_S("  pkg install-file /mnt/usb/mypackage.ngpkg"));
+	builtin__println(_S("  pkg info custom-app"));
+	builtin__println(_S("  pkg remove btop\n"));
 }
 VV_LOC void main__main(void) {
 	Array_string args = builtin__array_slice(_const_os__args, 1, 2147483647);
@@ -8848,11 +9199,20 @@ VV_LOC void main__main(void) {
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "install") || _SLIT_EQ(cmd.str, cmd.len, "i") || _SLIT_EQ(cmd.str, cmd.len, "add") || _SLIT_EQ(cmd.str, cmd.len, "get")) {
 		if (args.len < 2) {
-			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install <package>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install <package|path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
 			builtin___v_exit(1);
 			VUNREACHABLE();
 		}
-		builtin___v_exit(main__cmd_install(cfg, (*(string*)builtin__array_get(args, 1))));
+		builtin___v_exit(main__cmd_install_dispatcher(cfg, builtin__array_slice(args, 1, 2147483647)));
+		VUNREACHABLE();
+	}
+	else if (_SLIT_EQ(cmd.str, cmd.len, "install-file") || _SLIT_EQ(cmd.str, cmd.len, "install-local") || _SLIT_EQ(cmd.str, cmd.len, "local-install") || _SLIT_EQ(cmd.str, cmd.len, "pkg-install")) {
+		if (args.len < 2) {
+			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install-file <path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			builtin___v_exit(1);
+			VUNREACHABLE();
+		}
+		builtin___v_exit(main__cmd_install_file(cfg, (*(string*)builtin__array_get(args, 1))));
 		VUNREACHABLE();
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "remove") || _SLIT_EQ(cmd.str, cmd.len, "uninstall") || _SLIT_EQ(cmd.str, cmd.len, "rm") || _SLIT_EQ(cmd.str, cmd.len, "delete")) {
@@ -8903,7 +9263,7 @@ void _vinit(int ___argc, voidptr ___argv) {
 	_const_os__path_separator = _S("/");
 	_const_os__args = builtin__arguments();
 	// Initializations of consts for module main
-	_const_main__version = _S("1.3.0");
+	_const_main__version = _S("1.4.0");
 	_const_main__default_repo_url = _S("http://192.168.1.1:8000/packages");
 	_const_main__default_install_prefix = _S("/mnt/usb/opt");
 	_const_main__default_db_dir = _S("/var/lib/ngpkg");

@@ -8,7 +8,7 @@ module main
 import os
 import strings
 
-const version = '1.3.0'
+const version = '1.4.0'
 const default_repo_url = 'http://192.168.1.1:8000/packages'
 const default_install_prefix = '/mnt/usb/opt'
 const default_db_dir = '/var/lib/ngpkg'
@@ -20,6 +20,7 @@ struct Config {
 }
 
 struct PackageMeta {
+mut:
 	name        string
 	version     string
 	size        string
@@ -47,6 +48,33 @@ fn pad_right(s string, width int) string {
 		return s
 	}
 	return s + strings.repeat(` `, width - s.len)
+}
+
+fn format_bytes(bytes u64) string {
+	if bytes >= 1024 * 1024 {
+		mb := f64(bytes) / (1024.0 * 1024.0)
+		return '${mb:.1f}MB'
+	} else if bytes >= 1024 {
+		kb := f64(bytes) / 1024.0
+		return '${kb:.0f}KB'
+	}
+	return '${bytes}B'
+}
+
+fn parse_json_value(json_str string, key string) string {
+	search_key := '"${key}"'
+	if !json_str.contains(search_key) {
+		return ''
+	}
+	after_key := json_str.all_after(search_key).trim_space()
+	if !after_key.starts_with(':') {
+		return ''
+	}
+	val_part := after_key.all_after(':').trim_space()
+	if val_part.starts_with('"') {
+		return val_part.all_after('"').all_before('"')
+	}
+	return val_part.all_before(',').all_before('}').all_before('\n').trim_space()
 }
 
 fn print_banner() {
@@ -146,6 +174,58 @@ fn is_installed(cfg Config, pkg_name string) bool {
 	return false
 }
 
+fn get_installed_meta(cfg Config, pkg_name string) ?PackageMeta {
+	for d in get_installed_db_dirs(cfg) {
+		meta_file := '${d}/${pkg_name}.meta'
+		if os.exists(meta_file) {
+			lines := os.read_lines(meta_file) or { []string{} }
+			mut name := pkg_name
+			mut ver := 'unknown'
+			mut desc := 'Custom installed package'
+			mut cat := 'custom'
+			for line in lines {
+				trimmed := line.trim_space()
+				if trimmed.starts_with('NAME=') {
+					name = trimmed.all_after('NAME=').trim_space()
+				} else if trimmed.starts_with('VERSION=') {
+					ver = trimmed.all_after('VERSION=').trim_space()
+				} else if trimmed.starts_with('DESCRIPTION=') {
+					desc = trimmed.all_after('DESCRIPTION=').trim_space()
+				} else if trimmed.starts_with('CATEGORY=') {
+					cat = trimmed.all_after('CATEGORY=').trim_space()
+				}
+			}
+			return PackageMeta{
+				name: name
+				version: ver
+				size: 'installed'
+				description: desc
+				category: cat
+			}
+		}
+	}
+
+	manifest_path := '${cfg.prefix}/share/ngpkg/${pkg_name}/manifest.json'
+	if os.exists(manifest_path) {
+		content := os.read_file(manifest_path) or { '' }
+		if content != '' {
+			name := parse_json_value(content, 'name')
+			ver := parse_json_value(content, 'version')
+			desc := parse_json_value(content, 'description')
+			cat := parse_json_value(content, 'category')
+			return PackageMeta{
+				name: if name != '' { name } else { pkg_name }
+				version: if ver != '' { ver } else { 'unknown' }
+				size: 'installed'
+				description: if desc != '' { desc } else { 'Custom installed package' }
+				category: if cat != '' { cat } else { 'custom' }
+			}
+		}
+	}
+
+	return none
+}
+
 fn fetch_index(cfg Config) []PackageMeta {
 	index_file := '${cfg.db_dir}/cache/index.txt'
 	if !os.exists(index_file) {
@@ -170,6 +250,56 @@ fn fetch_index(cfg Config) []PackageMeta {
 		}
 	}
 	return pkgs
+}
+
+fn inspect_archive_meta(archive_path string) PackageMeta {
+	sz_bytes := os.file_size(archive_path)
+	sz_str := format_bytes(u64(sz_bytes))
+
+	// Attempt extracting manifest.json from archive stream
+	dump_cmd := '(gzip -dc "${archive_path}" 2>/dev/null || gunzip -c "${archive_path}" 2>/dev/null || cat "${archive_path}") | tar -xOf - $( (gzip -dc "${archive_path}" 2>/dev/null || gunzip -c "${archive_path}" 2>/dev/null || cat "${archive_path}") | tar -tf - 2>/dev/null | grep "manifest.json" | head -n 1) 2>/dev/null || tar -xOf "${archive_path}" $(tar -tf "${archive_path}" 2>/dev/null | grep "manifest.json" | head -n 1) 2>/dev/null'
+	res := os.execute(dump_cmd)
+
+	if res.exit_code == 0 && res.output.trim_space() != '' {
+		manifest_content := res.output
+		name := parse_json_value(manifest_content, 'name')
+		ver := parse_json_value(manifest_content, 'version')
+		description := parse_json_value(manifest_content, 'description')
+		category := parse_json_value(manifest_content, 'category')
+		if name != '' {
+			return PackageMeta{
+				name: name
+				version: if ver != '' { ver } else { '1.0.0' }
+				size: sz_str
+				description: if description != '' { description } else { 'Custom standalone package' }
+				category: if category != '' { category } else { 'custom' }
+			}
+		}
+	}
+
+	// Fallback: Infer name and version from filename
+	base := os.file_name(archive_path)
+	clean := base.trim_string_right('.ngpkg').trim_string_right('.apkg').trim_string_right('.tar.gz').trim_string_right('.tgz')
+
+	mut pkg_name := clean
+	mut pkg_version := '1.0.0'
+
+	if clean.contains('-') {
+		parts := clean.split('-')
+		last := parts[parts.len - 1]
+		if last.len > 0 && (last[0].is_digit() || last.starts_with('v')) {
+			pkg_version = last
+			pkg_name = parts[..parts.len - 1].join('-')
+		}
+	}
+
+	return PackageMeta{
+		name: pkg_name
+		version: pkg_version
+		size: sz_str
+		description: 'Custom standalone package'
+		category: 'custom'
+	}
 }
 
 // ==============================================================================
@@ -212,19 +342,15 @@ fn cmd_update(cfg Config) int {
 	}
 
 	pkgs := fetch_index(cfg)
-	println('${c_green}✓ Repository updated successfully!${c_reset} (${c_bold}${pkgs.len}${c_reset} packages available)
-')
+	println('${c_green}✓ Repository updated successfully!${c_reset} (${c_bold}${pkgs.len}${c_reset} packages available)\n')
 	return 0
 }
 
 fn cmd_list(cfg Config) int {
 	pkgs := fetch_index(cfg)
 	if pkgs.len == 0 {
-		println('${c_yellow}[! Hot Tip]${c_reset} No local index found. Running ${c_bold}pkg update${c_reset} first...
-')
-		if cmd_update(cfg) != 0 {
-			return 1
-		}
+		println('${c_yellow}[! Hot Tip]${c_reset} No local index found. Running ${c_bold}pkg update${c_reset} first...\n')
+		cmd_update(cfg)
 	}
 
 	fresh_pkgs := fetch_index(cfg)
@@ -240,10 +366,13 @@ fn cmd_list(cfg Config) int {
 	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}')
 
 	mut inst_count := 0
+	mut listed_installed := []string{}
+
 	for p in fresh_pkgs {
 		is_inst := installed.contains(p.name)
 		if is_inst {
 			inst_count++
+			listed_installed << p.name
 		}
 		status_badge := if is_inst {
 			'${c_green}● installed${c_reset}'
@@ -254,12 +383,34 @@ fn cmd_list(cfg Config) int {
 		ver_fmt := '${c_yellow}${pad_right(p.version, 10)}${c_reset}'
 		size_fmt := '${c_gray}${pad_right(p.size, 9)}${c_reset}'
 		status_fmt := pad_right(status_badge, 23)
-		
+
 		println('  ${name_fmt} ${ver_fmt} ${size_fmt} ${status_fmt} ${p.description}')
 	}
+
+	// Also display custom local packages installed from .ngpkg files
+	for inst_name in installed {
+		if !listed_installed.contains(inst_name) {
+			inst_count++
+			meta := get_installed_meta(cfg, inst_name) or {
+				PackageMeta{
+					name: inst_name
+					version: 'local'
+					size: 'installed'
+					description: 'Custom standalone package'
+					category: 'custom'
+				}
+			}
+			status_badge := '${c_green}● installed (local)${c_reset}'
+			name_fmt := '${c_green}${c_bold}${pad_right(meta.name, 16)}${c_reset}'
+			ver_fmt := '${c_yellow}${pad_right(meta.version, 10)}${c_reset}'
+			size_fmt := '${c_gray}${pad_right(meta.size, 9)}${c_reset}'
+			status_fmt := pad_right(status_badge, 31)
+			println('  ${name_fmt} ${ver_fmt} ${size_fmt} ${status_fmt} ${meta.description}')
+		}
+	}
+
 	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}')
-	println('  ${c_gray}Total:${c_reset} ${fresh_pkgs.len} packages  (${c_green}${inst_count} installed${c_reset}, ${c_cyan}${fresh_pkgs.len - inst_count} available${c_reset})
-')
+	println('  ${c_gray}Total:${c_reset} ${fresh_pkgs.len} repository packages  (${c_green}${inst_count} installed${c_reset}, ${c_cyan}${fresh_pkgs.len - listed_installed.len} available repo packages${c_reset})\n')
 	return 0
 }
 
@@ -276,10 +427,15 @@ fn cmd_search(cfg Config, query string) int {
 	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}')
 
 	mut matches := 0
+	mut found_installed := []string{}
+
 	for p in fresh_pkgs {
 		if p.name.to_lower().contains(q) || p.description.to_lower().contains(q) || p.category.to_lower().contains(q) {
 			matches++
 			is_inst := installed.contains(p.name)
+			if is_inst {
+				found_installed << p.name
+			}
 			status_badge := if is_inst { '${c_green}[installed]${c_reset}' } else { '${c_cyan}[available]${c_reset}' }
 			name_fmt := pad_right(p.name, 14)
 			ver_fmt := pad_right(p.version, 8)
@@ -289,11 +445,34 @@ fn cmd_search(cfg Config, query string) int {
 		}
 	}
 
+	// Search local custom packages
+	for inst_name in installed {
+		if !found_installed.contains(inst_name) {
+			meta := get_installed_meta(cfg, inst_name) or {
+				PackageMeta{
+					name: inst_name
+					version: 'local'
+					size: 'installed'
+					description: 'Custom standalone package'
+					category: 'custom'
+				}
+			}
+			if meta.name.to_lower().contains(q) || meta.description.to_lower().contains(q) || meta.category.to_lower().contains(q) {
+				matches++
+				status_badge := '${c_green}[installed]${c_reset}'
+				name_fmt := pad_right(meta.name, 14)
+				ver_fmt := pad_right(meta.version, 8)
+				size_fmt := pad_right(meta.size, 8)
+				status_fmt := pad_right(status_badge, 21)
+				println('  ${c_bold}${name_fmt}${c_reset} ${c_yellow}${ver_fmt}${c_reset} ${c_gray}${size_fmt}${c_reset} ${status_fmt} ${meta.description}')
+			}
+		}
+	}
+
 	if matches == 0 {
 		println('  ${c_gray}No matching packages found.${c_reset}')
 	}
-	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}
-')
+	println('${c_gray}────────────────────────────────────────────────────────────────────────────────${c_reset}\n')
 	return 0
 }
 
@@ -314,12 +493,20 @@ fn cmd_info(cfg Config, pkg_name string) int {
 		}
 	}
 
+	if !found && is_installed(cfg, pkg_name) {
+		meta_opt := get_installed_meta(cfg, pkg_name)
+		if m := meta_opt {
+			target = m
+			found = true
+		}
+	}
+
 	if !found {
-		eprintln('${c_red}✗ Package "${pkg_name}" not found in repository index.${c_reset}')
+		eprintln('${c_red}✗ Package "${pkg_name}" not found in repository index or installed database.${c_reset}')
 		return 1
 	}
 
-	is_inst := is_installed(cfg, pkg_name)
+	is_inst := is_installed(cfg, target.name)
 	homedir := if os.getenv('HOME') != '' { os.getenv('HOME') } else { '/root' }
 	ngpkg_bin := '${homedir}/.ngpkg-bin'
 
@@ -327,14 +514,14 @@ fn cmd_info(cfg Config, pkg_name string) int {
 	println('${c_cyan}│${c_reset}  ${c_gray}Name:${c_reset}         ${c_bold}${target.name}${c_reset}')
 	println('${c_cyan}│${c_reset}  ${c_gray}Version:${c_reset}      ${c_yellow}${target.version}${c_reset}')
 	println('${c_cyan}│${c_reset}  ${c_gray}Category:${c_reset}     ${c_purple}${target.category}${c_reset}')
-	println('${c_cyan}│${c_reset}  ${c_gray}Payload Size:${c_reset} ${target.size} (Compressed)')
+	println('${c_cyan}│${c_reset}  ${c_gray}Payload Size:${c_reset} ${target.size}')
 	println('${c_cyan}│${c_reset}  ${c_gray}Status:${c_reset}       ' + if is_inst { '${c_green}● Installed${c_reset}' } else { '${c_cyan}○ Available for installation${c_reset}' })
 	println('${c_cyan}│${c_reset}  ${c_gray}Prefix:${c_reset}       ${cfg.prefix}')
 	println('${c_cyan}│${c_reset}  ${c_gray}Binary Path:${c_reset}  ${ngpkg_bin}/${target.name}')
 	println('${c_cyan}│${c_reset}  ${c_gray}Description:${c_reset}  ${target.description}')
 
 	if is_inst {
-		list_file := '${cfg.db_dir}/installed/${pkg_name}.list'
+		list_file := '${cfg.db_dir}/installed/${target.name}.list'
 		if os.exists(list_file) {
 			lines := os.read_lines(list_file) or { []string{} }
 			println('${c_cyan}│${c_reset}')
@@ -352,8 +539,7 @@ fn cmd_info(cfg Config, pkg_name string) int {
 		}
 	}
 
-	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯${c_reset}
-')
+	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯\n')
 	return 0
 }
 
@@ -367,7 +553,7 @@ fn cmd_status(cfg Config) int {
 	println('${c_cyan}│${c_reset}  ${c_gray}Install Root:${c_reset}    ${cfg.prefix}')
 	println('${c_cyan}│${c_reset}  ${c_gray}User Binaries:${c_reset}   ${homedir}/.ngpkg-bin')
 	println('${c_cyan}│${c_reset}  ${c_gray}Installed:${c_reset}       ${c_green}${installed.len} packages${c_reset}')
-	
+
 	// USB storage check
 	df_res := os.execute('df -h "${cfg.prefix}" 2>/dev/null | tail -n 1')
 	if df_res.exit_code == 0 && df_res.output.trim_space() != '' {
@@ -382,78 +568,19 @@ fn cmd_status(cfg Config) int {
 			println('${c_cyan}│${c_reset}    Total: ${total}  •  Used: ${used} (${percent})  •  Free: ${avail}')
 		}
 	}
-	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯${c_reset}
-')
+	println('${c_cyan}╰──────────────────────────────────────────────────────────────╯\n')
 	return 0
 }
 
-fn cmd_install(cfg Config, pkg_name string) int {
-	pkgs := fetch_index(cfg)
-	if pkgs.len == 0 {
-		println('${c_yellow}[! No index]${c_reset} Updating repository index first...')
-		if cmd_update(cfg) != 0 {
-			return 1
-		}
-	}
-	fresh_pkgs := fetch_index(cfg)
-
-	mut target_pkg := PackageMeta{}
-	mut found := false
-	for p in fresh_pkgs {
-		if p.name == pkg_name {
-			target_pkg = p
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		eprintln('${c_red}✗ Package "${pkg_name}" not found in repository index.${c_reset}')
-		eprintln('  Run ${c_bold}pkg list${c_reset} to see all available applications.')
-		return 1
-	}
-
-	if is_installed(cfg, pkg_name) {
-		println('${c_yellow}[!] Package "${pkg_name}" is already installed.${c_reset} Reinstalling...')
+fn install_payload(cfg Config, archive_file string, target_pkg PackageMeta, is_local_file bool) int {
+	if is_installed(cfg, target_pkg.name) {
+		println('${c_yellow}[!] Package "${target_pkg.name}" is already installed.${c_reset} Reinstalling/Upgrading...')
 	}
 
 	println('${c_cyan}◈${c_reset} Installing ${c_bold}${target_pkg.name}${c_reset} (${c_yellow}v${target_pkg.version}${c_reset}, ${target_pkg.size})...')
 
-	// Step 1: Download
-	print('  ${c_blue}[1/3]${c_reset} ⬇ Downloading payload...')
-	cache_dir := '${cfg.prefix}/cache'
-	os.mkdir_all(cache_dir) or {}
-	archive_file := '${cache_dir}/${target_pkg.name}-${target_pkg.version}.ngpkg'
-
-	base_url := cfg.repo_url.trim_string_right('/packages').trim_right('/')
-	candidate_urls := [
-		'${cfg.repo_url}/${target_pkg.name}-${target_pkg.version}.ngpkg',
-		'${cfg.repo_url}/${target_pkg.name}.ngpkg',
-		'${base_url}/packages/${target_pkg.name}-${target_pkg.version}.ngpkg',
-		'${base_url}/packages/${target_pkg.name}.ngpkg',
-		'${cfg.repo_url}/${target_pkg.name}-${target_pkg.version}.apkg',
-		'${cfg.repo_url}/${target_pkg.name}.apkg',
-	]
-
-	mut downloaded := false
-	for url in candidate_urls {
-		dl_cmd := 'wget -q -T 30 -O "${archive_file}" "${url}" 2>/dev/null || curl -fsSL --connect-timeout 10 -o "${archive_file}" "${url}" 2>/dev/null'
-		dl_res := os.execute(dl_cmd)
-		if dl_res.exit_code == 0 && os.exists(archive_file) && os.file_size(archive_file) > 100 {
-			downloaded = true
-			break
-		}
-	}
-
-	if !downloaded {
-		println(' ${c_red}FAILED${c_reset}')
-		eprintln('${c_red}✗ Failed to download package ${target_pkg.name} from repository.${c_reset}')
-		return 1
-	}
-	println(' ${c_green}DONE${c_reset}')
-
-	// Step 2: Unpack
-	print('  ${c_blue}[2/3]${c_reset} 📦 Unpacking to ${c_bold}${cfg.prefix}${c_reset}...')
+	// Step 1: Unpack payload
+	print('  ${c_blue}[1/2]${c_reset} 📦 Unpacking to ${c_bold}${cfg.prefix}${c_reset}...')
 	os.mkdir_all(cfg.prefix) or {}
 	os.mkdir_all('${cfg.prefix}/bin') or {}
 	os.mkdir_all('${cfg.prefix}/sbin') or {}
@@ -491,26 +618,48 @@ fn cmd_install(cfg Config, pkg_name string) int {
 	list_cmd := '(gzip -dc "${archive_file}" 2>/dev/null || gunzip -c "${archive_file}" 2>/dev/null || cat "${archive_file}") | tar -tf - > "${list_file}" 2>/dev/null || tar -tf "${archive_file}" > "${list_file}" 2>/dev/null || true'
 	os.execute(list_cmd)
 
-	meta_file := '${cfg.db_dir}/installed/${target_pkg.name}.meta'
-	os.write_file(meta_file, 'NAME=${target_pkg.name}\nVERSION=${target_pkg.version}\nDESCRIPTION=${target_pkg.description}\nCATEGORY=${target_pkg.category}\n') or {}
+	// Refresh metadata if manifest was extracted into prefix/share/ngpkg/<pkg>/manifest.json
+	mut final_meta := target_pkg
+	manifest_path := '${cfg.prefix}/share/ngpkg/${target_pkg.name}/manifest.json'
+	if os.exists(manifest_path) {
+		m_content := os.read_file(manifest_path) or { '' }
+		if m_content != '' {
+			m_name := parse_json_value(m_content, 'name')
+			m_ver := parse_json_value(m_content, 'version')
+			m_desc := parse_json_value(m_content, 'description')
+			m_cat := parse_json_value(m_content, 'category')
+			if m_name != '' { final_meta.name = m_name }
+			if m_ver != '' { final_meta.version = m_ver }
+			if m_desc != '' { final_meta.description = m_desc }
+			if m_cat != '' { final_meta.category = m_cat }
+		}
+	}
+
+	meta_file := '${cfg.db_dir}/installed/${final_meta.name}.meta'
+	os.write_file(meta_file, 'NAME=${final_meta.name}\nVERSION=${final_meta.version}\nDESCRIPTION=${final_meta.description}\nCATEGORY=${final_meta.category}\n') or {}
 
 	if os.is_dir(cfg.prefix) {
 		usb_db := '${cfg.prefix}/var/lib/ngpkg/installed'
 		os.mkdir_all(usb_db) or {}
-		os.cp(list_file, '${usb_db}/${target_pkg.name}.list') or {}
-		os.cp(meta_file, '${usb_db}/${target_pkg.name}.meta') or {}
+		os.cp(list_file, '${usb_db}/${final_meta.name}.list') or {}
+		os.cp(meta_file, '${usb_db}/${final_meta.name}.meta') or {}
 	}
-	os.rm(archive_file) or {}
 
-	// Step 3: Symlink & Hooks
+	if !is_local_file {
+		os.rm(archive_file) or {}
+	}
+
+	// Step 2: Symlinks, services & hooks
 	homedir := if os.getenv('HOME') != '' { os.getenv('HOME') } else { '/root' }
 	ngpkg_bin := '${homedir}/.ngpkg-bin'
-	print('  ${c_blue}[3/3]${c_reset} 🔗 Linking package binaries & running hooks...')
+	print('  ${c_blue}[2/2]${c_reset} 🔗 Linking package binaries, systemd units & running hooks...')
 
 	os.mkdir_all(ngpkg_bin) or {}
 	if homedir != '/root' {
 		os.mkdir_all('/root/.ngpkg-bin') or {}
 	}
+
+	mut service_units := []string{}
 
 	// Symlink ONLY the files installed by this specific package
 	if os.exists(list_file) {
@@ -542,6 +691,20 @@ fn cmd_install(cfg Config, pkg_name string) int {
 				if homedir != '/root' && !os.exists('/root/.ngpkg-bin/${sbin_name}') && !os.is_link('/root/.ngpkg-bin/${sbin_name}') {
 					os.symlink(target, '/root/.ngpkg-bin/${sbin_name}') or {}
 				}
+			} else if trimmed.starts_with('etc/systemd/system/') && trimmed.ends_with('.service') {
+				svc_file := trimmed.all_after('etc/systemd/system/')
+				if !svc_file.contains('/') {
+					os.mkdir_all('/etc/systemd/system') or {}
+					src := '${cfg.prefix}/${trimmed}'
+					dst := '/etc/systemd/system/${svc_file}'
+					if !os.exists(dst) && !os.is_link(dst) {
+						os.symlink(src, dst) or {}
+					}
+					unit_name := svc_file.trim_string_right('.service')
+					if !service_units.contains(unit_name) {
+						service_units << unit_name
+					}
+				}
 			} else if trimmed.starts_with('etc/init.d/') {
 				svc_name := trimmed.all_after('etc/init.d/')
 				if svc_name.contains('/') { continue }
@@ -558,7 +721,7 @@ fn cmd_install(cfg Config, pkg_name string) int {
 
 	// Execute post-install hook if present
 	post_install_hooks := [
-		'${cfg.prefix}/share/ngpkg/${target_pkg.name}/install.sh',
+		'${cfg.prefix}/share/ngpkg/${final_meta.name}/install.sh',
 		'${cfg.prefix}/share/ngpkg/install.sh',
 	]
 	for hook in post_install_hooks {
@@ -571,17 +734,148 @@ fn cmd_install(cfg Config, pkg_name string) int {
 
 	println(' ${c_green}DONE${c_reset}')
 
-	// Auto-start systemd service if present
-	service_file := '/etc/systemd/system/${target_pkg.name}.service'
-	if os.exists(service_file) {
-		println('  ${c_purple}⚡ Registering system service:${c_reset} ${target_pkg.name}.service')
-		os.execute('systemctl enable ${target_pkg.name} 2>/dev/null || true')
-		os.execute('systemctl start ${target_pkg.name} 2>/dev/null || true')
+	// Check if package name itself has a service registered in /etc/systemd/system/
+	if os.exists('/etc/systemd/system/${final_meta.name}.service') {
+		if !service_units.contains(final_meta.name) {
+			service_units << final_meta.name
+		}
 	}
 
-	println('\n${c_green}✓ Successfully installed ${c_bold}${target_pkg.name}${c_reset} (${target_pkg.version})!${c_reset}')
-	println('  ${c_gray}Executables:${c_reset} ${c_cyan}${ngpkg_bin}/${target_pkg.name}${c_reset} (ready to run)\n')
+	// Auto-enable and start systemd services
+	if service_units.len > 0 {
+		os.execute('systemctl daemon-reload 2>/dev/null || true')
+		for svc in service_units {
+			println('  ${c_purple}⚡ Registering system service:${c_reset} ${svc}.service')
+			os.execute('systemctl enable ${svc} 2>/dev/null || true')
+			os.execute('systemctl start ${svc} 2>/dev/null || true')
+		}
+	}
+
+	println('\n${c_green}✓ Successfully installed ${c_bold}${final_meta.name}${c_reset} (${final_meta.version})!${c_reset}')
+	println('  ${c_gray}Executables:${c_reset} ${c_cyan}${ngpkg_bin}/${final_meta.name}${c_reset} (ready to run)\n')
 	return 0
+}
+
+fn cmd_install_file(cfg Config, raw_path string) int {
+	file_path := os.real_path(raw_path)
+	if !os.exists(file_path) {
+		eprintln('${c_red}✗ Package archive file not found: ${raw_path}${c_reset}')
+		return 1
+	}
+	if os.is_dir(file_path) {
+		eprintln('${c_red}✗ Path is a directory, expected a .ngpkg package file: ${raw_path}${c_reset}')
+		return 1
+	}
+
+	// Validate archive integrity
+	test_cmd := '(gzip -dc "${file_path}" 2>/dev/null || gunzip -c "${file_path}" 2>/dev/null || cat "${file_path}") | tar -tf - >/dev/null 2>&1 || tar -tf "${file_path}" >/dev/null 2>&1'
+	test_res := os.execute(test_cmd)
+	if test_res.exit_code != 0 {
+		eprintln('${c_red}✗ Invalid or corrupted package archive: ${raw_path}${c_reset}')
+		return 1
+	}
+
+	meta := inspect_archive_meta(file_path)
+	println('${c_cyan}◈${c_reset} Installing custom local package: ${c_bold}${file_path}${c_reset}')
+	return install_payload(cfg, file_path, meta, true)
+}
+
+fn cmd_install(cfg Config, pkg_name string) int {
+	pkgs := fetch_index(cfg)
+	if pkgs.len == 0 {
+		println('${c_yellow}[! No index]${c_reset} Updating repository index first...')
+		if cmd_update(cfg) != 0 {
+			return 1
+		}
+	}
+	fresh_pkgs := fetch_index(cfg)
+
+	mut target_pkg := PackageMeta{}
+	mut found := false
+	for p in fresh_pkgs {
+		if p.name == pkg_name {
+			target_pkg = p
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		// Check if a local .ngpkg file exists with that name in current working directory
+		local_candidates := [
+			'${pkg_name}.ngpkg',
+			'${pkg_name}.apkg',
+		]
+		for cand in local_candidates {
+			if os.exists(cand) && !os.is_dir(cand) {
+				println('${c_yellow}[*] Found matching local package archive: ${cand}${c_reset}')
+				return cmd_install_file(cfg, cand)
+			}
+		}
+
+		eprintln('${c_red}✗ Package "${pkg_name}" not found in repository index.${c_reset}')
+		eprintln('  Run ${c_bold}pkg list${c_reset} to see all available applications, or')
+		eprintln('  Run ${c_bold}pkg install /path/to/custom.ngpkg${c_reset} to install a custom package file.')
+		return 1
+	}
+
+	// Download payload from repository
+	print('  ${c_blue}[1/2]${c_reset} ⬇ Downloading payload...')
+	cache_dir := '${cfg.prefix}/cache'
+	os.mkdir_all(cache_dir) or {}
+	archive_file := '${cache_dir}/${target_pkg.name}-${target_pkg.version}.ngpkg'
+
+	base_url := cfg.repo_url.trim_string_right('/packages').trim_right('/')
+	candidate_urls := [
+		'${cfg.repo_url}/${target_pkg.name}-${target_pkg.version}.ngpkg',
+		'${cfg.repo_url}/${target_pkg.name}.ngpkg',
+		'${base_url}/packages/${target_pkg.name}-${target_pkg.version}.ngpkg',
+		'${base_url}/packages/${target_pkg.name}.ngpkg',
+		'${cfg.repo_url}/${target_pkg.name}-${target_pkg.version}.apkg',
+		'${cfg.repo_url}/${target_pkg.name}.apkg',
+	]
+
+	mut downloaded := false
+	for url in candidate_urls {
+		dl_cmd := 'wget -q -T 30 -O "${archive_file}" "${url}" 2>/dev/null || curl -fsSL --connect-timeout 10 -o "${archive_file}" "${url}" 2>/dev/null'
+		dl_res := os.execute(dl_cmd)
+		if dl_res.exit_code == 0 && os.exists(archive_file) && os.file_size(archive_file) > 100 {
+			downloaded = true
+			break
+		}
+	}
+
+	if !downloaded {
+		println(' ${c_red}FAILED${c_reset}')
+		eprintln('${c_red}✗ Failed to download package ${target_pkg.name} from repository.${c_reset}')
+		return 1
+	}
+	println(' ${c_green}DONE${c_reset}')
+
+	return install_payload(cfg, archive_file, target_pkg, false)
+}
+
+fn cmd_install_dispatcher(cfg Config, args []string) int {
+	if args.len == 0 {
+		eprintln('${c_red}Usage: pkg install <package-name|path/to/package.ngpkg>${c_reset}')
+		return 1
+	}
+
+	first := args[0]
+	if first == '-f' || first == '--file' {
+		if args.len < 2 {
+			eprintln('${c_red}Usage: pkg install -f <path/to/package.ngpkg>${c_reset}')
+			return 1
+		}
+		return cmd_install_file(cfg, args[1])
+	}
+
+	// Check if argument refers to a local file
+	if first.ends_with('.ngpkg') || first.ends_with('.apkg') || first.ends_with('.tar.gz') || first.ends_with('.tgz') || first.contains('/') || (os.exists(first) && !os.is_dir(first)) {
+		return cmd_install_file(cfg, first)
+	}
+
+	return cmd_install(cfg, first)
 }
 
 fn cmd_remove(cfg Config, pkg_name string) int {
@@ -655,6 +949,17 @@ fn cmd_remove(cfg Config, pkg_name string) int {
 							os.rm('/root/.ngpkg-bin/${sbin_name}') or {}
 						}
 					}
+				} else if rel_path.starts_with('etc/systemd/system/') && rel_path.ends_with('.service') {
+					svc_file := rel_path.all_after('etc/systemd/system/')
+					if !svc_file.contains('/') {
+						svc_unit := svc_file.trim_string_right('.service')
+						os.execute('systemctl stop ${svc_unit} 2>/dev/null || true')
+						os.execute('systemctl disable ${svc_unit} 2>/dev/null || true')
+						systemd_link := '/etc/systemd/system/${svc_file}'
+						if os.is_link(systemd_link) || os.exists(systemd_link) {
+							os.rm(systemd_link) or {}
+						}
+					}
 				} else if rel_path.starts_with('etc/init.d/') {
 					svc_name := rel_path.all_after('etc/init.d/')
 					if !svc_name.contains('/') {
@@ -684,30 +989,32 @@ fn cmd_remove(cfg Config, pkg_name string) int {
 		}
 	}
 
+	os.execute('systemctl daemon-reload 2>/dev/null || true')
 	println('${c_green}✓ Package "${pkg_name}" removed successfully.${c_reset}\n')
 	return 0
 }
-
 
 fn print_help() {
 	print_banner()
 	println('${c_bold}USAGE:${c_reset}')
 	println('  pkg <command> [arguments]\n')
 	println('${c_bold}COMMANDS:${c_reset}')
-	println('  ${c_cyan}update${c_reset}              Sync latest package index from repository')
-	println('  ${c_cyan}list${c_reset}                List all available & installed packages')
-	println('  ${c_cyan}search${c_reset} <query>      Search packages by name, description, or category')
-	println('  ${c_cyan}info${c_reset} <package>      Inspect package details, size, and installed files')
-	println('  ${c_cyan}install${c_reset} <package>   Install an application to USB storage (/mnt/usb/opt)')
-	println('  ${c_cyan}remove${c_reset} <package>    Uninstall an application and clean symlinks')
-	println('  ${c_cyan}status${c_reset}              Display USB storage, prefix, and repository info')
-	println('  ${c_cyan}help${c_reset}                Show this reference manual\n')
+	println('  ${c_cyan}update${c_reset}                      Sync latest package index from repository')
+	println('  ${c_cyan}list${c_reset}                        List all available & installed packages')
+	println('  ${c_cyan}search${c_reset} <query>              Search packages by name, description, or category')
+	println('  ${c_cyan}info${c_reset} <package>              Inspect package details, size, and installed files')
+	println('  ${c_cyan}install${c_reset} <pkg|file.ngpkg>   Install package from repo or custom .ngpkg file')
+	println('  ${c_cyan}install-file${c_reset} <file.ngpkg>   Install directly from a standalone .ngpkg archive')
+	println('  ${c_cyan}remove${c_reset} <package>            Uninstall an application and clean symlinks/services')
+	println('  ${c_cyan}status${c_reset}                      Display USB storage, prefix, and repository info')
+	println('  ${c_cyan}help${c_reset}                        Show this reference manual\n')
 	println('${c_bold}EXAMPLES:${c_reset}')
 	println('  pkg update')
 	println('  pkg install btop')
-	println('  pkg install screen')
-	println('  pkg info git')
-	println('  pkg search wireguard\n')
+	println('  pkg install ./custom-app-1.0.0.ngpkg')
+	println('  pkg install-file /mnt/usb/mypackage.ngpkg')
+	println('  pkg info custom-app')
+	println('  pkg remove btop\n')
 }
 
 fn main() {
@@ -743,10 +1050,17 @@ fn main() {
 		}
 		'install', 'i', 'add', 'get' {
 			if args.len < 2 {
-				eprintln('${c_red}Usage: pkg install <package>${c_reset}')
+				eprintln('${c_red}Usage: pkg install <package|path/to/package.ngpkg>${c_reset}')
 				exit(1)
 			}
-			exit(cmd_install(cfg, args[1]))
+			exit(cmd_install_dispatcher(cfg, args[1..]))
+		}
+		'install-file', 'install-local', 'local-install', 'pkg-install' {
+			if args.len < 2 {
+				eprintln('${c_red}Usage: pkg install-file <path/to/package.ngpkg>${c_reset}')
+				exit(1)
+			}
+			exit(cmd_install_file(cfg, args[1]))
 		}
 		'remove', 'uninstall', 'rm', 'delete' {
 			if args.len < 2 {
