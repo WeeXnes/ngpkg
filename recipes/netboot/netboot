@@ -213,8 +213,8 @@ get_status_json() {
     for iso in "${ISO_DIR}"/*.iso; do
         [ -f "$iso" ] || continue
         bname=$(basename "$iso")
-        size=$(stat -c%s "$iso" 2>/dev/null || echo "0")
-        mod_date=$(stat -c%y "$iso" 2>/dev/null | cut -d'.' -f1 || echo "")
+        size=$(ls -l "$iso" 2>/dev/null | awk '{print $5}' || echo "0")
+        mod_date=$(ls -l "$iso" 2>/dev/null | awk '{print $6, $7, $8}' || echo "")
         [ "$first" -eq 0 ] && printf ','
         first=0
         printf '{"name":"%s","size":%s,"modified":"%s"}' "$bname" "$size" "$mod_date"
@@ -260,7 +260,7 @@ C_EOF
             curl_pid=$!
 
             while kill -0 "$curl_pid" 2>/dev/null; do
-                curr=$(stat -c%s "$iso_file" 2>/dev/null || echo "0")
+                curr=$(ls -l "$iso_file" 2>/dev/null | awk '{print $5}' || echo "0")
                 pct=0
                 [ "$total" -gt 0 ] && pct=$(( (curr * 100) / total ))
                 [ "$pct" -gt 100 ] && pct=100
@@ -271,7 +271,7 @@ C_EOF
             wait "$curl_pid"
             exit_code=$?
             if [ $exit_code -eq 0 ]; then
-                curr=$(stat -c%s "$iso_file" 2>/dev/null || echo "0")
+                curr=$(ls -l "$iso_file" 2>/dev/null | awk '{print $5}' || echo "0")
                 echo "{\"active\":false,\"name\":\"$name\",\"pct\":100,\"downloaded\":$curr,\"total\":$curr}" > "$status_file"
                 /mnt/usb/opt/bin/netboot gen-ipxe >/dev/null 2>&1 || true
                 sleep 3
