@@ -1,0 +1,264 @@
+#!/bin/sh
+set -e
+
+CONFIG_DIR="/mnt/usb/netboot"
+WWW_DIR="/mnt/usb/netboot/www"
+TFTP_DIR="/mnt/usb/netboot/tftp"
+ISO_DIR="/mnt/usb/isos"
+CONFIG_FILE="${CONFIG_DIR}/config.json"
+PID_FILE="/var/run/netboot.pid"
+
+mkdir -p "${CONFIG_DIR}" "${WWW_DIR}" "${TFTP_DIR}" "${ISO_DIR}" 2>/dev/null || true
+
+get_lan_ip() {
+    ip -4 addr show eth0 2>/dev/null | grep -o 'inet [0-9.]*' | awk '{print $2}' | head -n 1 || echo "192.168.178.148"
+}
+
+get_subnet() {
+    lan_ip=$(get_lan_ip)
+    echo "${lan_ip%.*}.0"
+}
+
+gen_dnsmasq_conf() {
+    lan_ip=$(get_lan_ip)
+    subnet=$(get_subnet)
+    cat << D_EOF > "${CONFIG_DIR}/dnsmasq.conf"
+# OpenNGFW Netboot ProxyDHCP & TFTP Server
+port=0
+interface=eth0
+bind-dynamic
+
+# TFTP Server
+enable-tftp
+tftp-root=${TFTP_DIR}
+tftp-secure
+
+# ProxyDHCP (No IP allocation; only serves PXE options alongside existing router DHCP)
+dhcp-range=${subnet},proxy
+
+# Client System Architecture Matchers (RFC 4578 / Option 93)
+dhcp-match=set:bios,option:client-arch,0
+dhcp-match=set:efi32,option:client-arch,6
+dhcp-match=set:efi64,option:client-arch,7
+dhcp-match=set:efi64,option:client-arch,9
+dhcp-match=set:arm64,option:client-arch,11
+
+# Architecture Bootloaders
+dhcp-boot=tag:bios,undionly.kpxe
+dhcp-boot=tag:efi64,ipxe.efi
+dhcp-boot=tag:efi32,ipxe-i386.efi
+dhcp-boot=tag:arm64,ipxe-arm64.efi
+
+# iPXE User-Class Chainloading
+dhcp-userclass=set:ipxe,iPXE
+dhcp-boot=tag:ipxe,http://${lan_ip}:8080/boot.ipxe
+
+log-dhcp
+D_EOF
+}
+
+gen_ipxe_menu() {
+    lan_ip=$(get_lan_ip)
+    mode="menu"
+    active_iso=""
+    if [ -f "${CONFIG_FILE}" ]; then
+        mode=$(grep -o '"mode"[ ]*:[ ]*"[^"]*"' "${CONFIG_FILE}" 2>/dev/null | cut -d'"' -f4 || echo "menu")
+        active_iso=$(grep -o '"active_iso"[ ]*:[ ]*"[^"]*"' "${CONFIG_FILE}" 2>/dev/null | cut -d'"' -f4 || echo "")
+    fi
+
+    # Sync memdisk to web root for HTTP boot
+    [ -f "${TFTP_DIR}/memdisk" ] && cp -f "${TFTP_DIR}/memdisk" "${WWW_DIR}/memdisk" 2>/dev/null || true
+
+    if [ "$mode" = "direct" ] && [ -n "$active_iso" ] && [ -f "${ISO_DIR}/${active_iso}" ]; then
+        cat << D_EOF > "${WWW_DIR}/boot.ipxe"
+#!ipxe
+set server-ip ${lan_ip}
+set base-url http://\${server-ip}:8080
+
+echo [OpenNGFW Netboot] Booting ${active_iso}...
+sanboot --no-describe \${base-url}/isos/${active_iso} || goto fallback_memdisk
+
+:fallback_memdisk
+echo [sanboot failed] Falling back to RAM memdisk boot...
+kernel \${base-url}/memdisk iso raw
+initrd \${base-url}/isos/${active_iso}
+boot || goto failed
+
+:failed
+echo Boot failed. Dropping to iPXE shell...
+shell
+D_EOF
+        return 0
+    fi
+
+    # Generate Dynamic Menu
+    cat << M_EOF > "${WWW_DIR}/boot.ipxe"
+#!ipxe
+set menu-timeout 20000
+set menu-default local
+set server-ip ${lan_ip}
+set base-url http://\${server-ip}:8080
+
+:start
+menu OpenNGFW LAN Netboot Menu (\${server-ip})
+item --gap --             ------------------------- Available ISOs -------------------------
+M_EOF
+
+    idx=1
+    has_isos=0
+    for iso in "${ISO_DIR}"/*.iso; do
+        [ -f "$iso" ] || continue
+        has_isos=1
+        bname=$(basename "$iso")
+        tag="iso_${idx}"
+        echo "item ${tag}    ${bname}" >> "${WWW_DIR}/boot.ipxe"
+        idx=$((idx + 1))
+    done
+
+    if [ "$has_isos" -eq 0 ]; then
+        echo "item no_iso    (No ISO files found in /mnt/usb/isos/)" >> "${WWW_DIR}/boot.ipxe"
+    fi
+
+    cat << 'M_EOF2' >> "${WWW_DIR}/boot.ipxe"
+item --gap --             ------------------------- Client System --------------------------
+item local    Boot from Local Drive (Default)
+item shell    iPXE Interactive Shell
+item reboot   Reboot Client Machine
+
+choose --timeout ${menu-timeout} --default ${menu-default} target && goto ${target}
+
+:no_iso
+echo No ISO images available. Add .iso files to /mnt/usb/isos/ via Web Control Panel.
+prompt
+goto start
+
+:local
+echo Booting from local hard drive...
+sanboot --no-describe --drive 0x80 || exit 0
+
+:shell
+shell
+
+:reboot
+reboot
+M_EOF2
+
+    idx=1
+    for iso in "${ISO_DIR}"/*.iso; do
+        [ -f "$iso" ] || continue
+        bname=$(basename "$iso")
+        tag="iso_${idx}"
+        cat << I_EOF >> "${WWW_DIR}/boot.ipxe"
+
+:${tag}
+echo Booting ${bname}...
+sanboot --no-describe \${base-url}/isos/${bname} || goto ${tag}_fallback
+
+:${tag}_fallback
+echo [sanboot failed] Attempting RAM memdisk boot for ${bname}...
+kernel \${base-url}/memdisk iso raw
+initrd \${base-url}/isos/${bname}
+boot || goto failed
+I_EOF
+        idx=$((idx + 1))
+    done
+
+    cat << 'M_EOF3' >> "${WWW_DIR}/boot.ipxe"
+
+:failed
+echo Boot failed. Press any key to return to menu...
+prompt
+goto start
+M_EOF3
+}
+
+get_status_json() {
+    is_dnsmasq_up=$(pidof dnsmasq >/dev/null && echo "true" || echo "false")
+    is_httpd_up=$(pidof netboot-httpd >/dev/null && echo "true" || echo "false")
+    is_running="false"
+    [ "$is_dnsmasq_up" = "true" ] && [ "$is_httpd_up" = "true" ] && is_running="true"
+
+    is_enabled="false"
+    [ -L "/etc/systemd/system/multi-user.target.wants/netboot.service" ] && is_enabled="true"
+
+    lan_ip=$(get_lan_ip)
+    mode="menu"
+    active_iso=""
+    if [ -f "${CONFIG_FILE}" ]; then
+        mode=$(grep -o '"mode"[ ]*:[ ]*"[^"]*"' "${CONFIG_FILE}" 2>/dev/null | cut -d'"' -f4 || echo "menu")
+        active_iso=$(grep -o '"active_iso"[ ]*:[ ]*"[^"]*"' "${CONFIG_FILE}" 2>/dev/null | cut -d'"' -f4 || echo "")
+    fi
+
+    free_bytes=$(df -B1 "${ISO_DIR}" 2>/dev/null | awk 'NR==2 {print $4}' || echo "0")
+    total_bytes=$(df -B1 "${ISO_DIR}" 2>/dev/null | awk 'NR==2 {print $2}' || echo "0")
+
+    # List ISOs
+    printf '{"installed":true,"running":%s,"enabled":%s,"lan_ip":"%s","mode":"%s","active_iso":"%s","tftp_port":69,"http_port":8080,"free_space_bytes":%s,"total_space_bytes":%s,"isos":[' \
+        "$is_running" "$is_enabled" "$lan_ip" "$mode" "$active_iso" "$free_bytes" "$total_bytes"
+
+    first=1
+    for iso in "${ISO_DIR}"/*.iso; do
+        [ -f "$iso" ] || continue
+        bname=$(basename "$iso")
+        size=$(stat -c%s "$iso" 2>/dev/null || echo "0")
+        mod_date=$(stat -c%y "$iso" 2>/dev/null | cut -d'.' -f1 || echo "")
+        [ "$first" -eq 0 ] && printf ','
+        first=0
+        printf '{"name":"%s","size":%s,"modified":"%s"}' "$bname" "$size" "$mod_date"
+    done
+    printf ']}\n'
+}
+
+case "$1" in
+    status)
+        get_status_json
+        ;;
+    gen-ipxe)
+        gen_ipxe_menu
+        echo "Generated ${WWW_DIR}/boot.ipxe successfully."
+        ;;
+    set-mode)
+        mode="${2:-menu}"
+        active_iso="${3:-}"
+        cat << C_EOF > "${CONFIG_FILE}"
+{
+  "mode": "${mode}",
+  "active_iso": "${active_iso}"
+}
+C_EOF
+        gen_ipxe_menu
+        echo "Set netboot mode to ${mode} (active_iso: ${active_iso})"
+        ;;
+    start)
+        gen_dnsmasq_conf
+        gen_ipxe_menu
+        killall -9 dnsmasq netboot-httpd 2>/dev/null || true
+        /mnt/usb/opt/sbin/dnsmasq -C "${CONFIG_DIR}/dnsmasq.conf"
+        /mnt/usb/opt/bin/netboot-httpd 8080 "${WWW_DIR}" "${ISO_DIR}" &
+        echo "Netboot services started (ProxyDHCP + TFTP: 69, HTTP: 8080)"
+        ;;
+    stop)
+        killall -9 dnsmasq netboot-httpd 2>/dev/null || true
+        echo "Netboot services stopped."
+        ;;
+    daemon)
+        gen_dnsmasq_conf
+        gen_ipxe_menu
+        killall -9 dnsmasq netboot-httpd 2>/dev/null || true
+
+        trap 'kill -TERM "$HTTPD_PID" "$DNSMASQ_PID" 2>/dev/null || true; exit 0' TERM INT HUP
+
+        /mnt/usb/opt/sbin/dnsmasq -C "${CONFIG_DIR}/dnsmasq.conf" -k &
+        DNSMASQ_PID=$!
+
+        /mnt/usb/opt/bin/netboot-httpd 8080 "${WWW_DIR}" "${ISO_DIR}" &
+        HTTPD_PID=$!
+
+        echo "OpenNGFW Netboot Supervisor running (dnsmasq: $DNSMASQ_PID, httpd: $HTTPD_PID)..."
+        wait
+        ;;
+    *)
+        echo "Usage: $0 {status|start|stop|daemon|gen-ipxe|set-mode <menu|direct> [iso]}"
+        exit 1
+        ;;
+esac
