@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "package_count": 27,
+  "package_count": 28,
   "packages": [
     {
       "name": "bareiron",
@@ -118,6 +118,14 @@
       "description": "Lightweight CLI text editor with syntax highlighting",
       "category": "editors",
       "filename": "nano-7.2.ngpkg"
+    },
+    {
+      "name": "netboot",
+      "version": "1.0.0",
+      "size": "1.7MB",
+      "description": "OpenNGFW Netboot & PXE Server - Host and boot ISO images over LAN via iPXE and proxyDHCP",
+      "category": "networking",
+      "size_bytes": 1773264
     },
     {
       "name": "netclient",

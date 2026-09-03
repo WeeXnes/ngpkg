@@ -9,6 +9,7 @@ CONFIG_FILE="${CONFIG_DIR}/config.json"
 PID_FILE="/var/run/netboot.pid"
 
 mkdir -p "${CONFIG_DIR}" "${WWW_DIR}" "${TFTP_DIR}" "${ISO_DIR}" 2>/dev/null || true
+chmod -R 755 "${CONFIG_DIR}" "${ISO_DIR}" 2>/dev/null || true
 
 get_lan_ip() {
     ip -4 addr show eth0 2>/dev/null | grep -o 'inet [0-9.]*' | awk '{print $2}' | head -n 1 || echo "192.168.178.148"
@@ -27,6 +28,7 @@ gen_dnsmasq_conf() {
 port=0
 interface=eth0
 bind-dynamic
+user=root
 
 # TFTP Server
 enable-tftp
@@ -66,7 +68,6 @@ gen_ipxe_menu() {
         active_iso=$(grep -o '"active_iso"[ ]*:[ ]*"[^"]*"' "${CONFIG_FILE}" 2>/dev/null | cut -d'"' -f4 || echo "")
     fi
 
-    # Sync memdisk to web root for HTTP boot
     [ -f "${TFTP_DIR}/memdisk" ] && cp -f "${TFTP_DIR}/memdisk" "${WWW_DIR}/memdisk" 2>/dev/null || true
 
     if [ "$mode" = "direct" ] && [ -n "$active_iso" ] && [ -f "${ISO_DIR}/${active_iso}" ]; then
@@ -91,7 +92,6 @@ D_EOF
         return 0
     fi
 
-    # Generate Dynamic Menu
     cat << M_EOF > "${WWW_DIR}/boot.ipxe"
 #!ipxe
 set menu-timeout 20000
@@ -189,12 +189,25 @@ get_status_json() {
         active_iso=$(grep -o '"active_iso"[ ]*:[ ]*"[^"]*"' "${CONFIG_FILE}" 2>/dev/null | cut -d'"' -f4 || echo "")
     fi
 
-    free_bytes=$(df -B1 "${ISO_DIR}" 2>/dev/null | awk 'NR==2 {print $4}' || echo "0")
-    total_bytes=$(df -B1 "${ISO_DIR}" 2>/dev/null | awk 'NR==2 {print $2}' || echo "0")
+    free_bytes=$(df -k "${ISO_DIR}" 2>/dev/null | awk 'NR==2 {print $4 * 1024}' || echo "0")
+    total_bytes=$(df -k "${ISO_DIR}" 2>/dev/null | awk 'NR==2 {print $2 * 1024}' || echo "0")
+    [ -z "$free_bytes" ] && free_bytes=0
+    [ -z "$total_bytes" ] && total_bytes=0
 
-    # List ISOs
-    printf '{"installed":true,"running":%s,"enabled":%s,"lan_ip":"%s","mode":"%s","active_iso":"%s","tftp_port":69,"http_port":8080,"free_space_bytes":%s,"total_space_bytes":%s,"isos":[' \
+    # Read active download if status file exists
+    dl_status=""
+    if [ -f "${CONFIG_DIR}/download.status" ]; then
+        dl_status=$(cat "${CONFIG_DIR}/download.status" 2>/dev/null || true)
+    fi
+
+    printf '{"installed":true,"running":%s,"enabled":%s,"lan_ip":"%s","mode":"%s","active_iso":"%s","tftp_port":69,"http_port":8080,"free_space_bytes":%s,"total_space_bytes":%s' \
         "$is_running" "$is_enabled" "$lan_ip" "$mode" "$active_iso" "$free_bytes" "$total_bytes"
+
+    if [ -n "$dl_status" ] && echo "$dl_status" | grep -q '^{' ; then
+        printf ',"downloading":%s' "$dl_status"
+    fi
+
+    printf ',"isos":['
 
     first=1
     for iso in "${ISO_DIR}"/*.iso; do
@@ -229,6 +242,47 @@ C_EOF
         gen_ipxe_menu
         echo "Set netboot mode to ${mode} (active_iso: ${active_iso})"
         ;;
+    download)
+        url="$2"
+        name="$3"
+        [ -z "$url" ] || [ -z "$name" ] && { echo "Usage: $0 download <url> <filename.iso>"; exit 1; }
+        status_file="${CONFIG_DIR}/download.status"
+        iso_file="${ISO_DIR}/${name}"
+
+        echo "{\"active\":true,\"name\":\"$name\",\"pct\":0,\"downloaded\":0,\"total\":0}" > "$status_file"
+        CURL="/mnt/usb/opt/bin/curl"
+        [ ! -x "$CURL" ] && CURL="curl"
+        total=$($CURL -sIL -k "$url" 2>/dev/null | grep -i '^content-length:' | tail -n 1 | tr -d '\r\n ' | cut -d':' -f2 || echo "0")
+        [ -z "$total" ] && total=0
+
+        (
+            $CURL -f -k -L -o "$iso_file" "$url" </dev/null >/dev/null 2>&1 &
+            curl_pid=$!
+
+            while kill -0 "$curl_pid" 2>/dev/null; do
+                curr=$(stat -c%s "$iso_file" 2>/dev/null || echo "0")
+                pct=0
+                [ "$total" -gt 0 ] && pct=$(( (curr * 100) / total ))
+                [ "$pct" -gt 100 ] && pct=100
+                echo "{\"active\":true,\"name\":\"$name\",\"pct\":$pct,\"downloaded\":$curr,\"total\":$total}" > "$status_file"
+                sleep 2
+            done
+
+            wait "$curl_pid"
+            exit_code=$?
+            if [ $exit_code -eq 0 ]; then
+                curr=$(stat -c%s "$iso_file" 2>/dev/null || echo "0")
+                echo "{\"active\":false,\"name\":\"$name\",\"pct\":100,\"downloaded\":$curr,\"total\":$curr}" > "$status_file"
+                /mnt/usb/opt/bin/netboot gen-ipxe >/dev/null 2>&1 || true
+                sleep 3
+                rm -f "$status_file"
+            else
+                echo "{\"active\":false,\"error\":\"Download failed (exit code $exit_code)\"}" > "$status_file"
+                rm -f "$iso_file"
+            fi
+        ) </dev/null >/dev/null 2>&1 &
+        echo "Download initiated for $name"
+        ;;
     start)
         gen_dnsmasq_conf
         gen_ipxe_menu
@@ -258,7 +312,7 @@ C_EOF
         wait
         ;;
     *)
-        echo "Usage: $0 {status|start|stop|daemon|gen-ipxe|set-mode <menu|direct> [iso]}"
+        echo "Usage: $0 {status|start|stop|daemon|gen-ipxe|download <url> <name>|set-mode <menu|direct> [iso]}"
         exit 1
         ;;
 esac

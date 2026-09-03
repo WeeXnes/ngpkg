@@ -9,6 +9,7 @@
   "binaries": [
     "bin/netboot",
     "bin/netboot-httpd",
+    "bin/curl",
     "sbin/dnsmasq"
   ],
   "dependencies": [],

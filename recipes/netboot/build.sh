@@ -56,4 +56,7 @@ chmod 755 "${STAGE_DIR}/bin/netboot"
 
 cp -f "${SCRIPT_DIR}/netboot.service" "${STAGE_DIR}/etc/systemd/system/netboot.service"
 
+mkdir -p "${STAGE_DIR}/lib"
+cp -f /tmp/curl_stage/bin/curl "${STAGE_DIR}/bin/curl"
+cp -f /tmp/curl_stage/lib/* "${STAGE_DIR}/lib/"
 echo "  [✓] Netboot package staged successfully."

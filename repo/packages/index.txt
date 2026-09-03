@@ -11,6 +11,7 @@ iperf|3.17.1|65KB|Active bandwidth measurement tool for TCP, UDP and SCTP throug
 lua|5.4.7|350KB|Powerful, fast, lightweight, embeddable scripting language|development
 micro|2.0.14|4.2MB|Modern and intuitive terminal-based text editor with syntax highlighting|editors
 nano|7.2|302KB|Lightweight CLI text editor with syntax highlighting|editors
+netboot|1.0.0|1.3MB|OpenNGFW Netboot & PXE Server - Host and boot ISO images over LAN via iPXE and proxyDHCP|networking
 netclient|1.1.0|5.3MB|Fast, automated WireGuard overlay mesh network client|networking
 nmap|7.93|14.5MB|Network exploration tool and security / port scanner with NSE Lua scripts and Ncat|networking
 openssl|3.3.1|2.1MB|Robust, commercial-grade TLS/SSL cryptography toolkit and certificate manager|security
