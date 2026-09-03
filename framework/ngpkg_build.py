@@ -99,9 +99,16 @@ def package_payload(pkg_name, version, description, stage_dir, category="utiliti
                                 strip_flag = "--strip-unneeded" if ".so" in p.name else "--strip-all"
                                 subprocess.run([str(STRIP_TOOL), strip_flag, str(p)], check=False, stderr=subprocess.DEVNULL)
 
+    def reset_tarinfo(tarinfo):
+        tarinfo.uid = 0
+        tarinfo.gid = 0
+        tarinfo.uname = "root"
+        tarinfo.gname = "root"
+        return tarinfo
+
     with tarfile.open(pkg_file, "w:gz") as tar:
         for item in os.listdir(stage_dir):
-            tar.add(os.path.join(stage_dir, item), arcname=item)
+            tar.add(os.path.join(stage_dir, item), arcname=item, filter=reset_tarinfo)
 
     # Symlinks for backwards compatibility and unversioned requests
     if os.path.lexists(str(apkg_file)):

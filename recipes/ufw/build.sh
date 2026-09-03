@@ -58,7 +58,9 @@ sed -i "s%#VERSION#%0.36.2%g" "${STAGE_DIR}/lib/python3.11/site-packages/ufw/com
 # Copy configs and rules
 cp conf/ufw.conf "${STAGE_DIR}/etc/ufw/" 2>/dev/null || true
 cp conf/*.rules "${STAGE_DIR}/etc/ufw/" 2>/dev/null || true
-cp conf/default "${STAGE_DIR}/etc/default/ufw" 2>/dev/null || true
+cp conf/ufw.defaults "${STAGE_DIR}/etc/default/ufw" 2>/dev/null || true
+cp conf/sysctl.conf "${STAGE_DIR}/etc/ufw/sysctl.conf" 2>/dev/null || true
+sed -i "s%#CONFIG_PREFIX#%/etc%g" "${STAGE_DIR}/etc/default/ufw" 2>/dev/null || true
 # Default to IPv4 on router
 sed -i "s/IPV6=yes/IPV6=no/" "${STAGE_DIR}/etc/default/ufw" 2>/dev/null || true
 
@@ -87,11 +89,16 @@ export PYTHONHOME="/mnt/usb/opt"
 export PYTHONPATH="/mnt/usb/opt/lib/python3.11/site-packages:/mnt/usb/opt/lib/python3.11:${PYTHONPATH:-}"
 export LD_LIBRARY_PATH="/mnt/usb/opt/lib:/mnt/usb/opt/usr/lib:${LD_LIBRARY_PATH:-}"
 
-# Sync /etc/ufw if needed
-if [ ! -d /etc/ufw ]; then
+# Sync /etc/ufw and /etc/default/ufw from package if missing on the host
+if [ ! -f /etc/default/ufw ] || [ ! -d /etc/ufw ]; then
     mkdir -p /etc/ufw /etc/default
-    cp -r /mnt/usb/opt/etc/ufw/* /etc/ufw/ 2>/dev/null || true
-    cp -f /mnt/usb/opt/etc/default/ufw /etc/default/ufw 2>/dev/null || true
+    [ -d /mnt/usb/opt/etc/ufw ] && cp -rn /mnt/usb/opt/etc/ufw/* /etc/ufw/ 2>/dev/null || true
+    [ -f /mnt/usb/opt/etc/default/ufw ] && cp -n /mnt/usb/opt/etc/default/ufw /etc/default/ufw 2>/dev/null || true
+fi
+
+# Ensure /mnt/usb/opt directories are root-owned to prevent UID warnings
+if [ "$(id -u)" -eq 0 ]; then
+    chown 0:0 /mnt/usb/opt /mnt/usb/opt/lib /mnt/usb/opt/sbin 2>/dev/null || true
 fi
 
 exec /mnt/usb/opt/bin/python3 /mnt/usb/opt/sbin/ufw-real "$@"
