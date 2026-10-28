@@ -1,8 +1,0 @@
-{
-  "Introduction": "introduction.md",
-  "Setup & Deployment": "setup-guide.md",
-  "Architecture": "architecture.md",
-  "CLI Reference": "client-cli.md",
-  "Creating Packages": "creating-packages.md",
-  "Recipe Specification": "recipe-spec.md"
-}

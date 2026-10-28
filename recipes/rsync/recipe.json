@@ -1,8 +1,0 @@
-{
-  "name": "rsync",
-  "version": "3.3.0",
-  "description": "Fast and versatile remote file-copying and synchronization tool",
-  "category": "utilities",
-  "dependencies": [],
-  "binaries": ["rsync"]
-}

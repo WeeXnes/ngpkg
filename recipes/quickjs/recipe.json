@@ -1,7 +1,0 @@
-{
-  "name": "quickjs",
-  "version": "2024-01-13",
-  "description": "Fast, lightweight ES2020 JavaScript engine and compiler (qjs & qjsc)",
-  "category": "development",
-  "depends": []
-}

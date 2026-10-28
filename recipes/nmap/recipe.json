@@ -1,8 +1,0 @@
-{
-  "name": "nmap",
-  "version": "7.93",
-  "description": "Network exploration tool and security / port scanner with NSE Lua scripts and Ncat",
-  "category": "networking",
-  "dependencies": [],
-  "binaries": ["nmap", "ncat"]
-}

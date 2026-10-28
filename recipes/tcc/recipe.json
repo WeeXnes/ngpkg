@@ -1,8 +1,0 @@
-{
-  "name": "tcc",
-  "version": "0.9.28",
-  "description": "Tiny C Compiler - ultra-fast native C99/GNU C compiler for embedded devices",
-  "category": "development",
-  "dependencies": [],
-  "binaries": ["tcc", "cc"]
-}

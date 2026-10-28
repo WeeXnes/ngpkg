@@ -1,9 +1,0 @@
-{
-  "name": "debian",
-  "version": "12.8",
-  "description": "Full Debian 12 (Bookworm) armel container environment with apt & dpkg on USB storage",
-  "category": "system",
-  "license": "GPL-2.0+",
-  "homepage": "https://www.debian.org",
-  "type": "binary"
-}

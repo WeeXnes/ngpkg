@@ -1,9 +1,0 @@
-{
-  "name": "samba",
-  "version": "4.17.12",
-  "description": "Samba SMB/CIFS file server with legacy SMB1 and LANMAN support for PS2 OPL",
-  "category": "networking",
-  "license": "GPL-3.0-or-later",
-  "homepage": "https://www.samba.org",
-  "type": "binary"
-}

@@ -1,14 +1,15 @@
 
 #ifndef V_COMMIT_HASH
-	#define V_COMMIT_HASH "0c3183c55b39534f9bb0d2f796bb575d39c9d229"
+	#define V_COMMIT_HASH "45ae01d23168b6372f734eeb38a77360bbcf184a"
 #endif
 
 #define V_USE_SIGNAL_H
 
 // V comptime_definitions:
 // V compile time defines by -d or -define flags:
-//     All custom defines      : linux
-//     Turned ON custom defines: linux
+//     All custom defines      : no_backtrace,linux
+//     Turned ON custom defines: no_backtrace,linux
+#define CUSTOM_DEFINE_no_backtrace
 #define CUSTOM_DEFINE_linux
 
 
@@ -16,10 +17,39 @@
 typedef struct IError IError;
 typedef struct none none;
 
+// BEGIN_array_fixed_return_typedefs
+typedef struct _v_Array_fixed_u8_128 _v_Array_fixed_u8_128;
+typedef struct _v_Array_fixed_char_256 _v_Array_fixed_char_256;
+typedef struct _v_Array_fixed_u8_32 _v_Array_fixed_u8_32;
+typedef struct _v_Array_fixed_u8_64 _v_Array_fixed_u8_64;
+typedef struct _v_Array_fixed_u8_5 _v_Array_fixed_u8_5;
+typedef struct _v_Array_fixed_u8_20 _v_Array_fixed_u8_20;
+typedef struct _v_Array_fixed_u32_10 _v_Array_fixed_u32_10;
+typedef struct _v_Array_fixed_u64_20 _v_Array_fixed_u64_20;
+typedef struct _v_Array_fixed_u64_584 _v_Array_fixed_u64_584;
+typedef struct _v_Array_fixed_u64_652 _v_Array_fixed_u64_652;
+typedef struct _v_Array_fixed_f64_36 _v_Array_fixed_f64_36;
+typedef struct _v_Array_fixed_u8_26 _v_Array_fixed_u8_26;
+typedef struct _v_Array_fixed_u8_512 _v_Array_fixed_u8_512;
+typedef struct _v_Array_fixed_u64_47 _v_Array_fixed_u64_47;
+typedef struct _v_Array_fixed_u64_31 _v_Array_fixed_u64_31;
+typedef struct _v_Array_fixed_int_64 _v_Array_fixed_int_64;
+typedef struct _v_Array_fixed_voidptr_64 _v_Array_fixed_voidptr_64;
+typedef struct _v_Array_fixed_u8_17 _v_Array_fixed_u8_17;
+typedef struct _v_Array_fixed_i32_1264 _v_Array_fixed_i32_1264;
+typedef struct _v_Array_fixed_int_10 _v_Array_fixed_int_10;
+typedef struct _v_Array_fixed_int_20 _v_Array_fixed_int_20;
+typedef struct _v_Array_fixed_u8_4096 _v_Array_fixed_u8_4096;
+typedef struct _v_Array_fixed_u8_1024 _v_Array_fixed_u8_1024;
+// END_array_fixed_return_typedefs
+
+
 // BEGIN_multi_return_typedefs
 typedef struct multi_return_u32_u32 multi_return_u32_u32;
+typedef struct multi_return_rune_int multi_return_rune_int;
 typedef struct multi_return_strconv__Dec32_bool multi_return_strconv__Dec32_bool;
 typedef struct multi_return_strconv__Dec64_bool multi_return_strconv__Dec64_bool;
+typedef struct multi_return_string_int multi_return_string_int;
 typedef struct multi_return_int_bool multi_return_int_bool;
 typedef struct multi_return_u64_u64 multi_return_u64_u64;
 // END_multi_return_typedefs
@@ -33,45 +63,62 @@ typedef union strconv__Uf64 strconv__Uf64;
 typedef union strconv__Float64u strconv__Float64u;
 typedef union strconv__Float32u strconv__Float32u;
 typedef struct array array;
+typedef struct ArrayDataHeader ArrayDataHeader;
 typedef struct _result _result;
 typedef struct Error Error;
 typedef struct MessageError MessageError;
 typedef struct _option _option;
 typedef struct None__ None__;
+typedef struct GraphemeState GraphemeState;
 typedef struct DenseArray DenseArray;
 typedef struct map map;
 typedef struct string string;
 typedef union StrIntpMem StrIntpMem;
 typedef struct StrIntpData StrIntpData;
-typedef struct os__Eof os__Eof;
 typedef struct os__NotExpected os__NotExpected;
 typedef struct os__File os__File;
 typedef struct os__FileNotOpenedError os__FileNotOpenedError;
 typedef struct os__SizeOfTypeIs0Error os__SizeOfTypeIs0Error;
 typedef struct os__CopyParams os__CopyParams;
 typedef struct os__SystemError os__SystemError;
+typedef struct os__Eof os__Eof;
 typedef struct os__Result os__Result;
 typedef struct os__ExecutableNotFoundError os__ExecutableNotFoundError;
 typedef struct os__MkdirParams os__MkdirParams;
 typedef struct os__Stat os__Stat;
+typedef struct main__Repo main__Repo;
 typedef struct main__Config main__Config;
-typedef struct main__PackageMeta main__PackageMeta;
+typedef struct main__Package main__Package;
 typedef struct _result_os__File _result_os__File;
 typedef struct _result_FILE_ptr _result_FILE_ptr;
-typedef struct _result_void _result_void;
 typedef struct _result_int _result_int;
+typedef struct _result_void _result_void;
 typedef struct _result_strings__Builder _result_strings__Builder;
 typedef struct _result_string _result_string;
 typedef struct _result_os__Stat _result_os__Stat;
 typedef struct _result_Array_string _result_Array_string;
+typedef struct _option_int _option_int;
+typedef struct _option_u8 _option_u8;
 typedef struct _option_string _option_string;
-typedef struct _option_main__PackageMeta _option_main__PackageMeta;
+typedef struct _option_main__Package _option_main__Package;
 
  // V preincludes:
 #define _GNU_SOURCE
 
 #if defined(__TINYC__) && defined(__has_include) // tcc does not support has_include properly yet, turn it off completely
 #undef __has_include
+#endif
+
+#if defined(__TINYC__) && defined(__BIONIC__)
+	#define __builtin_nanf(ignored_string) (0.0F / 0.0F)
+	#define __builtin_nan(ignored_string) (0.0 / 0.0)
+	#define __builtin_nanl(ignored_string) (0.0L / 0.0L)
+	#define __builtin_inff() (1.0F / 0.0F)
+	#define __builtin_inf() (1.0 / 0.0)
+	#define __builtin_infl() (1.0L / 0.0L)
+	#define __builtin_huge_valf() (1.0F / 0.0F)
+	#define __builtin_huge_val() (1.0 / 0.0)
+	#define __builtin_huge_vall() (1.0L / 0.0L)
 #endif
 
 // V cheaders:
@@ -89,17 +136,38 @@ typedef struct _option_main__PackageMeta _option_main__PackageMeta;
 #undef __has_include
 #endif
 
+#if defined(__TINYC__) && defined(__BIONIC__)
+	#define __builtin_nanf(ignored_string) (0.0F / 0.0F)
+	#define __builtin_nan(ignored_string) (0.0 / 0.0)
+	#define __builtin_nanl(ignored_string) (0.0L / 0.0L)
+	#define __builtin_inff() (1.0F / 0.0F)
+	#define __builtin_inf() (1.0 / 0.0)
+	#define __builtin_infl() (1.0L / 0.0L)
+	#define __builtin_huge_valf() (1.0F / 0.0F)
+	#define __builtin_huge_val() (1.0 / 0.0)
+	#define __builtin_huge_vall() (1.0L / 0.0L)
+#endif
+
+#ifdef __TINYC__
+#include <inttypes.h>
+#else
 #if defined(__has_include)
 #if __has_include(<inttypes.h>)
 #include <inttypes.h>
+#elif __has_include(<stdint.h>)
+#include <stdint.h>
 #else
-#error VERROR_MESSAGE The C compiler can not find <inttypes.h>. Please install the package `build-essential`.
+#error VERROR_MESSAGE The C compiler can not find <stdint.h>. Please install the package `build-essential`.
 #endif
 #else
-#include <inttypes.h>
+#include <stdint.h>
+#endif
 #endif
 
 
+#ifdef __TINYC__
+#include <stddef.h>
+#else
 #if defined(__has_include)
 #if __has_include(<stddef.h>)
 #include <stddef.h>
@@ -109,10 +177,11 @@ typedef struct _option_main__PackageMeta _option_main__PackageMeta;
 #else
 #include <stddef.h>
 #endif
+#endif
 
 
 //================================== builtin types ================================*/
-#if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64) || (defined(__riscv_xlen) && __riscv_xlen == 64) || defined(__s390x__) || (defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)) || defined(__loongarch64)
+#if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64) || (defined(__riscv_xlen) && __riscv_xlen == 64) || defined(__s390x__) || (defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)) || defined(__loongarch64) || defined(__sparc__) || (defined(__powerpc64__) && defined(__BIG_ENDIAN__))
 typedef int64_t vint_t;
 #else
 typedef int32_t vint_t;
@@ -149,6 +218,7 @@ typedef u8 array_fixed_byte_300 [300];
 typedef struct sync__Channel* chan;
 #ifndef CUSTOM_DEFINE_no_bool
 	#ifndef __cplusplus
+		#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
 		#ifndef bool
 			#ifdef CUSTOM_DEFINE_4bytebool
 				typedef int bool;
@@ -158,8 +228,51 @@ typedef struct sync__Channel* chan;
 			#define true 1
 			#define false 0
 		#endif
+		#endif
 	#endif
 #endif
+
+
+#define V_SAFE_SHIFT_BITS(type) ((u64)(sizeof(type) * 8))
+#define V_SAFE_LSHIFT_UNSIGNED(name, type) static inline type name(type x, u64 y) { return y >= V_SAFE_SHIFT_BITS(type) ? (type)0 : (type)(x << y); }
+#define V_SAFE_LSHIFT_SIGNED(name, type, unsigned_type) static inline type name(type x, u64 y) { return y >= V_SAFE_SHIFT_BITS(type) ? (type)0 : (type)(((unsigned_type)x) << y); }
+#define V_SAFE_RSHIFT_UNSIGNED(name, type) static inline type name(type x, u64 y) { return y >= V_SAFE_SHIFT_BITS(type) ? (type)0 : (type)(x >> y); }
+#define V_SAFE_RSHIFT_SIGNED(name, type) static inline type name(type x, u64 y) { return y >= V_SAFE_SHIFT_BITS(type) ? (type)(x < 0 ? -1 : 0) : (type)(x >> y); }
+V_SAFE_LSHIFT_SIGNED(v__lshift_char, char, u8)
+V_SAFE_RSHIFT_SIGNED(v__rshift_char, char)
+V_SAFE_LSHIFT_SIGNED(v__lshift_i8, i8, u8)
+V_SAFE_RSHIFT_SIGNED(v__rshift_i8, i8)
+V_SAFE_LSHIFT_SIGNED(v__lshift_i16, i16, u16)
+V_SAFE_RSHIFT_SIGNED(v__rshift_i16, i16)
+V_SAFE_LSHIFT_SIGNED(v__lshift_i32, i32, u32)
+V_SAFE_RSHIFT_SIGNED(v__rshift_i32, i32)
+V_SAFE_LSHIFT_SIGNED(v__lshift_int, int, unsigned int)
+V_SAFE_RSHIFT_SIGNED(v__rshift_int, int)
+V_SAFE_LSHIFT_SIGNED(v__lshift_vint_t, vint_t, u64)
+V_SAFE_RSHIFT_SIGNED(v__rshift_vint_t, vint_t)
+V_SAFE_LSHIFT_SIGNED(v__lshift_i64, i64, u64)
+V_SAFE_RSHIFT_SIGNED(v__rshift_i64, i64)
+V_SAFE_LSHIFT_SIGNED(v__lshift_isize, isize, usize)
+V_SAFE_RSHIFT_SIGNED(v__rshift_isize, isize)
+V_SAFE_LSHIFT_UNSIGNED(v__lshift_u8, u8)
+V_SAFE_RSHIFT_UNSIGNED(v__rshift_u8, u8)
+V_SAFE_LSHIFT_UNSIGNED(v__lshift_u16, u16)
+V_SAFE_RSHIFT_UNSIGNED(v__rshift_u16, u16)
+V_SAFE_LSHIFT_UNSIGNED(v__lshift_u32, u32)
+V_SAFE_RSHIFT_UNSIGNED(v__rshift_u32, u32)
+V_SAFE_LSHIFT_UNSIGNED(v__lshift_u64, u64)
+V_SAFE_RSHIFT_UNSIGNED(v__rshift_u64, u64)
+V_SAFE_LSHIFT_UNSIGNED(v__lshift_usize, usize)
+V_SAFE_RSHIFT_UNSIGNED(v__rshift_usize, usize)
+V_SAFE_LSHIFT_UNSIGNED(v__lshift_rune, rune)
+V_SAFE_RSHIFT_UNSIGNED(v__rshift_rune, rune)
+V_SAFE_LSHIFT_SIGNED(v__lshift_int_literal, int_literal, u64)
+V_SAFE_RSHIFT_SIGNED(v__rshift_int_literal, int_literal)
+#undef V_SAFE_RSHIFT_SIGNED
+#undef V_SAFE_RSHIFT_UNSIGNED
+#undef V_SAFE_LSHIFT_SIGNED
+#undef V_SAFE_LSHIFT_UNSIGNED
+#undef V_SAFE_SHIFT_BITS
 
 
 typedef u64 (*MapHashFn)(voidptr);
@@ -182,6 +295,7 @@ typedef void (*MapFreeFn)(voidptr);
 #define HEAP(type, expr) ((type*)builtin__memdup((void*)&((type[]){expr}[0]), sizeof(type)))
 #define HEAP_noscan(type, expr) ((type*)builtin__memdup_noscan((void*)&((type[]){expr}[0]), sizeof(type)))
 #define HEAP_align(type, expr, align) ((type*)builtin__memdup_align((void*)&((type[]){expr}[0]), sizeof(type), align))
+#define HEAP_vgc(type, expr, ptrmap, nptrs) ((type*)builtin__vgc_memdup_typed((void*)&((type[]){expr}[0]), sizeof(type), (ptrmap), (nptrs)))
 #define _PUSH_MANY(arr, val, tmp, tmp_typ) {tmp_typ tmp = (val); builtin__array_push_many(arr, tmp.data, tmp.len);}
 #define _PUSH_MANY_noscan(arr, val, tmp, tmp_typ) {tmp_typ tmp = (val); builtin__array_push_many_noscan(arr, tmp.data, tmp.len);}
 
@@ -235,6 +349,21 @@ typedef void (*MapFreeFn)(voidptr);
 	#undef __V_architecture
 	#define __V_architecture 9
 #endif
+#if defined(__sparc__)
+	#define __V_sparc64  1
+	#undef __V_architecture
+	#define __V_architecture 10
+#endif
+#if defined(__powerpc64__) && defined(__BIG_ENDIAN__)
+	#define __V_ppc64  1
+	#undef __V_architecture
+	#define __V_architecture 11
+#endif
+#if (defined(__powerpc__) || defined(__powerpc) || defined(__POWERPC__) || defined(__ppc__) || defined(__ppc) || defined(__PPC__)) && !defined(__powerpc64__) && !defined(__ppc64__) && !defined(__PPC64__)
+	#define __V_ppc  1
+	#undef __V_architecture
+	#define __V_architecture 12
+#endif
 // Using just __GNUC__ for detecting gcc, is not reliable because other compilers define it too:
 #ifdef __GNUC__
 	#define __V_GCC__
@@ -255,14 +384,30 @@ typedef void (*MapFreeFn)(voidptr);
 	#define E_STRUCT_DECL unsigned char _dummy_pad
 	#define E_STRUCT 0
 #endif
-#ifndef _WIN32
-	#if defined __has_include
-		#if __has_include (<execinfo.h>)
-			#include <execinfo.h>
-		#else
-			// On linux: int backtrace(void **__array, int __size);
-			// On BSD: size_t backtrace(void **, size_t);
-		#endif
+#if defined(__has_include) && !defined(__TINYC__)
+	#if __has_include(<execinfo.h>) && !defined(_WIN32)
+		#define __V_HAVE_EXECINFO_H 1
+		#include <execinfo.h>
+	#else
+		// On linux: int backtrace(void **__array, int __size);
+		// On BSD: size_t backtrace(void **, size_t);
+	#endif
+#elif (defined(__linux__) && (defined(__GLIBC__) || defined(__GNU_LIBRARY__))) || defined(__APPLE__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
+	#define __V_HAVE_EXECINFO_H 1
+	#include <execinfo.h>
+#else
+	// On linux: int backtrace(void **__array, int __size);
+	// On BSD: size_t backtrace(void **, size_t);
+#endif
+#ifndef __V_HAVE_EXECINFO_H
+	#ifdef __cplusplus
+	extern "C" {
+	#endif
+	int backtrace(void **__array, int __size);
+	char **backtrace_symbols(void *const *__array, int __size);
+	void backtrace_symbols_fd(void *const *__array, int __size, int __fd);
+	#ifdef __cplusplus
+	}
 	#endif
 #endif
 #ifdef __TINYC__
@@ -293,7 +438,11 @@ typedef void (*MapFreeFn)(voidptr);
 #endif
 #if defined(_WIN32) || defined(__CYGWIN__)
 	#define VV_EXP extern __declspec(dllexport)
-	#define VV_LOC static
+	#ifdef _VPARALLELCC
+		#define VV_LOC
+	#else
+		#define VV_LOC static
+	#endif
 #else
 	// 4 < gcc < 5 is used by some older Ubuntu LTS and Centos versions,
 	// and does not support __has_attribute(visibility) ...
@@ -306,14 +455,18 @@ typedef void (*MapFreeFn)(voidptr);
 		#else
 			#define VV_EXP  extern __attribute__((visibility("default")))
 		#endif
-		#if defined(__clang__) && (defined(_VUSECACHE) || defined(_VBUILDMODULE))
+		#if defined(_VOBJECTFILE) || (defined(__clang__) && (defined(_VUSECACHE) || defined(_VBUILDMODULE)))
 			#define VV_LOC static
 		#else
 			#define VV_LOC  __attribute__ ((visibility ("hidden")))
 		#endif
 	#else
 		#define VV_EXP extern
-		#define VV_LOC static
+		#ifdef _VPARALLELCC
+			#define VV_LOC
+		#else
+			#define VV_LOC static
+		#endif
 	#endif
 #endif
 #ifdef __cplusplus
@@ -334,27 +487,497 @@ typedef void (*MapFreeFn)(voidptr);
 	#define _unlikely_(x) (x)
 #endif
 
+#if !defined(VCALLCONV)
+	#ifdef _MSC_VER
+		#define VCALLCONV(name) __##name
+	#else
+		#define VCALLCONV(name) __attribute__((name))
+	#endif
+#endif
+
 // c_headers
 typedef int (*qsort_callback_func)(const void*, const void*);
-#include <stdio.h>  // TODO: remove all these includes, define all function signatures and types manually
+#if defined(_MSC_VER) && !defined(__clang__)
+	#define V_CRT_LINKAGE __declspec(dllimport)
+	#define V_CRT_CALL VCALLCONV(cdecl)
+#else
+	#define V_CRT_LINKAGE
+	#define V_CRT_CALL
+#endif
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__cplusplus)
+// Under C++ (g++/clang++), let libc declare FILE/stdio/string/stdlib to keep
+// noexcept specifiers consistent — the manual extern "C" prototypes below
+// would otherwise conflict with system headers under -std=c++NN.
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h> // for va_list
+#ifndef va_copy
+	#define va_copy(dest, src) ((dest) = (src))
+#endif
+#ifndef _TRUNCATE
+	#define _TRUNCATE ((size_t)-1)
+#endif
+#elif defined(__NetBSD__)
+// NetBSD exposes stdin/stdout/stderr as macros into a single `__sF[3]`
+// array whose element size (sizeof(FILE)) depends on the platform and libc
+// version, so we cannot forward-declare them. The FreeBSD-style
+// `__stdinp/__stdoutp/__stderrp` symbols also do not exist on NetBSD (see
+// vlang/v#27190). Defer to the system headers for FILE, the stdio streams,
+// and the libc prototypes that would otherwise clash with the
+// `__restrict`-qualified declarations in NetBSD libc.
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#elif defined(__TINYC__) && (defined(__FreeBSD__) || defined(__OpenBSD__))
+// TinyCC reports a hard redefinition error if system OpenSSL pulls in
+// <stdarg.h> after V has provided its own va_start macro. Include it first,
+// but keep V manual FILE declarations on these BSD libc variants.
+#include <stdarg.h>
+#if defined(__FreeBSD__)
+typedef struct __sFILE FILE;
+extern FILE* __stdinp;
+extern FILE* __stdoutp;
+extern FILE* __stderrp;
+#define stdin __stdinp
+#define stdout __stdoutp
+#define stderr __stderrp
+#else
+typedef struct __sFILE FILE;
+#ifndef _STDFILES_DECLARED
+	#define _STDFILES_DECLARED
+struct __sFstub { long _stub; };
+extern struct __sFstub __stdin[];
+extern struct __sFstub __stdout[];
+extern struct __sFstub __stderr[];
+#endif
+#define stdin ((struct __sFILE *)__stdin)
+#define stdout ((struct __sFILE *)__stdout)
+#define stderr ((struct __sFILE *)__stderr)
+#endif
+#elif (defined(__MINGW32__) || defined(__MINGW64__)) && defined(__V_GCC__)
+// mingw-w64 stdio.h provides fprintf/vfprintf as static inline overrides
+// when __USE_MINGW_ANSI_STDIO is enabled, so use the system declarations
+// instead of the manual formatted-stdio prototypes below.
+#include <stdarg.h>
+#include <stdio.h>
+#elif defined(__MINGW32__) || defined(__MINGW64__) || (defined(__clang__) && (defined(_WIN32) || defined(_WIN64)))
+typedef struct _iobuf FILE;
+FILE* __cdecl __acrt_iob_func(unsigned index);
+#define stdin  (__acrt_iob_func(0))
+#define stdout (__acrt_iob_func(1))
+#define stderr (__acrt_iob_func(2))
+#elif defined(__TINYC__) && (defined(_WIN32) || defined(_WIN64))
+#ifndef _FILE_DEFINED
+struct _iobuf {
+	char *_ptr;
+	int _cnt;
+	char *_base;
+	int _flag;
+	int _file;
+	int _charbuf;
+	int _bufsiz;
+	char *_tmpfname;
+};
+typedef struct _iobuf FILE;
+#define _FILE_DEFINED
+#endif
+	#if defined(_WIN64)
+FILE* __cdecl __iob_func(void);
+	#else
+		#ifdef _MSVCRT_
+extern FILE _iob[];
+			#define __iob_func() (_iob)
+		#else
+extern FILE (*_imp___iob)[];
+			#define __iob_func() (*_imp___iob)
+			#define _iob __iob_func()
+		#endif
+	#endif
+#define stdin (&__iob_func()[0])
+#define stdout (&__iob_func()[1])
+#define stderr (&__iob_func()[2])
+#elif defined(__vinix__)
+typedef struct __file FILE;
+extern FILE* stdin;
+extern FILE* stdout;
+extern FILE* stderr;
+struct __thread_data;
+struct __threadattr;
+// pthread_t handling for vinix builds:
+//  - Vinix kernel (freestanding, __STDC_HOSTED__=0): no libc, define
+//    pthread_t ourselves so V code that references it compiles.
+//  - util-vinix cross-compiled on a libc-providing host (hosted, e.g.
+//    glibc on Linux or macOS with -D__vinix__): pull pthread_t from
+//    libc to avoid colliding with the libc typedef.
+#if defined(__STDC_HOSTED__) && __STDC_HOSTED__ && defined(__has_include) && __has_include(<pthread.h>)
+#include <pthread.h>
+#else
+typedef struct __thread_data *pthread_t;
+#endif
+typedef __builtin_va_list va_list;
+#ifndef va_start
+	#define va_start(ap, v) __builtin_va_start(ap, v)
+#endif
+#ifndef va_arg
+	#define va_arg(ap, t) __builtin_va_arg(ap, t)
+#endif
+#ifndef va_end
+	#define va_end(ap) __builtin_va_end(ap)
+#endif
+#ifndef va_copy
+	#define va_copy(dest, src) __builtin_va_copy(dest, src)
+#endif
+#else
+	#if defined(__APPLE__) || defined(__FreeBSD__)
+typedef struct __sFILE FILE;
+extern FILE* __stdinp;
+extern FILE* __stdoutp;
+extern FILE* __stderrp;
+#define stdin __stdinp
+#define stdout __stdoutp
+#define stderr __stderrp
+	#elif defined(__DragonFly__)
+typedef struct __sFILE FILE;
+extern FILE* __stdinp;
+extern FILE* __stdoutp;
+extern FILE* __stderrp;
+#define stdin __stdinp
+#define stdout __stdoutp
+#define stderr __stderrp
+	#elif defined(__OpenBSD__)
+typedef struct __sFILE FILE;
+#ifndef _STDFILES_DECLARED
+	#define _STDFILES_DECLARED
+struct __sFstub { long _stub; };
+extern struct __sFstub __stdin[];
+extern struct __sFstub __stdout[];
+extern struct __sFstub __stderr[];
+#endif
+#define stdin ((struct __sFILE *)__stdin)
+#define stdout ((struct __sFILE *)__stdout)
+#define stderr ((struct __sFILE *)__stderr)
+	#elif defined(__BIONIC__)
+struct __sFILE;
+typedef struct __sFILE FILE;
+extern FILE* stdin;
+extern FILE* stdout;
+extern FILE* stderr;
+	#elif defined(__linux__) && !defined(__GLIBC__) && !defined(__GNU_LIBRARY__) && !defined(__BIONIC__) && !defined(__UCLIBC__)
+typedef struct _IO_FILE FILE;
+// musl exposes the stdio streams as `FILE *const`, so match that to stay
+// compatible with later <stdio.h> includes from headers like miniz.h.
+extern FILE* const stdin;
+extern FILE* const stdout;
+extern FILE* const stderr;
+	#else
+typedef struct _IO_FILE FILE;
+extern FILE* stdin;
+extern FILE* stdout;
+extern FILE* stderr;
+	#endif
+typedef __builtin_va_list va_list;
+#ifndef va_start
+	#define va_start(ap, v) __builtin_va_start(ap, v)
+#endif
+#ifndef va_arg
+	#define va_arg(ap, t) __builtin_va_arg(ap, t)
+#endif
+#ifndef va_end
+	#define va_end(ap) __builtin_va_end(ap)
+#endif
+#ifndef va_copy
+	#define va_copy(dest, src) __builtin_va_copy(dest, src)
+#endif
+#endif
+#if (!defined(_MSC_VER) || defined(__clang__)) && !defined(__cplusplus) && !defined(__NetBSD__)
+// mingw-w64 stdio.h declares these as static __mingw_ovr inline overrides
+// when __USE_MINGW_ANSI_STDIO is on. Skip them under gcc+mingw to avoid
+// static-after-extern conflicts; clang+mingw needs them because it builds
+// with -Werror=implicit-function-declaration and does not hit the conflict.
+// NetBSD pulls these prototypes from <stdio.h>/<stdlib.h>/<string.h> via
+// the include block above to avoid `__restrict` qualifier conflicts.
+#if !((defined(__MINGW32__) || defined(__MINGW64__)) && !defined(__clang__))
+V_CRT_LINKAGE int V_CRT_CALL vfprintf(FILE *stream, const char *format, va_list ap);
+V_CRT_LINKAGE int V_CRT_CALL vsnprintf(char *str, size_t size, const char *format, va_list ap);
+V_CRT_LINKAGE int V_CRT_CALL fprintf(FILE *stream, const char *format, ...);
+V_CRT_LINKAGE int V_CRT_CALL printf(const char *format, ...);
+V_CRT_LINKAGE int V_CRT_CALL snprintf(char *str, size_t size, const char *format, ...);
+V_CRT_LINKAGE int V_CRT_CALL sprintf(char *str, const char *format, ...);
+V_CRT_LINKAGE int V_CRT_CALL sscanf(const char *str, const char *format, ...);
+V_CRT_LINKAGE int V_CRT_CALL scanf(const char *format, ...);
+#endif
+V_CRT_LINKAGE int V_CRT_CALL puts(const char *str);
+V_CRT_LINKAGE void V_CRT_CALL perror(const char *str);
+V_CRT_LINKAGE int V_CRT_CALL fputs(const char *str, FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL getchar(void);
+V_CRT_LINKAGE int V_CRT_CALL putchar(int ch);
+V_CRT_LINKAGE int V_CRT_CALL getc(FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL fgetc(FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL ungetc(int ch, FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL fflush(FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL feof(FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL ferror(FILE *stream);
+V_CRT_LINKAGE void V_CRT_CALL clearerr(FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL setvbuf(FILE *stream, char *buf, int mode, size_t size);
+V_CRT_LINKAGE long V_CRT_CALL ftell(FILE *stream);
+V_CRT_LINKAGE void V_CRT_CALL rewind(FILE *stream);
+V_CRT_LINKAGE FILE * V_CRT_CALL fopen(const char *filename, const char *mode);
+V_CRT_LINKAGE FILE * V_CRT_CALL fdopen(int fd, const char *mode);
+V_CRT_LINKAGE FILE * V_CRT_CALL freopen(const char *filename, const char *mode, FILE *stream);
+V_CRT_LINKAGE int V_CRT_CALL fileno(FILE *stream);
+V_CRT_LINKAGE size_t V_CRT_CALL fread(void *ptr, size_t size, size_t items, FILE *stream);
+V_CRT_LINKAGE size_t V_CRT_CALL fwrite(const void *ptr, size_t size, size_t items, FILE *stream);
+#if defined(__vinix__)
+V_CRT_LINKAGE char * V_CRT_CALL fgets(char *str, size_t size, FILE *stream);
+#else
+V_CRT_LINKAGE char * V_CRT_CALL fgets(char *str, int size, FILE *stream);
+#endif
+V_CRT_LINKAGE int V_CRT_CALL fclose(FILE *stream);
+#if defined(__vinix__)
+V_CRT_LINKAGE FILE * V_CRT_CALL popen(char *command, char *mode);
+#else
+V_CRT_LINKAGE FILE * V_CRT_CALL popen(const char *command, const char *mode);
+#endif
+V_CRT_LINKAGE int V_CRT_CALL pclose(FILE *stream);
+V_CRT_LINKAGE void * V_CRT_CALL malloc(size_t size);
+V_CRT_LINKAGE void * V_CRT_CALL calloc(size_t nitems, size_t size);
+V_CRT_LINKAGE void * V_CRT_CALL realloc(void *ptr, size_t size);
+V_CRT_LINKAGE void * V_CRT_CALL aligned_alloc(size_t alignment, size_t size);
+V_CRT_LINKAGE int V_CRT_CALL posix_memalign(void **memptr, size_t alignment, size_t size);
+V_CRT_LINKAGE void V_CRT_CALL free(void *ptr);
+V_CRT_LINKAGE int V_CRT_CALL rand(void);
+V_CRT_LINKAGE void V_CRT_CALL srand(unsigned int seed);
+V_CRT_LINKAGE int V_CRT_CALL atexit(void (*cb)(void));
+V_CRT_LINKAGE void V_CRT_CALL exit(int status);
+V_CRT_LINKAGE int V_CRT_CALL abs(int n);
+V_CRT_LINKAGE int V_CRT_CALL atoi(const char *str);
+V_CRT_LINKAGE double V_CRT_CALL atof(const char *str);
+V_CRT_LINKAGE char * V_CRT_CALL getenv(const char *name);
+V_CRT_LINKAGE int V_CRT_CALL setenv(const char *name, const char *value, int overwrite);
+V_CRT_LINKAGE int V_CRT_CALL unsetenv(const char *name);
+V_CRT_LINKAGE int V_CRT_CALL system(const char *command);
+V_CRT_LINKAGE int V_CRT_CALL remove(const char *path);
+V_CRT_LINKAGE int V_CRT_CALL rename(const char *old_path, const char *new_path);
+V_CRT_LINKAGE char * V_CRT_CALL realpath(const char *path, char *resolved_path);
+V_CRT_LINKAGE int V_CRT_CALL mkstemp(char *stemplate);
+V_CRT_LINKAGE void V_CRT_CALL qsort(void *base, size_t items, size_t item_size, qsort_callback_func cb);
+#if defined(__vinix__)
+V_CRT_LINKAGE int V_CRT_CALL strcmp(char *left, char *right);
+V_CRT_LINKAGE int V_CRT_CALL strncmp(char *left, char *right, size_t n);
+#else
+V_CRT_LINKAGE int V_CRT_CALL strcmp(const char *left, const char *right);
+V_CRT_LINKAGE int V_CRT_CALL strncmp(const char *left, const char *right, size_t n);
+#endif
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__BIONIC__)
+V_CRT_LINKAGE char * V_CRT_CALL strdup(const char *str);
+#endif
+#if !defined(_WIN32) && !defined(_WIN64)
+V_CRT_LINKAGE int V_CRT_CALL strcasecmp(const char *left, const char *right);
+V_CRT_LINKAGE int V_CRT_CALL strncasecmp(const char *left, const char *right, size_t n);
+#endif
+#if defined(__vinix__)
+V_CRT_LINKAGE size_t V_CRT_CALL strlen(char *str);
+#else
+V_CRT_LINKAGE size_t V_CRT_CALL strlen(const char *str);
+#endif
+V_CRT_LINKAGE char * V_CRT_CALL strerror(int errnum);
+V_CRT_LINKAGE void * V_CRT_CALL memcpy(void *dest, const void *src, size_t n);
+V_CRT_LINKAGE void * V_CRT_CALL memmove(void *dest, const void *src, size_t n);
+V_CRT_LINKAGE void * V_CRT_CALL memset(void *dest, int ch, size_t n);
+V_CRT_LINKAGE int V_CRT_CALL memcmp(const void *left, const void *right, size_t n);
+V_CRT_LINKAGE void * V_CRT_CALL memchr(const void *str, int c, size_t n);
+V_CRT_LINKAGE char * V_CRT_CALL strchr(const char *str, int c);
+V_CRT_LINKAGE char * V_CRT_CALL strrchr(const char *str, int c);
+V_CRT_LINKAGE char * V_CRT_CALL strstr(const char *haystack, const char *needle);
+V_CRT_LINKAGE int V_CRT_CALL fseek(FILE *stream, long offset, int whence);
+V_CRT_LINKAGE isize V_CRT_CALL getline(char **lineptr, size_t *n, FILE *stream);
+#if defined(_WIN32) || defined(_WIN64)
+V_CRT_LINKAGE int V_CRT_CALL _fileno(FILE *stream);
+V_CRT_LINKAGE FILE * V_CRT_CALL _wfopen(const unsigned short *filename, const unsigned short *mode);
+V_CRT_LINKAGE int V_CRT_CALL _wremove(const unsigned short *path);
+V_CRT_LINKAGE void * V_CRT_CALL _aligned_malloc(size_t size, size_t alignment);
+V_CRT_LINKAGE void * V_CRT_CALL _aligned_realloc(void *memory, size_t size, size_t alignment);
+V_CRT_LINKAGE void V_CRT_CALL _aligned_free(void *memory);
+V_CRT_LINKAGE unsigned short * V_CRT_CALL _wgetenv(const unsigned short *varname);
+V_CRT_LINKAGE int V_CRT_CALL _wputenv(const unsigned short *envstring);
+#endif
+#if defined(_MSC_VER) && !defined(__clang__)
+#ifndef _TRUNCATE
+	#define _TRUNCATE ((size_t)-1)
+#endif
+V_CRT_LINKAGE int V_CRT_CALL _vscprintf(const char *format, va_list ap);
+V_CRT_LINKAGE int V_CRT_CALL _vsnprintf_s(char *buffer, size_t size, size_t count, const char *format, va_list ap);
+#endif
+#endif
+#ifndef _IOFBF
+	#define _IOFBF 0
+#endif
+#ifndef _IOLBF
+	#define _IOLBF 1
+#endif
+#ifndef _IONBF
+	#define _IONBF 2
+#endif
+#ifndef EOF
+	#define EOF (-1)
+#endif
+#ifndef SEEK_SET
+	#define SEEK_SET 0
+#endif
+#ifndef SEEK_CUR
+	#define SEEK_CUR 1
+#endif
+#ifndef SEEK_END
+	#define SEEK_END 2
+#endif
+#ifndef RAND_MAX
+enum {
+	#if defined(_MSC_VER)
+		RAND_MAX = 0x7fff
+	#else
+		RAND_MAX = 2147483647
+	#endif
+};
+#endif
+#undef V_CRT_LINKAGE
+#undef V_CRT_CALL
+static void v_stable_sort(void *base, size_t items, size_t item_size, qsort_callback_func cb) {
+	if (items < 2 || item_size == 0) {
+		return;
+	}
+	if (items > ((size_t)-1) / item_size) {
+		qsort(base, items, item_size, cb);
+		return;
+	}
+	const size_t bytes = items * item_size;
+	char *base_bytes = (char*)base;
+	char *tmp = (char*)malloc(bytes);
+	if (tmp == 0) {
+		qsort(base, items, item_size, cb);
+		return;
+	}
+	char *src = base_bytes;
+	char *dst = tmp;
+	for (size_t width = 1; width < items;) {
+		for (size_t left = 0; left < items;) {
+			size_t mid = left;
+			mid += width;
+			if (mid > items) {
+				mid = items;
+			}
+			size_t right = mid;
+			right += width;
+			if (right > items || right < mid) {
+				right = items;
+			}
+			size_t i = left;
+			size_t j = mid;
+			size_t k = left;
+			while (i < mid && j < right) {
+				char *leftp = src;
+				leftp += i * item_size;
+				char *rightp = src;
+				rightp += j * item_size;
+				char *dstp = dst;
+				dstp += k * item_size;
+				if (cb(leftp, rightp) <= 0) {
+					memcpy(dstp, leftp, item_size);
+					i++;
+				} else {
+					memcpy(dstp, rightp, item_size);
+					j++;
+				}
+				k++;
+			}
+			while (i < mid) {
+				char *dstp = dst;
+				dstp += k * item_size;
+				char *srcp = src;
+				srcp += i * item_size;
+				memcpy(dstp, srcp, item_size);
+				i++;
+				k++;
+			}
+			while (j < right) {
+				char *dstp = dst;
+				dstp += k * item_size;
+				char *srcp = src;
+				srcp += j * item_size;
+				memcpy(dstp, srcp, item_size);
+				j++;
+				k++;
+			}
+			left = right;
+		}
+		char *next_src = dst;
+		dst = src;
+		src = next_src;
+		if (width > items / 2) {
+			width = items;
+		} else {
+			width *= 2;
+		}
+	}
+	if (src != base_bytes) {
+		memcpy(base_bytes, src, bytes);
+	}
+	free(tmp);
+}
 #if defined(__TINYC__)
 // https://lists.nongnu.org/archive/html/tinycc-devel/2025-10/msg00007.html
 // gnu headers use to #define __attribute__ to empty for non-gcc compilers
 #undef __attribute__
 #endif
+#if defined(_MSC_VER) && !defined(__clang__)
+// Ensure C99-like return semantics and NUL-termination for MSVC snprintf/vsnprintf.
+static int v__vsnprintf(char *s, size_t n, const char *fmt, va_list ap) {
+	va_list ap_copy;
+	va_copy(ap_copy, ap);
+	const int needed = _vscprintf(fmt, ap_copy);
+	va_end(ap_copy);
+	if (n > 0) {
+		const int written = _vsnprintf_s(s, n, _TRUNCATE, fmt, ap);
+		if (written < 0) {
+			s[n -
+	1] = 0;
+		}
+	}
+	return needed;
+}
+static int v__snprintf(char *s, size_t n, const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	const int needed = v__vsnprintf(s, n, fmt, ap);
+	va_end(ap);
+	return needed;
+}
+#define vsnprintf v__vsnprintf
+#define snprintf v__snprintf
+#endif
 //================================== GLOBALS =================================*/
+#ifdef _VOBJECTFILE
+static void _vinit(int ___argc, voidptr ___argv);
+static void _vcleanup(void);
+#else
 void _vinit(int ___argc, voidptr ___argv);
 void _vcleanup(void);
-#ifdef _WIN32
-	// workaround for windows, export _vinit_caller/_vcleanup_caller, let dl.open()/dl.close() call it
-	// NOTE: This is hardcoded in vlib/dl/dl_windows.c.v!
-	VV_EXP void _vinit_caller();
-	VV_EXP void _vcleanup_caller();
 #endif
+#ifdef _WIN32
+	// Export helpers so the autogenerated DllMain, or a user-defined one,
+	// can reuse the default V shared-library init/cleanup path.
+	#ifdef _VOBJECTFILE
+		static void _vinit_caller();
+		static void _vcleanup_caller();
+	#else
+		VV_EXP void _vinit_caller();
+		VV_EXP void _vcleanup_caller();
+	#endif
+#endif
+#if !defined(_WIN32)
 #define sigaction_size sizeof(sigaction);
+#endif
 #define _ARR_LEN(a) ( (sizeof(a)) / (sizeof(a[0])) )
 #if INTPTR_MAX == INT32_MAX
 	#define TARGET_IS_32BIT 1
@@ -370,7 +993,7 @@ void _vcleanup(void);
 #else
 	#error "Unknown architecture endianness"
 #endif
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__vinix__)
 	#include <ctype.h>
 	#include <locale.h> // tolower
 	#include <sys/time.h>
@@ -382,7 +1005,7 @@ void _vcleanup(void);
 		#define pthread_rwlockattr_setkind_np(a, b)
 	#endif
 #endif
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__vinix__) || defined(__serenity__) || defined(__sun) || defined(__plan9__) || defined(__OpenBSD__)
+#if (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__serenity__) || defined(__sun) || defined(__plan9__) || defined(__OpenBSD__)) && !defined(__vinix__)
 	#include <sys/types.h>
 	#include <sys/wait.h> // for os__wait
 #endif
@@ -405,7 +1028,26 @@ void _vcleanup(void);
 void * aligned_alloc(size_t alignment, size_t size) { return malloc(size); }
 #endif
 #endif
+#ifdef __APPLE__
+	// macOS only exports aligned_alloc starting with 10.15.
+	#if !defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) || __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101500
+static void *v__aligned_alloc_fallback(size_t alignment, size_t size) {
+	void *res = 0;
+	if (alignment < sizeof(void *)) {
+		alignment = sizeof(void *);
+	}
+	if (posix_memalign(&res, alignment, size) != 0) {
+		return 0;
+	}
+	return res;
+}
+		#define aligned_alloc v__aligned_alloc_fallback
+	#endif
+#endif
 #ifdef _WIN32
+	#ifdef WINVER
+		#undef WINVER
+	#endif
 	#define WINVER 0x0600
 	#ifdef _WIN32_WINNT
 		#undef _WIN32_WINNT
@@ -441,7 +1083,7 @@ void * aligned_alloc(size_t alignment, size_t size) { return malloc(size); }
 #if defined(__CYGWIN__) && !defined(_WIN32)
 	#error Cygwin is not supported, please use MinGW or Visual Studio.
 #endif
-#if defined(__MINGW32__) || defined(__MINGW64__) || (defined(_WIN32) && defined(__TINYC__))
+#if defined(__MINGW32__) || defined(__MINGW64__) || (defined(_WIN32) && defined(__TINYC__)) || defined(_MSC_VER)
 	#undef PRId64
 	#undef PRIi64
 	#undef PRIo64
@@ -458,6 +1100,19 @@ void * aligned_alloc(size_t alignment, size_t size) { return malloc(size); }
 #ifdef _VFREESTANDING
 #undef _VFREESTANDING
 #endif
+
+
+// deterministic float -> u64 conversions for explicit V casts
+// direct C casts are undefined for out-of-range values
+static inline uint64_t _v_f64_to_u64(double x) {
+	if (!(x >= 0.0)) {
+		return 0;
+	}
+	if (x >= 18446744073709551616.0) {
+		return UINT64_MAX;
+	}
+	return (uint64_t)x;
+}
 
 
 // unsigned/signed comparisons
@@ -477,10 +1132,8 @@ static inline bool _us64_lt(uint64_t a, int64_t b) { return a < INT64_MAX && (in
 
 #if !defined(VNORETURN)
 	#if defined(__TINYC__)
-		#include <stdnoreturn.h>
-		#define VNORETURN noreturn
-	#endif
-	# if !defined(__TINYC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+		#define VNORETURN __attribute__((noreturn))
+	# elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 	#  define VNORETURN _Noreturn
 	# elif !defined(VNORETURN) && defined(__GNUC__) && __GNUC__ >= 2
 	#  define VNORETURN __attribute__((noreturn))
@@ -597,7 +1250,7 @@ static inline uint64_t _wymix(uint64_t A, uint64_t B){ _wymum(&A,&B); return A^B
 static inline uint64_t _wyr3(const uint8_t *p, size_t k) { return (((uint64_t)p[0])<<16)|(((uint64_t)p[k>>1])<<8)|p[k-1];}
 // wyhash main function
 static inline uint64_t wyhash(const void *key, size_t len, uint64_t seed, const uint64_t *secret){
-	const uint8_t *p=(const uint8_t *)key; seed^=_wymix(seed^secret[0],secret[1]);	uint64_t a, b;
+	const uint8_t *p=(const uint8_t *)key; seed^=_wymix(seed^secret[0]^len,secret[1]);	uint64_t a, b;
 	if (_likely_(len<=16)) {
 		if (_likely_(len>=4)) { a=(_wyr4(p)<<32)|_wyr4(p+((len>>3)<<2)); b=(_wyr4(p+len-4)<<32)|_wyr4(p+len-4-((len>>3)<<2)); }
 		else if (_likely_(len>0)) { a=_wyr3(p,len); b=0; }
@@ -650,10 +1303,25 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #undef __has_include
 #endif
 
-#if !defined(_VFREESTANDING) && !defined(__vinix__)
+#if defined(__TINYC__) && defined(__BIONIC__)
+	#define __builtin_nanf(ignored_string) (0.0F / 0.0F)
+	#define __builtin_nan(ignored_string) (0.0 / 0.0)
+	#define __builtin_nanl(ignored_string) (0.0L / 0.0L)
+	#define __builtin_inff() (1.0F / 0.0F)
+	#define __builtin_inf() (1.0 / 0.0)
+	#define __builtin_infl() (1.0L / 0.0L)
+	#define __builtin_huge_valf() (1.0F / 0.0F)
+	#define __builtin_huge_val() (1.0 / 0.0)
+	#define __builtin_huge_vall() (1.0L / 0.0L)
+#endif
+
+#if 1
 
 // added by module `builtin.closure`, file: closure_nix.c.v:4:
 
+#ifdef __TINYC__
+#include <sys/mman.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/mman.h>)
 #include <sys/mman.h>
@@ -663,13 +1331,116 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/mman.h>
 #endif
+#endif
+
+
+// inserted by module `builtin.closure`, file: closure_nix.c.v:5:
+#ifndef V_CLOSURE_ONCE_NIX_H
+#define V_CLOSURE_ONCE_NIX_H
+
+#include <pthread.h>
+
+typedef void (*v_closure_init_fn)(void);
+
+#ifndef V_CLOSURE_STATIC_INLINE
+# ifdef _MSC_VER
+#  define V_CLOSURE_STATIC_INLINE static __inline
+# else
+#  define V_CLOSURE_STATIC_INLINE static inline
+# endif
+#endif
+
+static pthread_mutex_t v_closure_once_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int v_closure_once_done = 0;
+
+V_CLOSURE_STATIC_INLINE void v_closure_init_once(v_closure_init_fn init_fn) {
+	pthread_mutex_lock(&v_closure_once_mutex);
+	if (!v_closure_once_done) {
+		init_fn();
+		v_closure_once_done = 1;
+	}
+	pthread_mutex_unlock(&v_closure_once_mutex);
+}
 
 #endif
 
-#if !defined(_VNATIVE)
+#endif
 
-// added by module `builtin`, file: float.c.v:10:
+#if 1
 
+// added by module `builtin.closure`, file: closure_nix.c.v:4:
+
+#ifdef __TINYC__
+#include <sys/mman.h>
+#else
+#if defined(__has_include)
+#if __has_include(<sys/mman.h>)
+#include <sys/mman.h>
+#else
+#error VERROR_MESSAGE Header file <sys/mman.h>, needed for module `builtin.closure` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <sys/mman.h>
+#endif
+#endif
+
+
+// inserted by module `builtin.closure`, file: closure_nix.c.v:5:
+#ifndef V_CLOSURE_ONCE_NIX_H
+#define V_CLOSURE_ONCE_NIX_H
+
+#include <pthread.h>
+
+typedef void (*v_closure_init_fn)(void);
+
+#ifndef V_CLOSURE_STATIC_INLINE
+# ifdef _MSC_VER
+#  define V_CLOSURE_STATIC_INLINE static __inline
+# else
+#  define V_CLOSURE_STATIC_INLINE static inline
+# endif
+#endif
+
+static pthread_mutex_t v_closure_once_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int v_closure_once_done = 0;
+
+V_CLOSURE_STATIC_INLINE void v_closure_init_once(v_closure_init_fn init_fn) {
+	pthread_mutex_lock(&v_closure_once_mutex);
+	if (!v_closure_once_done) {
+		init_fn();
+		v_closure_once_done = 1;
+	}
+	pthread_mutex_unlock(&v_closure_once_mutex);
+}
+
+#endif
+
+#endif
+
+// inserted by module `builtin`, file: allocation.c.v:43:
+#ifndef V_TRACK_HEAP_CHECKS_H
+#define V_TRACK_HEAP_CHECKS_H
+
+#if defined(CUSTOM_DEFINE_track_heap) && (defined(_VGCBOEHM) || defined(CUSTOM_DEFINE_gcboehm))
+#error "-d track_heap requires manual memory management; rebuild with -gc none"
+#endif
+
+#if defined(CUSTOM_DEFINE_track_heap) && defined(CUSTOM_DEFINE_vgc)
+#error "-d track_heap requires manual memory management; rebuild with -gc none"
+#endif
+
+#if defined(CUSTOM_DEFINE_track_heap) && defined(_VPREALLOC)
+#error "-d track_heap requires manual memory management; rebuild with -gc none (not -prealloc)"
+#endif
+
+#endif
+
+
+// added by module `builtin`, file: float.c.v:9:
+
+#ifdef __TINYC__
+#include <float.h>
+#else
 #if defined(__has_include)
 #if __has_include(<float.h>)
 #include <float.h>
@@ -679,11 +1450,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <float.h>
 #endif
-
 #endif
+
 
 // added by module `term.termios`, file: termios_linux.c.v:10:
 
+#ifdef __TINYC__
+#include <termios.h>
+#else
 #if defined(__has_include)
 #if __has_include(<termios.h>)
 #include <termios.h>
@@ -693,10 +1467,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <termios.h>
 #endif
+#endif
 
 
 // added by module `term.termios`, file: termios_linux.c.v:11:
 
+#ifdef __TINYC__
+#include <sys/ioctl.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/ioctl.h>)
 #include <sys/ioctl.h>
@@ -706,10 +1484,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/ioctl.h>
 #endif
+#endif
 
 
 // added by module `os`, file: debugger_linux.c.v:3:
 
+#ifdef __TINYC__
+#include <sys/ptrace.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/ptrace.h>)
 #include <sys/ptrace.h>
@@ -719,12 +1501,16 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/ptrace.h>
 #endif
+#endif
 
 
-#if !defined(_WIN32)
+#if 1
 
 // added by module `os`, file: fd.c.v:6:
 
+#ifdef __TINYC__
+#include <sys/select.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/select.h>)
 #include <sys/select.h>
@@ -734,11 +1520,69 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/select.h>
 #endif
+#endif
+
+
+// added by module `os`, file: fd.c.v:7:
+
+#ifdef __TINYC__
+#include <sys/ioctl.h>
+#else
+#if defined(__has_include)
+#if __has_include(<sys/ioctl.h>)
+#include <sys/ioctl.h>
+#else
+#error VERROR_MESSAGE Header file <sys/ioctl.h>, needed for module `os` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <sys/ioctl.h>
+#endif
+#endif
+
+#endif
+
+#if 1
+
+// added by module `os`, file: fd.c.v:6:
+
+#ifdef __TINYC__
+#include <sys/select.h>
+#else
+#if defined(__has_include)
+#if __has_include(<sys/select.h>)
+#include <sys/select.h>
+#else
+#error VERROR_MESSAGE Header file <sys/select.h>, needed for module `os` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <sys/select.h>
+#endif
+#endif
+
+
+// added by module `os`, file: fd.c.v:7:
+
+#ifdef __TINYC__
+#include <sys/ioctl.h>
+#else
+#if defined(__has_include)
+#if __has_include(<sys/ioctl.h>)
+#include <sys/ioctl.h>
+#else
+#error VERROR_MESSAGE Header file <sys/ioctl.h>, needed for module `os` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <sys/ioctl.h>
+#endif
+#endif
 
 #endif
 
 // added by module `os`, file: os.c.v:5:
 
+#ifdef __TINYC__
+#include <sys/stat.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/stat.h>)
 #include <sys/stat.h>
@@ -748,13 +1592,17 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/stat.h>
 #endif
+#endif
 
 
 // added by module `os`, file: os.c.v:6:
 #include <errno.h>
 
-// added by module `os`, file: os_nix.c.v:5:
+// added by module `os`, file: os_nix.c.v:3:
 
+#ifdef __TINYC__
+#include <dirent.h>
+#else
 #if defined(__has_include)
 #if __has_include(<dirent.h>)
 #include <dirent.h>
@@ -764,10 +1612,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <dirent.h>
 #endif
+#endif
 
 
-// added by module `os`, file: os_nix.c.v:6:
+// added by module `os`, file: os_nix.c.v:4:
 
+#ifdef __TINYC__
+#include <unistd.h>
+#else
 #if defined(__has_include)
 #if __has_include(<unistd.h>)
 #include <unistd.h>
@@ -777,10 +1629,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <unistd.h>
 #endif
+#endif
 
 
-// added by module `os`, file: os_nix.c.v:7:
+// added by module `os`, file: os_nix.c.v:5:
 
+#ifdef __TINYC__
+#include <fcntl.h>
+#else
 #if defined(__has_include)
 #if __has_include(<fcntl.h>)
 #include <fcntl.h>
@@ -790,10 +1646,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <fcntl.h>
 #endif
+#endif
 
 
-// added by module `os`, file: os_nix.c.v:8:
+// added by module `os`, file: os_nix.c.v:6:
 
+#ifdef __TINYC__
+#include <sys/utsname.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/utsname.h>)
 #include <sys/utsname.h>
@@ -803,10 +1663,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/utsname.h>
 #endif
+#endif
 
 
-// added by module `os`, file: os_nix.c.v:9:
+// added by module `os`, file: os_nix.c.v:7:
 
+#ifdef __TINYC__
+#include <sys/types.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/types.h>)
 #include <sys/types.h>
@@ -816,10 +1680,14 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/types.h>
 #endif
+#endif
 
 
-// added by module `os`, file: os_nix.c.v:10:
+// added by module `os`, file: os_nix.c.v:8:
 
+#ifdef __TINYC__
+#include <sys/statvfs.h>
+#else
 #if defined(__has_include)
 #if __has_include(<sys/statvfs.h>)
 #include <sys/statvfs.h>
@@ -829,10 +1697,31 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <sys/statvfs.h>
 #endif
+#endif
 
 
-// added by module `os`, file: os_nix.c.v:11:
+// added by module `os`, file: os_nix.c.v:9:
 
+#ifdef __TINYC__
+#include <sys/wait.h>
+#else
+#if defined(__has_include)
+#if __has_include(<sys/wait.h>)
+#include <sys/wait.h>
+#else
+#error VERROR_MESSAGE Header file <sys/wait.h>, needed for module `os` was not found. Please install the corresponding development headers.
+#endif
+#else
+#include <sys/wait.h>
+#endif
+#endif
+
+
+// added by module `os`, file: os_nix.c.v:10:
+
+#ifdef __TINYC__
+#include <utime.h>
+#else
 #if defined(__has_include)
 #if __has_include(<utime.h>)
 #include <utime.h>
@@ -842,10 +1731,195 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <utime.h>
 #endif
+#endif
+
+
+// inserted by module `os`, file: os_nix.c.v:11:
+// v_os_execute_set_cloexec marks an fd as close-on-exec. When multiple threads
+// each call os.execute, every pipe() they create is briefly visible to all of
+// them; without FD_CLOEXEC, one thread's spawned child can inherit another
+// thread's pipe write end, keeping that pipe open after the intended writer
+// exits. The reader then never observes EOF and the captured output ends up
+// empty (seen on macOS arm64 in CI). Setting CLOEXEC closes the fd
+// automatically across exec, which fixes the race for both fork/execvp and
+// posix_spawn paths.
+static void v_os_execute_set_cloexec(int fd) {
+	int flags = fcntl(fd, F_GETFD, 0);
+	if (flags >= 0) {
+		fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+	}
+}
+
+#if defined(__ANDROID__) && (!defined(__ANDROID_API__) || __ANDROID_API__ < 28)
+// Android API levels below 28 do not provide posix_spawn(). Fall back to
+// fork()/execvp() with a pipe; this is what popen() does internally and
+// is sufficient for capturing the merged stdout+stderr of a shell command.
+static int v_os_execute_capture_start(const char *cmd, int *child_pid, int *read_fd) {
+	int pipefd[2];
+	if (pipe(pipefd) != 0) {
+		return -1;
+	}
+	v_os_execute_set_cloexec(pipefd[0]);
+	v_os_execute_set_cloexec(pipefd[1]);
+	pid_t pid = fork();
+	if (pid < 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	if (pid == 0) {
+		// child: redirect stdout+stderr to the pipe, then exec the shell.
+		// dup2 clears FD_CLOEXEC on the destination, so STDOUT/STDERR stay
+		// open across exec while the original pipe fds are auto-closed.
+		dup2(pipefd[1], STDOUT_FILENO);
+		dup2(pipefd[1], STDERR_FILENO);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		execlp("sh", "sh", "-c", cmd, (char *)NULL);
+		_exit(127);
+	}
+	close(pipefd[1]);
+	*child_pid = (int)pid;
+	*read_fd = pipefd[0];
+	return 0;
+}
+
+static int v_os_exec_capture_start(char *const argv[], int *child_pid, int *read_fd) {
+	if (argv == NULL || argv[0] == NULL) {
+		return -1;
+	}
+	int pipefd[2];
+	if (pipe(pipefd) != 0) {
+		return -1;
+	}
+	v_os_execute_set_cloexec(pipefd[0]);
+	v_os_execute_set_cloexec(pipefd[1]);
+	pid_t pid = fork();
+	if (pid < 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	if (pid == 0) {
+		dup2(pipefd[1], STDOUT_FILENO);
+		dup2(pipefd[1], STDERR_FILENO);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		execvp(argv[0], argv);
+		_exit(127);
+	}
+	close(pipefd[1]);
+	*child_pid = (int)pid;
+	*read_fd = pipefd[0];
+	return 0;
+}
+#else
+// Use opaque void* declarations for posix_spawn instead of #include <spawn.h>.
+// Including <spawn.h> transitively pulls in <features.h>/<sys/cdefs.h>, which
+// breaks under musl-gcc on the Ubuntu docker image where <sys/cdefs.h> is not
+// on the include path. The 128-byte buffer is comfortably larger than the
+// real posix_spawn_file_actions_t on glibc (~80 bytes) and musl (~40 bytes);
+// posix_spawn_file_actions_init() initializes the buffer, so its true layout
+// is not needed here. We pass NULL for posix_spawnattr_t, so it is not
+// declared. Calling these via void* is ABI-compatible: pointer parameters
+// are passed identically regardless of pointee type.
+typedef struct { unsigned char _opaque[128]; } v_posix_spawn_file_actions_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern int posix_spawn(pid_t *, const char *, const void *, const void *, char *const [], char *const []);
+extern int posix_spawnp(pid_t *, const char *, const void *, const void *, char *const [], char *const []);
+extern int posix_spawn_file_actions_init(void *);
+extern int posix_spawn_file_actions_destroy(void *);
+extern int posix_spawn_file_actions_adddup2(void *, int, int);
+extern int posix_spawn_file_actions_addclose(void *, int);
+
+extern char **environ;
+#ifdef __cplusplus
+}
+#endif
+
+static int v_os_execute_capture_start(const char *cmd, int *child_pid, int *read_fd) {
+	int pipefd[2];
+	if (pipe(pipefd) != 0) {
+		return -1;
+	}
+	v_os_execute_set_cloexec(pipefd[0]);
+	v_os_execute_set_cloexec(pipefd[1]);
+	v_posix_spawn_file_actions_t actions;
+	if (posix_spawn_file_actions_init(&actions) != 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	int err = 0;
+	if ((err = posix_spawn_file_actions_adddup2(&actions, pipefd[1], STDOUT_FILENO)) != 0
+		|| (err = posix_spawn_file_actions_adddup2(&actions, pipefd[1], STDERR_FILENO)) != 0
+		|| (err = posix_spawn_file_actions_addclose(&actions, pipefd[0])) != 0
+		|| (err = posix_spawn_file_actions_addclose(&actions, pipefd[1])) != 0) {
+		posix_spawn_file_actions_destroy(&actions);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	char *const argv[] = {(char *)"/bin/sh", (char *)"-c", (char *)cmd, NULL};
+	err = posix_spawn(child_pid, "/bin/sh", &actions, NULL, argv, environ);
+	posix_spawn_file_actions_destroy(&actions);
+	if (err != 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	close(pipefd[1]);
+	*read_fd = pipefd[0];
+	return 0;
+}
+
+static int v_os_exec_capture_start(char *const argv[], int *child_pid, int *read_fd) {
+	if (argv == NULL || argv[0] == NULL) {
+		return -1;
+	}
+	int pipefd[2];
+	if (pipe(pipefd) != 0) {
+		return -1;
+	}
+	v_os_execute_set_cloexec(pipefd[0]);
+	v_os_execute_set_cloexec(pipefd[1]);
+	v_posix_spawn_file_actions_t actions;
+	if (posix_spawn_file_actions_init(&actions) != 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	int err = 0;
+	if ((err = posix_spawn_file_actions_adddup2(&actions, pipefd[1], STDOUT_FILENO)) != 0
+		|| (err = posix_spawn_file_actions_adddup2(&actions, pipefd[1], STDERR_FILENO)) != 0
+		|| (err = posix_spawn_file_actions_addclose(&actions, pipefd[0])) != 0
+		|| (err = posix_spawn_file_actions_addclose(&actions, pipefd[1])) != 0) {
+		posix_spawn_file_actions_destroy(&actions);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	err = posix_spawnp(child_pid, argv[0], &actions, NULL, argv, environ);
+	posix_spawn_file_actions_destroy(&actions);
+	if (err != 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return -1;
+	}
+	close(pipefd[1]);
+	*read_fd = pipefd[0];
+	return 0;
+}
+#endif
 
 
 // added by module `os`, file: signal.c.v:3:
 
+#ifdef __TINYC__
+#include <signal.h>
+#else
 #if defined(__has_include)
 #if __has_include(<signal.h>)
 #include <signal.h>
@@ -855,10 +1929,16 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <signal.h>
 #endif
+#endif
 
+// defined by module `os`
+#define v_signal_with_handler_cast(sig, handler) signal((sig), (void (*)(int))(handler))
 
 // added by module `os`, file: signal_linux.c.v:5:
 
+#ifdef __TINYC__
+#include <signal.h>
+#else
 #if defined(__has_include)
 #if __has_include(<signal.h>)
 #include <signal.h>
@@ -868,10 +1948,25 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #else
 #include <signal.h>
 #endif
+#endif
 
+#if !defined(__cplusplus) && !defined(CUSTOM_DEFINE_no_bool)
+#ifdef bool
+#undef bool
+#endif
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
+#ifdef CUSTOM_DEFINE_4bytebool
+typedef int bool;
+#else
+typedef u8 bool;
+#endif
+#endif
+#endif
 
 // V global/const #define ... :
 #define _const_strconv__max_size_f64_char 512
+#define _const_autostr_type_stack_max_depth 64
+#define _const_min_int -2147483648
 #define _const_max_int 2147483647
 #define _const_hashbits 24
 #define _const_max_cached_hashbits 16
@@ -890,6 +1985,7 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #define _const_os__error_code_not_set -1
 #define _const_os__max_path_len 4096
 #define _const_os__f_ok 0
+#define _const_os__read_lines_chunk_size 131072
 
 // Enum definitions:
 
@@ -904,7 +2000,27 @@ typedef enum {
 	ArrayFlags__noshrink = 2U, // u64(1) << 1
 	ArrayFlags__nogrow = 4U, // u64(1) << 2
 	ArrayFlags__nofree = 8U, // u64(1) << 3
+	ArrayFlags__managed = 16U, // u64(1) << 4
+	ArrayFlags__noscan_data = 32U, // u64(1) << 5
+	ArrayFlags__is_slice = 64U, // u64(1) << 6
 }  ArrayFlags;
+
+typedef enum {
+	GraphemeBreakProperty__other, // 
+	GraphemeBreakProperty__cr, // +1
+	GraphemeBreakProperty__lf, // +2
+	GraphemeBreakProperty__control, // +3
+	GraphemeBreakProperty__extend, // +4
+	GraphemeBreakProperty__regional_indicator, // +5
+	GraphemeBreakProperty__prepend, // +6
+	GraphemeBreakProperty__spacing_mark, // +7
+	GraphemeBreakProperty__l, // +8
+	GraphemeBreakProperty__v, // +9
+	GraphemeBreakProperty__t, // +10
+	GraphemeBreakProperty__lv, // +11
+	GraphemeBreakProperty__lvt, // +12
+	GraphemeBreakProperty__zwj, // +13
+}  GraphemeBreakProperty;
 
 typedef enum {
 	MapMode__to_upper, // 
@@ -958,15 +2074,16 @@ struct IError {
 		void* _object;
 		None__* _None__;
 		voidptr* _voidptr;
-		Error* _Error;
 		MessageError* _MessageError;
 		os__Eof* _os__Eof;
 		os__NotExpected* _os__NotExpected;
 		os__FileNotOpenedError* _os__FileNotOpenedError;
 		os__SizeOfTypeIs0Error* _os__SizeOfTypeIs0Error;
 		os__ExecutableNotFoundError* _os__ExecutableNotFoundError;
+		Error* _Error;
 	};
 	u32 _typ;
+	void* _methods;
 };
 
 struct string {
@@ -1030,11 +2147,15 @@ typedef array Array_u8;
 typedef array Array_voidptr;
 typedef array Array_int;
 typedef array Array_rune;
-typedef array Array_main__PackageMeta;
+typedef array Array_main__Repo;
+typedef array Array_main__Package;
+typedef map Map_string_bool;
+typedef u8 Array_fixed_u8_128 [128];
 typedef char Array_fixed_char_256 [256];
 typedef u8 Array_fixed_u8_32 [32];
 typedef u8 Array_fixed_u8_64 [64];
 typedef u8 Array_fixed_u8_5 [5];
+typedef u8 Array_fixed_u8_20 [20];
 typedef u32 Array_fixed_u32_10 [10];
 typedef u64 Array_fixed_u64_20 [20];
 typedef u64 Array_fixed_u64_584 [584];
@@ -1044,6 +2165,9 @@ typedef u8 Array_fixed_u8_26 [26];
 typedef u8 Array_fixed_u8_512 [512];
 typedef u64 Array_fixed_u64_47 [47];
 typedef u64 Array_fixed_u64_31 [31];
+typedef int Array_fixed_int_64 [64];
+typedef voidptr Array_fixed_voidptr_64 [64];
+typedef array Array_GraphemeBreakProperty;
 typedef u8 Array_fixed_u8_17 [17];
 typedef i32 Array_fixed_i32_1264 [1264];
 typedef int Array_fixed_int_10 [10];
@@ -1059,20 +2183,6 @@ struct none {
 
 struct None__ {
 	Error Error;
-};
-
-struct main__Config {
-	string repo_url;
-	string prefix;
-	string db_dir;
-};
-
-struct main__PackageMeta {
-	string name;
-	string version;
-	string size;
-	string description;
-	string category;
 };
 
 struct os__Eof {
@@ -1091,6 +2201,10 @@ struct os__ExecutableNotFoundError {
 	Error Error;
 };
 
+struct ArrayDataHeader {
+	bool has_slices;
+};
+
 struct MessageError {
 	string msg;
 	int code;
@@ -1104,6 +2218,12 @@ union strconv__Float64u {
 union strconv__Float32u {
 	f32 f;
 	u32 u;
+};
+
+struct GraphemeState {
+	GraphemeBreakProperty prev_prop;
+	int ri_count;
+	u8 extended_pictographic_state;
 };
 
 union StrIntpMem {
@@ -1132,6 +2252,33 @@ struct strconv__BF_param {
 	bool sign_flag;
 	strconv__Align_text align;
 	bool rm_tail_zero;
+};
+
+struct main__Repo {
+	string name;
+	string url;
+	string raw_url;
+	int package_count;
+};
+
+struct main__Config {
+	Array_main__Repo repos;
+	string prefix;
+	string db_dir;
+};
+
+struct main__Package {
+	string name;
+	string version;
+	string arch;
+	string size;
+	u64 size_bytes;
+	string description;
+	string category;
+	string bin;
+	string src;
+	string pkg_type;
+	string repo_name;
 };
 
 struct strconv__Dec32 {
@@ -1206,13 +2353,94 @@ struct StrIntpData {
 	string str;
 	u32 fmt;
 	StrIntpMem d;
+	int dyn_width;
+	int dyn_precision;
+	u8 dyn_flags;
 };
 // #end sorted_symbols
+
+// BEGIN_array_fixed_return_structs
+struct _v_Array_fixed_u8_128 {
+	u8 ret_arr[128];
+};
+struct _v_Array_fixed_char_256 {
+	char ret_arr[256];
+};
+struct _v_Array_fixed_u8_32 {
+	u8 ret_arr[32];
+};
+struct _v_Array_fixed_u8_64 {
+	u8 ret_arr[64];
+};
+struct _v_Array_fixed_u8_5 {
+	u8 ret_arr[5];
+};
+struct _v_Array_fixed_u8_20 {
+	u8 ret_arr[20];
+};
+struct _v_Array_fixed_u32_10 {
+	u32 ret_arr[10];
+};
+struct _v_Array_fixed_u64_20 {
+	u64 ret_arr[20];
+};
+struct _v_Array_fixed_u64_584 {
+	u64 ret_arr[584];
+};
+struct _v_Array_fixed_u64_652 {
+	u64 ret_arr[652];
+};
+struct _v_Array_fixed_f64_36 {
+	f64 ret_arr[36];
+};
+struct _v_Array_fixed_u8_26 {
+	u8 ret_arr[26];
+};
+struct _v_Array_fixed_u8_512 {
+	u8 ret_arr[512];
+};
+struct _v_Array_fixed_u64_47 {
+	u64 ret_arr[47];
+};
+struct _v_Array_fixed_u64_31 {
+	u64 ret_arr[31];
+};
+struct _v_Array_fixed_int_64 {
+	int ret_arr[64];
+};
+struct _v_Array_fixed_voidptr_64 {
+	voidptr ret_arr[64];
+};
+struct _v_Array_fixed_u8_17 {
+	u8 ret_arr[17];
+};
+struct _v_Array_fixed_i32_1264 {
+	i32 ret_arr[1264];
+};
+struct _v_Array_fixed_int_10 {
+	int ret_arr[10];
+};
+struct _v_Array_fixed_int_20 {
+	int ret_arr[20];
+};
+struct _v_Array_fixed_u8_4096 {
+	u8 ret_arr[4096];
+};
+struct _v_Array_fixed_u8_1024 {
+	u8 ret_arr[1024];
+};
+// END_array_fixed_return_structs
+
 
 // BEGIN_multi_return_structs
 struct multi_return_u32_u32 {
 	u32 arg0;
 	u32 arg1;
+};
+
+struct multi_return_rune_int {
+	rune arg0;
+	int arg1;
 };
 
 struct multi_return_strconv__Dec32_bool {
@@ -1223,6 +2451,11 @@ struct multi_return_strconv__Dec32_bool {
 struct multi_return_strconv__Dec64_bool {
 	strconv__Dec64 arg0;
 	bool arg1;
+};
+
+struct multi_return_string_int {
+	string arg0;
+	int arg1;
 };
 
 struct multi_return_int_bool {
@@ -1241,16 +2474,28 @@ static bool Array_u8_contains(Array_u8 a, u8 v);
 static bool Array_string_contains(Array_string a, string v);
 
 // V Option_xxx definitions:
+struct _option_int {
+	byte state;
+	IError err;
+	byte data[sizeof(int) > 1 ? sizeof(int) : 1];
+};
+
+struct _option_u8 {
+	byte state;
+	IError err;
+	byte data[sizeof(u8) > 1 ? sizeof(u8) : 1];
+};
+
 struct _option_string {
 	byte state;
 	IError err;
 	byte data[sizeof(string) > 1 ? sizeof(string) : 1];
 };
 
-struct _option_main__PackageMeta {
+struct _option_main__Package {
 	byte state;
 	IError err;
-	byte data[sizeof(main__PackageMeta) > 1 ? sizeof(main__PackageMeta) : 1];
+	byte data[sizeof(main__Package) > 1 ? sizeof(main__Package) : 1];
 };
 
 
@@ -1267,16 +2512,16 @@ struct _result_FILE_ptr {
 	byte data[sizeof(FILE*) > 1 ? sizeof(FILE*) : 1];
 };
 
-struct _result_void {
-	bool is_error;
-	IError err;
-	byte data[sizeof(u8) > 1 ? sizeof(u8) : 1];
-};
-
 struct _result_int {
 	bool is_error;
 	IError err;
 	byte data[sizeof(int) > 1 ? sizeof(int) : 1];
+};
+
+struct _result_void {
+	bool is_error;
+	IError err;
+	byte data[sizeof(u8) > 1 ? sizeof(u8) : 1];
 };
 
 struct _result_strings__Builder {
@@ -1309,12 +2554,20 @@ static char * v_typeof_interface_IError(u32 sidx);
 u32 v_typeof_interface_idx_IError(u32 sidx);
 // end of definitions #endif
 strings__Builder strings__new_builder(int initial_size);
+Array_u8 strings__Builder_reuse_as_plain_u8_array(strings__Builder* b);
 void strings__Builder_write_ptr(strings__Builder* b, u8* ptr, int len);
+void strings__Builder_write_rune(strings__Builder* b, rune r);
 void strings__Builder_write_runes(strings__Builder* b, Array_rune runes);
 void strings__Builder_write_u8(strings__Builder* b, u8 data);
+void strings__Builder_write_byte(strings__Builder* b, u8 data);
+void strings__Builder_write_u_decimal(strings__Builder* b, u64 n);
 void strings__Builder_write_string(strings__Builder* b, string s);
+string strings__Builder_spart(strings__Builder* b, int start_pos, int n);
+string strings__Builder_cut_last(strings__Builder* b, int n);
 string strings__Builder_str(strings__Builder* b);
+void strings__Builder_ensure_cap(strings__Builder* b, int n);
 void strings__Builder_free(strings__Builder* b);
+void strings__Builder_write_repeated_rune(strings__Builder* b, rune r, int count);
 string strings__repeat(u8 c, int n);
 multi_return_u64_u64 math__bits__mul_64(u64 x, u64 y);
 int math__bits__trailing_zeros_32(u32 x);
@@ -1368,6 +2621,7 @@ int strconv__dec_digits(u64 n);
 VV_LOC void builtin___memory_panic(string fname, isize size);
 u8* builtin___v_malloc(isize n);
 u8* builtin__malloc_noscan(isize n);
+VV_LOC u8* builtin__malloc_uninit(isize n);
 VV_LOC u64 builtin____at_least_one(u64 how_many);
 u8* builtin__v_realloc(u8* b, isize n);
 u8* builtin__realloc_data(u8* old_data, int old_size, int new_size);
@@ -1376,26 +2630,55 @@ u8* builtin__vcalloc_noscan(isize n);
 void builtin___v_free(voidptr ptr);
 voidptr builtin__memdup(voidptr src, isize sz);
 voidptr builtin__memdup_noscan(voidptr src, isize sz);
+VV_LOC int builtin__array_data_header_size(void);
+VV_LOC u64 builtin__array_data_allocation_size(u64 total_size);
+VV_LOC voidptr builtin__alloc_array_data(u64 total_size);
+VV_LOC voidptr builtin__alloc_array_data_uninit(u64 total_size);
+VV_LOC bool builtin__array_uses_noscan_data(array a);
+VV_LOC voidptr builtin__array_alloc_array_data_like(array a, u64 total_size);
+VV_LOC voidptr builtin__array_alloc_array_data_like_uninit(array a, u64 total_size);
+VV_LOC ArrayDataHeader* builtin__array_data_header(array a);
+VV_LOC bool builtin__array_buffer_has_slices(array a);
+VV_LOC void builtin__array_mark_buffer_has_slices(array* a);
+VV_LOC void builtin__array_set_managed_flags(array* a, bool is_slice);
+VV_LOC void builtin__array_clone_shallow_to_cap(array* a, int new_cap);
+VV_LOC int builtin__v_ni_index(int i, int len);
 VV_LOC array builtin____new_array(int mylen, int cap, int elm_size);
 VV_LOC array builtin____new_array_with_default(int mylen, int cap, int elm_size, voidptr val);
 VV_LOC array builtin____new_array_with_multi_default(int mylen, int cap, int elm_size, voidptr val);
 VV_LOC array builtin____new_array_with_array_default(int mylen, int cap, int elm_size, array val, int depth);
 VV_LOC array builtin__new_array_from_c_array(int len, int cap, int elm_size, voidptr c_array);
 void builtin__array_ensure_cap(array* a, int required);
+VV_LOC bool builtin__array_needs_unique_shift(array a, int required);
+VV_LOC bool builtin__array_needs_unique_append(array a, int required);
+VV_LOC bool builtin__array_needs_unique_shrink(array a);
 void builtin__array_insert(array* a, int i, voidptr val);
 VV_LOC void builtin__array_insert_many(array* a, int i, voidptr val, int size);
 void builtin__array_prepend(array* a, voidptr val);
 VV_LOC void builtin__array_prepend_many(array* a, voidptr val, int size);
+void builtin__array_delete(array* a, int i);
+void builtin__array_delete_many(array* a, int i, int size);
 void builtin__array_clear(array* a);
+void builtin__array_trim(array* a, int index);
 VV_LOC voidptr builtin__array_get_unsafe(array a, int i);
 VV_LOC voidptr builtin__array_get(array a, int i);
+VV_LOC voidptr builtin__array_get_i64(array a, i64 i);
+VV_LOC voidptr builtin__array_get_u64(array a, u64 i);
+VV_LOC voidptr builtin__array_get_ni(array a, int i);
 VV_LOC voidptr builtin__array_get_with_check(array a, int i);
+VV_LOC voidptr builtin__array_get_with_check_i64(array a, i64 i);
+VV_LOC voidptr builtin__array_get_with_check_u64(array a, u64 i);
+VV_LOC voidptr builtin__array_get_with_check_ni(array a, int i);
 VV_LOC array builtin__array_slice(array a, int start, int _end);
 VV_LOC array builtin__array_clone_static_to_depth(array a, int depth);
 array builtin__array_clone(array* a);
 array builtin__array_clone_to_depth(array* a, int depth);
 VV_LOC void builtin__array_set_unsafe(array* a, int i, voidptr val);
 VV_LOC void builtin__array_set(array* a, int i, voidptr val);
+VV_LOC void builtin__array_set_i64(array* a, i64 i, voidptr val);
+VV_LOC void builtin__array_set_u64(array* a, u64 i, voidptr val);
+VV_LOC void builtin__array_set_ni(array* a, int i, voidptr val);
+VV_LOC void builtin__copy_element_to(voidptr dest, voidptr src, int element_size);
 VV_LOC void builtin__array_push(array* a, voidptr val);
 void builtin__array_push_many(array* a, voidptr val, int size);
 void builtin__array_free(array* a);
@@ -1409,12 +2692,22 @@ VV_LOC array builtin____new_array_with_default_noscan(int mylen, int cap, int el
 VV_LOC void builtin__array_prepend_noscan(array* a, voidptr val);
 VV_LOC void builtin__array_push_noscan(array* a, voidptr val);
 VV_LOC void builtin__array_push_many_noscan(array* a, voidptr val, int size);
-void builtin__print_backtrace(void);
+VV_LOC bool builtin__autostr_type_in_stack(int typ);
+VV_LOC void builtin__autostr_type_push(int typ);
+VV_LOC void builtin__autostr_type_pop(void);
+VV_LOC bool builtin__autostr_addr_in_stack(voidptr addr);
+VV_LOC void builtin__autostr_addr_push(voidptr addr);
+VV_LOC void builtin__autostr_addr_pop(void);
+VV_LOC string builtin__autostr_array_circular(int len);
 bool builtin__print_backtrace_skipping_top_frames(int xskipframes);
-VV_LOC bool builtin__print_backtrace_skipping_top_frames_linux(int skipframes);
 void builtin___v_exit(int code);
 VV_LOC void builtin__v_segmentation_fault_handler(i32 signal_number);
 VV_LOC int builtin__v_fixed_index(int i, int len);
+VV_LOC int builtin__v_fixed_index_i64(i64 i, int len);
+VV_LOC int builtin__v_fixed_index_u64(u64 i, int len);
+VV_LOC int builtin__v_fixed_index_ni(int i, int len);
+VV_LOC int builtin__v_slice_index_i64(i64 i);
+VV_LOC int builtin__v_slice_index_u64(u64 i);
 Array_string builtin__arguments(void);
 string builtin__vcurrent_hash(void);
 u64 builtin__v_getpid(void);
@@ -1423,11 +2716,12 @@ bool builtin__isnil(voidptr v);
 VV_LOC void builtin__builtin_init(void);
 int builtin__vstrlen(u8* s);
 int builtin__vstrlen_char(char* s);
-voidptr builtin__vmemcpy(voidptr dest, const voidptr const_src, isize n);
-voidptr builtin__vmemmove(voidptr dest, const voidptr const_src, isize n);
-int builtin__vmemcmp(const voidptr const_s1, const voidptr const_s2, isize n);
+voidptr builtin__vmemcpy(voidptr dest, const void* const_src, isize n);
+voidptr builtin__vmemmove(voidptr dest, const void* const_src, isize n);
+int builtin__vmemcmp(const void* const_s1, const void* const_s2, isize n);
 voidptr builtin__vmemset(voidptr s, int c, isize n);
 VV_LOC void builtin___result_ok(voidptr data, _result* res, int size);
+VV_LOC void builtin___result_clone(_result* current, _result* res, int size);
 string builtin__IError_str(IError err);
 string builtin__Error_msg(Error err);
 int builtin__Error_code(Error err);
@@ -1440,6 +2734,7 @@ IError builtin__error_with_code(string message, int code);
 VV_LOC void builtin___option_none(voidptr data, _option* option, int size);
 VV_LOC void builtin___option_ok(voidptr data, _option* option, int size);
 VV_LOC void builtin___option_clone(_option* current, _option* option, int size);
+VV_LOC void builtin___result_ok_markused(void);
 VV_LOC string builtin__None___str(None__ _d1);
 string builtin__f64_str(f64 x);
 string builtin__f64_strg(f64 x);
@@ -1447,6 +2742,17 @@ string builtin__f32_str(f32 x);
 string builtin__f32_strg(f32 x);
 f32 builtin__f32_abs(f32 a);
 f64 builtin__f64_abs(f64 a);
+VV_LOC u32 builtin__grapheme_hex_nibble(u8 c);
+VV_LOC u32 builtin__grapheme_hex_byte(string ranges, int i);
+VV_LOC u32 builtin__grapheme_range_value(string ranges, int value_idx);
+VV_LOC bool builtin__in_grapheme_ranges(rune r, string ranges);
+VV_LOC GraphemeBreakProperty builtin__grapheme_break_property(rune r);
+VV_LOC bool builtin__is_extended_pictographic(rune r);
+VV_LOC GraphemeState builtin__grapheme_state_from_rune(rune r, GraphemeBreakProperty prop);
+VV_LOC void builtin__GraphemeState_push(GraphemeState* gs, rune r, GraphemeBreakProperty prop);
+VV_LOC bool builtin__should_break_grapheme(GraphemeState gs, rune r, GraphemeBreakProperty prop);
+VV_LOC int builtin__utf8_rune_visible_width(rune r, GraphemeBreakProperty prop);
+VV_LOC int builtin__utf8_grapheme_visible_length(string s);
 string builtin__ptr_str(voidptr ptr);
 string builtin__isize_str(isize x);
 string builtin__usize_str(usize x);
@@ -1466,6 +2772,8 @@ string builtin__bool_str(bool b);
 VV_LOC string builtin__u64_to_hex_no_leading_zeros(u64 nn, u8 len);
 string builtin__u64_hex(u64 nn);
 string builtin__voidptr_str(voidptr nn);
+string builtin__byteptr_str(byteptr nn);
+string builtin__charptr_str(charptr nn);
 string builtin__u8_str(u8 b);
 string builtin__u8_ascii_str(u8 b);
 VV_LOC bool builtin__fast_string_eq(string a, string b);
@@ -1480,6 +2788,7 @@ VV_LOC DenseArray builtin__new_dense_array(int key_bytes, int value_bytes);
 VV_LOC voidptr builtin__DenseArray_key(DenseArray* d, int i);
 VV_LOC voidptr builtin__DenseArray_value(DenseArray* d, int i);
 VV_LOC bool builtin__DenseArray_has_index(DenseArray* d, int i);
+VV_LOC void builtin__DenseArray_trim_deleted_tail(DenseArray* d);
 VV_LOC int builtin__DenseArray_expand(DenseArray* d);
 VV_LOC bool builtin__map_eq_string(voidptr a, voidptr b);
 VV_LOC bool builtin__map_eq_int_1(voidptr a, voidptr b);
@@ -1494,8 +2803,8 @@ VV_LOC void builtin__map_clone_int_4(voidptr dest, voidptr pkey);
 VV_LOC void builtin__map_clone_int_8(voidptr dest, voidptr pkey);
 VV_LOC void builtin__map_free_string(voidptr pkey);
 VV_LOC void builtin__map_free_nop(voidptr _d1);
-VV_LOC map builtin__new_map(int key_bytes, int value_bytes, u64 (*hash_fn)(voidptr ), bool (*key_eq_fn)(voidptr , voidptr ), void (*clone_fn)(voidptr , voidptr ), void (*free_fn)(voidptr ));
-VV_LOC map builtin__new_map_init(u64 (*hash_fn)(voidptr ), bool (*key_eq_fn)(voidptr , voidptr ), void (*clone_fn)(voidptr , voidptr ), void (*free_fn)(voidptr ), int n, int key_bytes, int value_bytes, voidptr keys, voidptr values);
+VV_LOC map builtin__new_map(int key_bytes, int value_bytes, u64 (*hash_fn)(voidptr _d1), bool (*key_eq_fn)(voidptr _d1, voidptr _d2), void (*clone_fn)(voidptr _d1, voidptr _d2), void (*free_fn)(voidptr _d1));
+VV_LOC map builtin__new_map_init(u64 (*hash_fn)(voidptr _d1), bool (*key_eq_fn)(voidptr _d1, voidptr _d2), void (*clone_fn)(voidptr _d1, voidptr _d2), void (*free_fn)(voidptr _d1), int n, int key_bytes, int value_bytes, voidptr keys, voidptr values);
 map builtin__map_move(map* m);
 void builtin__map_clear(map* m);
 VV_LOC multi_return_u32_u32 builtin__map_key_to_index(map* m, voidptr pkey);
@@ -1506,7 +2815,8 @@ VV_LOC void builtin__map_ensure_extra_metas(map* m, u32 probe_count);
 VV_LOC void builtin__map_set(map* m, voidptr key, voidptr value);
 VV_LOC void builtin__map_expand(map* m);
 VV_LOC void builtin__map_rehash(map* m);
-void builtin__map_reserve(map* m, u32 meta_bytes);
+VV_LOC void builtin__map_reserve_metas(map* m, u32 meta_bytes);
+void builtin__map_reserve(map* m, u32 n);
 VV_LOC void builtin__map_cached_rehash(map* m, u32 old_cap);
 VV_LOC voidptr builtin__map_get_and_set(map* m, voidptr key, voidptr zero);
 VV_LOC voidptr builtin__map_get(map* m, voidptr key, voidptr zero);
@@ -1525,16 +2835,20 @@ void builtin__panic_result_not_set(string s);
 void builtin___v_panic(string s);
 void builtin__panic_n(string s, i64 number1);
 void builtin__panic_n2(string s, i64 number1, i64 number2);
+VV_LOC void builtin__panic_n3(string s, i64 number1, i64 number2, i64 number3);
+VV_LOC void builtin__set_stream_unbuffered(FILE* stream);
 void builtin__eprintln(string s);
 void builtin__eprint(string s);
 void builtin__flush_stdout(void);
 void builtin__flush_stderr(void);
+void builtin__unbuffer_stdout(void);
 void builtin__print(string s);
 void builtin__println(string s);
 VV_LOC void builtin___writeln_to_fd(int fd, string s);
 VV_LOC void builtin___write_buf_to_fd(int fd, u8* buf, int buf_len);
 string builtin__rune_str(rune c);
 string Array_rune_string(Array_rune ra);
+Array_u8 builtin__rune_bytes(rune c);
 rune builtin__rune_to_upper(rune c);
 rune builtin__rune_to_lower(rune c);
 VV_LOC rune builtin__rune_map_to(rune c, MapMode mode);
@@ -1544,7 +2858,6 @@ string builtin__tos_clone(const u8* const_s);
 string builtin__tos(u8* s, int len);
 string builtin__tos2(u8* s);
 string builtin__tos3(char* s);
-string builtin__tos4(u8* s);
 string builtin__u8_vstring(u8* bp);
 string builtin__u8_vstring_with_len(u8* bp, int len);
 bool builtin__string_is_pure_ascii(string s);
@@ -1553,12 +2866,14 @@ string builtin__string_replace(string s, string rep, string with);
 VV_LOC bool builtin__string__eq(string s, string a);
 VV_LOC bool builtin__string__lt(string s, string a);
 VV_LOC string builtin__string__plus(string s, string a);
+VV_LOC string builtin__string_plus_many(int data_len, string* input_base);
 Array_string builtin__string_split(string s, string delim);
 Array_string builtin__string_split_nth(string s, string delim, int nth);
 Array_string builtin__string_split_into_lines(string s);
 string builtin__string_substr(string s, int start, int _end);
 string builtin__string_substr_unsafe(string s, int start, int _end);
 int builtin__string_index_(string s, string p);
+_option_int builtin__string_last_index(string s, string needle);
 VV_LOC int builtin__string_index_kmp(string s, string p);
 VV_LOC int builtin__string_index_last_(string s, string p);
 int builtin__string_index_after_(string s, string p, int start);
@@ -1579,40 +2894,61 @@ string builtin__string_trim_right(string s, string cutset);
 string builtin__string_trim_string_right(string s, string str);
 string builtin__string_str(string s);
 VV_LOC u8 builtin__string_at(string s, int idx);
-bool builtin__u8_is_digit(u8 c);
+VV_LOC u8 builtin__string_at_i64(string s, i64 idx);
+VV_LOC u8 builtin__string_at_u64(string s, u64 idx);
+VV_LOC u8 builtin__string_at_ni(string s, int idx);
+VV_LOC _option_u8 builtin__string_at_with_check(string s, int idx);
+VV_LOC _option_u8 builtin__string_at_with_check_i64(string s, i64 idx);
+VV_LOC _option_u8 builtin__string_at_with_check_u64(string s, u64 idx);
+VV_LOC _option_u8 builtin__string_at_with_check_ni(string s, int idx);
 void builtin__string_free(string* s);
 string builtin__string_all_before(string s, string sub);
+string builtin__string_all_before_last(string s, string sub);
 string builtin__string_all_after(string s, string sub);
 string builtin__string_all_after_last(string s, string sub);
 string Array_string_join(Array_string a, string sep);
 Array_string builtin__string_fields(string s);
-string builtin__charptr_vstring_literal(charptr cp);
 string builtin__StrIntpType_str(StrIntpType x);
 VV_LOC f32 builtin__fabs32(f32 x);
 VV_LOC f64 builtin__fabs64(f64 x);
 VV_LOC u64 builtin__abs64(i64 x);
 VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, strings__Builder* sb);
 string builtin__str_intp(int data_len, StrIntpData* input_base);
-int builtin__utf8_char_len(u8 b);
 string builtin__utf32_to_str(u32 code);
 string builtin__utf32_to_str_no_malloc(u32 code, u8* buf);
 int builtin__utf32_decode_to_buffer(u32 code, u8* buf);
-int builtin__string_utf32_code(string _rune);
-VV_LOC rune builtin__impl_utf8_to_utf32(u8* _bytes, int _bytes_len);
+VV_LOC bool builtin__utf8_is_continuation(u8 b);
+VV_LOC multi_return_rune_int builtin__utf8_decode_rune(u8* _bytes, int available_len);
 int builtin__utf8_str_visible_length(string s);
 bool builtin__ArrayFlags_has(ArrayFlags* e, ArrayFlags flag_);
 void builtin__ArrayFlags_set(ArrayFlags* e, ArrayFlags flag_);
 void builtin__ArrayFlags_clear(ArrayFlags* e, ArrayFlags flag_);
 string os__getenv(string key);
 _option_string os__getenv_opt(string key);
+VV_LOC voidptr os__v_os_execute_mutex_ptr(void);
+VV_LOC void os__init(void);
+VV_LOC void os__v_os_execute_lock(void);
+VV_LOC void os__v_os_execute_unlock(void);
+int os__fd_close(int fd);
+Array_string os__fd_slurp(int fd);
+multi_return_string_int os__fd_read(int fd, int maxbytes);
 VV_LOC string os__NotExpected_msg(os__NotExpected err);
 VV_LOC int os__NotExpected_code(os__NotExpected err);
+_result_os__File os__open(string path);
 _result_os__File os__create(string path);
+_result_int os__File_read(os__File* f, Array_u8* buf);
 _result_void os__File_write_full_buffer(os__File* f, voidptr buffer, usize buffer_len);
 VV_LOC _result_int os__fread(voidptr ptr, int item_size, int items, FILE* stream);
 string os__FileNotOpenedError_msg(os__FileNotOpenedError err);
 string os__SizeOfTypeIs0Error_msg(os__SizeOfTypeIs0Error err);
 VV_LOC IError os__error_file_not_opened(void);
+VV_LOC IError os__error_size_of_type_0(void);
+VV_LOC u16 os__swap_bytes_u16(u16 x);
+VV_LOC u32 os__swap_bytes_u32(u32 x);
+VV_LOC u64 os__swap_bytes_u64(u64 x);
+VV_LOC _result_void os__check_cf(usize x, string label);
+VV_LOC _result_void os__check_fwrite(usize x);
+VV_LOC _result_void os__check_fread(usize x);
 VV_LOC _result_int os__find_cfile_size(FILE* fp);
 VV_LOC _result_strings__Builder os__slurp_file_in_builder(FILE* fp);
 _result_string os__read_file(string path);
@@ -1620,10 +2956,12 @@ u64 os__file_size(string path);
 _result_void os__cp(string src, string dst, os__CopyParams config);
 _result_FILE_ptr os__vfopen(string path, string mode);
 int os__fileno(voidptr cfile);
-VV_LOC voidptr os__vpopen(string path);
+VV_LOC bool os__posix_wait_status_exited(int status);
+VV_LOC int os__posix_wait_status_exit_code(int status);
+VV_LOC bool os__posix_wait_status_signaled(int status);
+VV_LOC int os__posix_wait_status_signal(int status);
 VV_LOC multi_return_int_bool os__posix_wait4_to_exit_status(int waitret);
 string os__posix_get_error_msg(int code);
-VV_LOC int os__vpclose(voidptr f);
 bool os__exists(string path);
 _result_void os__rm(string path);
 _result_void os__rmdir(string path);
@@ -1633,6 +2971,9 @@ _result_void os__chmod(string path, int mode);
 IError os__error_posix(os__SystemError e);
 void os__Result_free(os__Result* result);
 _result_Array_string os__read_lines(string path);
+VV_LOC _result_Array_string os__read_lines_from_open_file(os__File* file);
+_result_void os__rmdir_all(string path);
+string os__dir(string path);
 string os__file_name(string path);
 _result_void os__write_file(string path, string text);
 string os__ExecutableNotFoundError_msg(os__ExecutableNotFoundError err);
@@ -1652,79 +2993,93 @@ bool os__is_dir(string path);
 bool os__is_link(string path);
 VV_LOC string main__pad_right(string s, int width);
 VV_LOC string main__format_bytes(u64 bytes);
+VV_LOC string main__json_escape(string s);
 VV_LOC string main__parse_json_value(string json_str, string key);
 VV_LOC void main__print_banner(void);
+VV_LOC string main__normalize_repo_url(string url);
+VV_LOC Array_string main__get_repo_file_urls(main__Repo repo, string rel_path);
+VV_LOC Array_string main__get_repos_conf_paths(string prefix);
 VV_LOC main__Config main__load_config(void);
+VV_LOC bool main__save_repos_config(main__Config cfg);
 VV_LOC Array_string main__get_installed_db_dirs(main__Config cfg);
-VV_LOC Array_string main__get_installed_packages(main__Config cfg);
 VV_LOC bool main__is_installed(main__Config cfg, string pkg_name);
-VV_LOC _option_main__PackageMeta main__get_installed_meta(main__Config cfg, string pkg_name);
-VV_LOC Array_main__PackageMeta main__fetch_index(main__Config cfg);
-VV_LOC main__PackageMeta main__inspect_archive_meta(string archive_path);
+VV_LOC Array_string main__get_installed_packages(main__Config cfg);
+VV_LOC _option_main__Package main__get_installed_meta(main__Config cfg, string pkg_name);
+VV_LOC Array_main__Package main__parse_index_json(string content, string repo_name);
+VV_LOC Array_main__Package main__fetch_all_repo_packages(main__Config cfg);
+VV_LOC bool main__download_url(string url, string dest);
 VV_LOC int main__cmd_update(main__Config cfg);
-VV_LOC int main__cmd_list(main__Config cfg);
+VV_LOC int main__cmd_list(main__Config cfg, bool json_mode);
 VV_LOC int main__cmd_search(main__Config cfg, string query);
 VV_LOC int main__cmd_info(main__Config cfg, string pkg_name);
-VV_LOC int main__cmd_status(main__Config cfg);
-VV_LOC int main__install_payload(main__Config cfg, string archive_file, main__PackageMeta target_pkg, bool is_local_file);
-VV_LOC int main__cmd_install_file(main__Config cfg, string raw_path);
 VV_LOC int main__cmd_install(main__Config cfg, string pkg_name);
-VV_LOC int main__cmd_install_dispatcher(main__Config cfg, Array_string args);
+VV_LOC int main__cmd_install_local_file(main__Config cfg, string file_path);
+VV_LOC int main__deploy_package_payload(main__Config cfg, string payload_file, main__Package pkg);
 VV_LOC int main__cmd_remove(main__Config cfg, string pkg_name);
+VV_LOC int main__cmd_repo_list(main__Config cfg, bool json_mode);
+VV_LOC int main__cmd_repo_add(main__Config* cfg, string name, string url);
+VV_LOC int main__cmd_repo_remove(main__Config* cfg, string name);
+VV_LOC int main__cmd_status(main__Config cfg);
 VV_LOC void main__print_help(void);
 VV_LOC void main__main(void);
 
 // V global/const non-precomputed definitions:
-string _const_strconv__digit_pairs; // a string literal, inited later
-string _const_strconv__base_digits; // a string literal, inited later
-string _const_digit_pairs; // a string literal, inited later
-string _const_os__path_separator; // a string literal, inited later
-string _const_main__version; // a string literal, inited later
-string _const_main__default_repo_url; // a string literal, inited later
-string _const_main__default_install_prefix; // a string literal, inited later
-string _const_main__default_db_dir; // a string literal, inited later
-string _const_main__c_reset; // a string literal, inited later
-string _const_main__c_bold; // a string literal, inited later
-string _const_main__c_dim; // a string literal, inited later
-string _const_main__c_cyan; // a string literal, inited later
-string _const_main__c_blue; // a string literal, inited later
-string _const_main__c_green; // a string literal, inited later
-string _const_main__c_yellow; // a string literal, inited later
-string _const_main__c_red; // a string literal, inited later
-string _const_main__c_purple; // a string literal, inited later
-string _const_main__c_gray; // a string literal, inited later
-const u32 _const_math__bits__de_bruijn32 = 125613361; // precomputed2
-Array_fixed_u8_32 _const_math__bits__de_bruijn32tab = {((u8)(0)), 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
+static string _const_strconv__digit_pairs; // a string literal, inited later
+static string _const_strconv__base_digits; // a string literal, inited later
+static string _const_grapheme_control_ranges; // a string literal, inited later
+static string _const_grapheme_extend_ranges; // a string literal, inited later
+static string _const_grapheme_spacing_mark_ranges; // a string literal, inited later
+static string _const_grapheme_prepend_ranges; // a string literal, inited later
+static string _const_grapheme_extended_pictographic_ranges; // a string literal, inited later
+static string _const_digit_pairs; // a string literal, inited later
+static string _const_os__path_separator; // a string literal, inited later
+static string _const_main__version; // a string literal, inited later
+static string _const_main__default_repo_name; // a string literal, inited later
+static string _const_main__default_repo_url; // a string literal, inited later
+static string _const_main__default_install_prefix; // a string literal, inited later
+static string _const_main__default_db_dir; // a string literal, inited later
+static string _const_main__c_reset; // a string literal, inited later
+static string _const_main__c_bold; // a string literal, inited later
+static string _const_main__c_dim; // a string literal, inited later
+static string _const_main__c_cyan; // a string literal, inited later
+static string _const_main__c_blue; // a string literal, inited later
+static string _const_main__c_green; // a string literal, inited later
+static string _const_main__c_yellow; // a string literal, inited later
+static string _const_main__c_red; // a string literal, inited later
+static string _const_main__c_purple; // a string literal, inited later
+static string _const_main__c_gray; // a string literal, inited later
+static const u32 _const_math__bits__de_bruijn32 = 125613361; // precomputed2
+static Array_fixed_u8_32 _const_math__bits__de_bruijn32tab = {((u8)(0)), 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9}; // fixed array const
-const u64 _const_math__bits__de_bruijn64 = 285870213051353865U; // precomputed2
-Array_fixed_u8_64 _const_math__bits__de_bruijn64tab = {((u8)(0)), 1, 56, 2, 57, 49, 28, 3, 61, 58, 42, 50, 38, 29, 17, 4, 
+static const u64 _const_math__bits__de_bruijn64 = 285870213051353865U; // precomputed2
+static Array_fixed_u8_64 _const_math__bits__de_bruijn64tab = {((u8)(0)), 1, 56, 2, 57, 49, 28, 3, 61, 58, 42, 50, 38, 29, 17, 4, 
 62, 47, 59, 36, 45, 43, 51, 22, 53, 39, 33, 30, 24, 18, 12, 5, 
 63, 55, 48, 27, 60, 41, 37, 16, 46, 35, 44, 21, 52, 32, 23, 11, 
 54, 26, 40, 15, 34, 20, 31, 10, 25, 14, 19, 9, 13, 8, 7, 6}; // fixed array const
-const u64 _const_math__bits__two32 = 4294967296U; // precomputed2
-const u64 _const_math__bits__mask32 = 4294967295U; // precomputed2
-const u32 _const_strconv__single_plus_zero = 0; // precomputed2
-const u32 _const_strconv__single_minus_zero = 2147483648; // precomputed2
-const u32 _const_strconv__single_plus_infinity = 2139095040; // precomputed2
-const u32 _const_strconv__single_minus_infinity = 4286578688; // precomputed2
-const u64 _const_strconv__double_plus_zero = 0U; // precomputed2
-const u64 _const_strconv__double_minus_zero = 9223372036854775808U; // precomputed2
-const u64 _const_strconv__double_plus_infinity = 9218868437227405312U; // precomputed2
-const u64 _const_strconv__double_minus_infinity = 18442240474082181120U; // precomputed2
-Array_fixed_u32_10 _const_strconv__ten_pow_table_32 = {((u32)(1)), ((u32)(10)), ((u32)(100)), ((u32)(1000)), ((u32)(10000)), ((u32)(100000)), ((u32)(1000000)), ((u32)(10000000)), ((u32)(100000000)), ((u32)(1000000000))}; // fixed array const
-const u32 _const_strconv__mantbits32 = 23; // precomputed2
-const u32 _const_strconv__expbits32 = 8; // precomputed2
-Array_fixed_u64_20 _const_strconv__ten_pow_table_64 = {((u64)(1)), ((u64)(10)), ((u64)(100)), ((u64)(1000)), ((u64)(10000)), ((u64)(100000)), ((u64)(1000000)), ((u64)(10000000)), ((u64)(100000000)), ((u64)(1000000000)), ((u64)(10000000000LL)), ((u64)(100000000000LL)), ((u64)(1000000000000LL)), ((u64)(10000000000000LL)), ((u64)(100000000000000LL)), ((u64)(1000000000000000LL)), ((u64)(10000000000000000LL)), ((u64)(100000000000000000LL)), ((u64)(1000000000000000000LL)), ((u64)(10000000000000000000ULL))}; // fixed array const
-const u32 _const_strconv__mantbits64 = 52; // precomputed2
-const u32 _const_strconv__expbits64 = 11; // precomputed2
-Array_fixed_f64_36 _const_strconv__dec_round = {((f64)(0.5)), 0.05, 0.005, 0.0005, 0.00005, 0.000005, 0.0000005, 0.00000005, 0.000000005, 0.0000000005, 0.00000000005, 0.000000000005, 0.0000000000005, 0.00000000000005, 0.000000000000005, 0.0000000000000005, 
+static const u64 _const_math__bits__two32 = 4294967296U; // precomputed2
+static const u64 _const_math__bits__mask32 = 4294967295U; // precomputed2
+static const u32 _const_strconv__single_plus_zero = 0; // precomputed2
+static const u32 _const_strconv__single_minus_zero = 2147483648; // precomputed2
+static const u32 _const_strconv__single_plus_infinity = 2139095040; // precomputed2
+static const u32 _const_strconv__single_minus_infinity = 4286578688; // precomputed2
+static const u64 _const_strconv__double_plus_zero = 0U; // precomputed2
+static const u64 _const_strconv__double_minus_zero = 9223372036854775808U; // precomputed2
+static const u64 _const_strconv__double_plus_infinity = 9218868437227405312U; // precomputed2
+static const u64 _const_strconv__double_minus_infinity = 18442240474082181120U; // precomputed2
+static Array_fixed_u32_10 _const_strconv__ten_pow_table_32 = {((u32)(1)), ((u32)(10)), ((u32)(100)), ((u32)(1000)), ((u32)(10000)), ((u32)(100000)), ((u32)(1000000)), ((u32)(10000000)), ((u32)(100000000)), ((u32)(1000000000))}; // fixed array const
+static const u32 _const_strconv__mantbits32 = 23; // precomputed2
+static const u32 _const_strconv__expbits32 = 8; // precomputed2
+static Array_fixed_u64_20 _const_strconv__ten_pow_table_64 = {((u64)(1)), ((u64)(10)), ((u64)(100)), ((u64)(1000)), ((u64)(10000)), ((u64)(100000)), ((u64)(1000000)), ((u64)(10000000)), ((u64)(100000000)), ((u64)(1000000000)), ((u64)(10000000000LL)), ((u64)(100000000000LL)), ((u64)(1000000000000LL)), ((u64)(10000000000000LL)), ((u64)(100000000000000LL)), ((u64)(1000000000000000LL)), ((u64)(10000000000000000LL)), ((u64)(100000000000000000LL)), ((u64)(1000000000000000000LL)), ((u64)(10000000000000000000ULL))}; // fixed array const
+static const u32 _const_strconv__mantbits64 = 52; // precomputed2
+static const u32 _const_strconv__expbits64 = 11; // precomputed2
+static Array_fixed_f64_36 _const_strconv__dec_round = {((f64)(0.5)), 0.05, 0.005, 0.0005, 0.00005, 0.000005, 0.0000005, 0.00000005, 0.000000005, 0.0000000005, 0.00000000005, 0.000000000005, 0.0000000000005, 0.00000000000005, 0.000000000000005, 0.0000000000000005, 
 0.00000000000000005, 0.000000000000000005, 0.0000000000000000005, 0.00000000000000000005, 0.000000000000000000005, 0.0000000000000000000005, 0.00000000000000000000005, 0.000000000000000000000005, 0.0000000000000000000000005, 0.00000000000000000000000005, 0.000000000000000000000000005, 0.0000000000000000000000000005, 0.00000000000000000000000000005, 0.000000000000000000000000000005, 0.0000000000000000000000000000005, 0.00000000000000000000000000000005, 0.000000000000000000000000000000005, 0.0000000000000000000000000000000005, 0.00000000000000000000000000000000005, 0.000000000000000000000000000000000005}; // fixed array const
-Array_fixed_u64_47 _const_strconv__pow5_split_32 = {((u64)(1152921504606846976LL)), ((u64)(1441151880758558720LL)), ((u64)(1801439850948198400LL)), ((u64)(2251799813685248000LL)), ((u64)(1407374883553280000LL)), ((u64)(1759218604441600000LL)), ((u64)(2199023255552000000LL)), ((u64)(1374389534720000000LL)), ((u64)(1717986918400000000LL)), ((u64)(2147483648000000000LL)), ((u64)(1342177280000000000LL)), ((u64)(1677721600000000000LL)), ((u64)(2097152000000000000LL)), ((u64)(1310720000000000000LL)), ((u64)(1638400000000000000LL)), ((u64)(2048000000000000000LL)), 
+static Array_fixed_u64_47 _const_strconv__pow5_split_32 = {((u64)(1152921504606846976LL)), ((u64)(1441151880758558720LL)), ((u64)(1801439850948198400LL)), ((u64)(2251799813685248000LL)), ((u64)(1407374883553280000LL)), ((u64)(1759218604441600000LL)), ((u64)(2199023255552000000LL)), ((u64)(1374389534720000000LL)), ((u64)(1717986918400000000LL)), ((u64)(2147483648000000000LL)), ((u64)(1342177280000000000LL)), ((u64)(1677721600000000000LL)), ((u64)(2097152000000000000LL)), ((u64)(1310720000000000000LL)), ((u64)(1638400000000000000LL)), ((u64)(2048000000000000000LL)), 
 ((u64)(1280000000000000000LL)), ((u64)(1600000000000000000LL)), ((u64)(2000000000000000000LL)), ((u64)(1250000000000000000LL)), ((u64)(1562500000000000000LL)), ((u64)(1953125000000000000LL)), ((u64)(1220703125000000000LL)), ((u64)(1525878906250000000LL)), ((u64)(1907348632812500000LL)), ((u64)(1192092895507812500LL)), ((u64)(1490116119384765625LL)), ((u64)(1862645149230957031LL)), ((u64)(1164153218269348144LL)), ((u64)(1455191522836685180LL)), ((u64)(1818989403545856475LL)), ((u64)(2273736754432320594LL)), 
 ((u64)(1421085471520200371LL)), ((u64)(1776356839400250464LL)), ((u64)(2220446049250313080LL)), ((u64)(1387778780781445675LL)), ((u64)(1734723475976807094LL)), ((u64)(2168404344971008868LL)), ((u64)(1355252715606880542LL)), ((u64)(1694065894508600678LL)), ((u64)(2117582368135750847LL)), ((u64)(1323488980084844279LL)), ((u64)(1654361225106055349LL)), ((u64)(2067951531382569187LL)), ((u64)(1292469707114105741LL)), ((u64)(1615587133892632177LL)), ((u64)(2019483917365790221LL))}; // fixed array const
-Array_fixed_u64_31 _const_strconv__pow5_inv_split_32 = {((u64)(576460752303423489LL)), ((u64)(461168601842738791LL)), ((u64)(368934881474191033LL)), ((u64)(295147905179352826LL)), ((u64)(472236648286964522LL)), ((u64)(377789318629571618LL)), ((u64)(302231454903657294LL)), ((u64)(483570327845851670LL)), ((u64)(386856262276681336LL)), ((u64)(309485009821345069LL)), ((u64)(495176015714152110LL)), ((u64)(396140812571321688LL)), ((u64)(316912650057057351LL)), ((u64)(507060240091291761LL)), ((u64)(405648192073033409LL)), ((u64)(324518553658426727LL)), 
+static Array_fixed_u64_31 _const_strconv__pow5_inv_split_32 = {((u64)(576460752303423489LL)), ((u64)(461168601842738791LL)), ((u64)(368934881474191033LL)), ((u64)(295147905179352826LL)), ((u64)(472236648286964522LL)), ((u64)(377789318629571618LL)), ((u64)(302231454903657294LL)), ((u64)(483570327845851670LL)), ((u64)(386856262276681336LL)), ((u64)(309485009821345069LL)), ((u64)(495176015714152110LL)), ((u64)(396140812571321688LL)), ((u64)(316912650057057351LL)), ((u64)(507060240091291761LL)), ((u64)(405648192073033409LL)), ((u64)(324518553658426727LL)), 
 ((u64)(519229685853482763LL)), ((u64)(415383748682786211LL)), ((u64)(332306998946228969LL)), ((u64)(531691198313966350LL)), ((u64)(425352958651173080LL)), ((u64)(340282366920938464LL)), ((u64)(544451787073501542LL)), ((u64)(435561429658801234LL)), ((u64)(348449143727040987LL)), ((u64)(557518629963265579LL)), ((u64)(446014903970612463LL)), ((u64)(356811923176489971LL)), ((u64)(570899077082383953LL)), ((u64)(456719261665907162LL)), ((u64)(365375409332725730LL))}; // fixed array const
-Array_fixed_u64_652 _const_strconv__pow5_split_64_x = {((u64)(0x0000000000000000)), ((u64)(0x0100000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0140000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0190000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01f4000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0138800000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0186a00000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01e8480000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01312d0000000000LL)), 
+static Array_fixed_u64_652 _const_strconv__pow5_split_64_x = {((u64)(0x0000000000000000)), ((u64)(0x0100000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0140000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0190000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01f4000000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0138800000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0186a00000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01e8480000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01312d0000000000LL)), 
 ((u64)(0x0000000000000000)), ((u64)(0x017d784000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01dcd65000000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x012a05f200000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x0174876e80000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01d1a94a20000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x012309ce54000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x016bcc41e9000000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01c6bf5263400000LL)), 
 ((u64)(0x0000000000000000)), ((u64)(0x011c37937e080000LL)), ((u64)(0x0000000000000000)), ((u64)(0x016345785d8a0000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01bc16d674ec8000LL)), ((u64)(0x0000000000000000)), ((u64)(0x01158e460913d000LL)), ((u64)(0x0000000000000000)), ((u64)(0x015af1d78b58c400LL)), ((u64)(0x0000000000000000)), ((u64)(0x01b1ae4d6e2ef500LL)), ((u64)(0x0000000000000000)), ((u64)(0x010f0cf064dd5920LL)), ((u64)(0x0000000000000000)), ((u64)(0x0152d02c7e14af68LL)), 
 ((u64)(0x0000000000000000)), ((u64)(0x01a784379d99db42LL)), ((u64)(0x4000000000000000LL)), ((u64)(0x0108b2a2c2802909LL)), ((u64)(0x9000000000000000ULL)), ((u64)(0x014adf4b7320334bLL)), ((u64)(0x7400000000000000LL)), ((u64)(0x019d971e4fe8401eLL)), ((u64)(0x0880000000000000LL)), ((u64)(0x01027e72f1f12813LL)), ((u64)(0xcaa0000000000000ULL)), ((u64)(0x01431e0fae6d7217LL)), ((u64)(0xbd48000000000000ULL)), ((u64)(0x0193e5939a08ce9dLL)), ((u64)(0x2c9a000000000000LL)), ((u64)(0x01f8def8808b0245LL)), 
@@ -1764,7 +3119,7 @@ Array_fixed_u64_652 _const_strconv__pow5_split_64_x = {((u64)(0x0000000000000000
 ((u64)(0xa4dda37f34ad3e67ULL)), ((u64)(0x013926bc01a973b1LL)), ((u64)(0x0e150c5f01d88e01LL)), ((u64)(0x0187706b0213d09eLL)), ((u64)(0x919a4f76c24eb181ULL)), ((u64)(0x01e94c85c298c4c5LL)), ((u64)(0x7b0071aa39712ef1LL)), ((u64)(0x0131cfd3999f7afbLL)), ((u64)(0x59c08e14c7cd7aadLL)), ((u64)(0x017e43c8800759baLL)), ((u64)(0xf030b199f9c0d958ULL)), ((u64)(0x01ddd4baa0093028LL)), ((u64)(0x961e6f003c1887d7ULL)), ((u64)(0x012aa4f4a405be19LL)), ((u64)(0xfba60ac04b1ea9cdULL)), ((u64)(0x01754e31cd072d9fLL)), 
 ((u64)(0xfa8f8d705de65440ULL)), ((u64)(0x01d2a1be4048f907LL)), ((u64)(0xfc99b8663aaff4a8ULL)), ((u64)(0x0123a516e82d9ba4LL)), ((u64)(0x3bc0267fc95bf1d2LL)), ((u64)(0x016c8e5ca239028eLL)), ((u64)(0xcab0301fbbb2ee47ULL)), ((u64)(0x01c7b1f3cac74331LL)), ((u64)(0x1eae1e13d54fd4ecLL)), ((u64)(0x011ccf385ebc89ffLL)), ((u64)(0xe659a598caa3ca27ULL)), ((u64)(0x01640306766bac7eLL)), ((u64)(0x9ff00efefd4cbcb1ULL)), ((u64)(0x01bd03c81406979eLL)), ((u64)(0x23f6095f5e4ff5efLL)), ((u64)(0x0116225d0c841ec3LL)), 
 ((u64)(0xecf38bb735e3f36aULL)), ((u64)(0x015baaf44fa52673LL)), ((u64)(0xe8306ea5035cf045ULL)), ((u64)(0x01b295b1638e7010LL)), ((u64)(0x911e4527221a162bULL)), ((u64)(0x010f9d8ede39060aLL)), ((u64)(0x3565d670eaa09bb6LL)), ((u64)(0x015384f295c7478dLL)), ((u64)(0x82bf4c0d2548c2a3ULL)), ((u64)(0x01a8662f3b391970LL)), ((u64)(0x51b78f88374d79a6LL)), ((u64)(0x01093fdd8503afe6LL)), ((u64)(0xe625736a4520d810ULL)), ((u64)(0x014b8fd4e6449bdfLL)), ((u64)(0xdfaed044d6690e14ULL)), ((u64)(0x019e73ca1fd5c2d7LL)), ((u64)(0xebcd422b0601a8ccULL)), ((u64)(0x0103085e53e599c6LL)), ((u64)(0xa6c092b5c78212ffULL)), ((u64)(0x0143ca75e8df0038LL)), ((u64)(0xd070b763396297bfULL)), ((u64)(0x0194bd136316c046LL)), ((u64)(0x848ce53c07bb3dafULL)), ((u64)(0x01f9ec583bdc7058LL)), ((u64)(0x52d80f4584d5068dLL)), ((u64)(0x013c33b72569c637LL)), ((u64)(0x278e1316e60a4831LL)), ((u64)(0x018b40a4eec437c5LL))}; // fixed array const
-Array_fixed_u64_584 _const_strconv__pow5_inv_split_64_x = {((u64)(0x0000000000000001)), ((u64)(0x0400000000000000LL)), ((u64)(0x3333333333333334LL)), ((u64)(0x0333333333333333LL)), ((u64)(0x28f5c28f5c28f5c3LL)), ((u64)(0x028f5c28f5c28f5cLL)), ((u64)(0xed916872b020c49cULL)), ((u64)(0x020c49ba5e353f7cLL)), ((u64)(0xaf4f0d844d013a93ULL)), ((u64)(0x0346dc5d63886594LL)), ((u64)(0x8c3f3e0370cdc876ULL)), ((u64)(0x029f16b11c6d1e10LL)), ((u64)(0xd698fe69270b06c5ULL)), ((u64)(0x0218def416bdb1a6LL)), ((u64)(0xf0f4ca41d811a46eULL)), ((u64)(0x035afe535795e90aLL)), 
+static Array_fixed_u64_584 _const_strconv__pow5_inv_split_64_x = {((u64)(0x0000000000000001)), ((u64)(0x0400000000000000LL)), ((u64)(0x3333333333333334LL)), ((u64)(0x0333333333333333LL)), ((u64)(0x28f5c28f5c28f5c3LL)), ((u64)(0x028f5c28f5c28f5cLL)), ((u64)(0xed916872b020c49cULL)), ((u64)(0x020c49ba5e353f7cLL)), ((u64)(0xaf4f0d844d013a93ULL)), ((u64)(0x0346dc5d63886594LL)), ((u64)(0x8c3f3e0370cdc876ULL)), ((u64)(0x029f16b11c6d1e10LL)), ((u64)(0xd698fe69270b06c5ULL)), ((u64)(0x0218def416bdb1a6LL)), ((u64)(0xf0f4ca41d811a46eULL)), ((u64)(0x035afe535795e90aLL)), 
 ((u64)(0xf3f70834acdae9f1ULL)), ((u64)(0x02af31dc4611873bLL)), ((u64)(0x5cc5a02a23e254c1LL)), ((u64)(0x0225c17d04dad296LL)), ((u64)(0xfad5cd10396a2135ULL)), ((u64)(0x036f9bfb3af7b756LL)), ((u64)(0xfbde3da69454e75eULL)), ((u64)(0x02bfaffc2f2c92abLL)), ((u64)(0x2fe4fe1edd10b918LL)), ((u64)(0x0232f33025bd4223LL)), ((u64)(0x4ca19697c81ac1bfLL)), ((u64)(0x0384b84d092ed038LL)), ((u64)(0x3d4e1213067bce33LL)), ((u64)(0x02d09370d4257360LL)), ((u64)(0x643e74dc052fd829LL)), ((u64)(0x024075f3dceac2b3LL)), 
 ((u64)(0x6d30baf9a1e626a7LL)), ((u64)(0x039a5652fb113785LL)), ((u64)(0x2426fbfae7eb5220LL)), ((u64)(0x02e1dea8c8da92d1LL)), ((u64)(0x1cebfcc8b9890e80LL)), ((u64)(0x024e4bba3a487574LL)), ((u64)(0x94acc7a78f41b0ccULL)), ((u64)(0x03b07929f6da5586LL)), ((u64)(0xaa23d2ec729af3d7ULL)), ((u64)(0x02f394219248446bLL)), ((u64)(0xbb4fdbf05baf2979ULL)), ((u64)(0x025c768141d369efLL)), ((u64)(0xc54c931a2c4b758dULL)), ((u64)(0x03c7240202ebdcb2LL)), ((u64)(0x9dd6dc14f03c5e0bULL)), ((u64)(0x0305b66802564a28LL)), 
 ((u64)(0x4b1249aa59c9e4d6LL)), ((u64)(0x026af8533511d4edLL)), ((u64)(0x44ea0f76f60fd489LL)), ((u64)(0x03de5a1ebb4fbb15LL)), ((u64)(0x6a54d92bf80caa07LL)), ((u64)(0x0318481895d96277LL)), ((u64)(0x21dd7a89933d54d2LL)), ((u64)(0x0279d346de4781f9LL)), ((u64)(0x362f2a75b8622150LL)), ((u64)(0x03f61ed7ca0c0328LL)), ((u64)(0xf825bb91604e810dULL)), ((u64)(0x032b4bdfd4d668ecLL)), ((u64)(0xc684960de6a5340bULL)), ((u64)(0x0289097fdd7853f0LL)), ((u64)(0xd203ab3e521dc33cULL)), ((u64)(0x02073accb12d0ff3LL)), 
@@ -1802,20 +3157,33 @@ Array_fixed_u64_584 _const_strconv__pow5_inv_split_64_x = {((u64)(0x000000000000
 ((u64)(0x2746cd003e3e73feLL)), ((u64)(0x03a162b4923d708bLL)), ((u64)(0x1f6bd73364fec332LL)), ((u64)(0x02e7822a0e978d3cLL)), ((u64)(0xe5efdf5c50cbcf5bULL)), ((u64)(0x0252ce880bac70fcLL)), ((u64)(0x3cb2fefa1adfb22bLL)), ((u64)(0x03b7b0d9ac471b2eLL)), ((u64)(0x308f3261af195b56LL)), ((u64)(0x02f95a47bd05af58LL)), ((u64)(0x5a0c284e25ade2abLL)), ((u64)(0x0261150630d15913LL)), ((u64)(0x29ad0d49d5e30445LL)), ((u64)(0x03ce8809e7b55b52LL)), ((u64)(0x548a7107de4f369dLL)), ((u64)(0x030ba007ec9115dbLL)), ((u64)(0xdd3b8d9fe50c2bb1ULL)), ((u64)(0x026fb3398a0dab15LL)), ((u64)(0x952c15cca1ad12b5ULL)), ((u64)(0x03e5eb8f434911bcLL)), ((u64)(0x775677d6e7bda891LL)), ((u64)(0x031e560c35d40e30LL)), ((u64)(0xc5dec645863153a7ULL)), ((u64)(0x027eab3cf7dcd826LL))}; // fixed array const
 bool v_memory_panic = false; // global 6
 
+int_literal g_autostr_type_stack_len = 0; // global 6
+
+int_literal g_autostr_addr_stack_len = 0; // global 6
+
 int g_main_argc = ((int)(0)); // global 6
 
 voidptr g_main_argv = ((void*)0); // global 6
 
 voidptr g_live_reload_info; // global 6
 
-IError _const_none__; // inited later
-const i32 _const_min_i32 = -2147483648; // precomputed2
-const i32 _const_max_i32 = 2147483647; // precomputed2
-i64 _const_min_i64; // inited later
-i64 _const_max_i64; // inited later
-const u32 _const_hash_mask = 16777215; // precomputed2
-const u32 _const_probe_inc = 16777216; // precomputed2
-Array_fixed_i32_1264 _const_rune_maps = {((i32)(0xB5)), 0xB5, 743, 0, 0xC0, 0xD6, 0, 32, 0xD8, 0xDE, 0, 32, 0xE0, 0xF6, -32, 0, 
+/* skip C global: errno */
+
+/* skip C global: stdout */
+
+/* skip C global: stderr */
+
+/* skip C global: _wyp */
+
+static IError _const_error_sentinel; // inited later
+static IError _const_none__; // inited later
+static const i32 _const_min_i32 = -2147483648; // precomputed2
+static const i32 _const_max_i32 = 2147483647; // precomputed2
+static i64 _const_min_i64; // inited later
+static i64 _const_max_i64; // inited later
+static const u32 _const_hash_mask = 16777215; // precomputed2
+static const u32 _const_probe_inc = 16777216; // precomputed2
+static Array_fixed_i32_1264 _const_rune_maps = {((i32)(0xB5)), 0xB5, 743, 0, 0xC0, 0xD6, 0, 32, 0xD8, 0xDE, 0, 32, 0xE0, 0xF6, -32, 0, 
 0xF8, 0xFE, -32, 0, 0xFF, 0xFF, 121, 0, 0x100, 0x12F, -3, -3, 0x130, 0x130, 0, -199, 
 0x131, 0x131, -232, 0, 0x132, 0x137, -3, -3, 0x139, 0x148, -3, -3, 0x14A, 0x177, -3, -3, 
 0x178, 0x178, 0, -121, 0x179, 0x17E, -3, -3, 0x17F, 0x17F, -300, 0, 0x180, 0x180, 195, 0, 
@@ -1894,77 +3262,134 @@ Array_fixed_i32_1264 _const_rune_maps = {((i32)(0xB5)), 0xB5, 743, 0, 0xC0, 0xD6
 0x10597, 0x105A1, -39, 0, 0x105A3, 0x105B1, -39, 0, 0x105B3, 0x105B9, -39, 0, 0x105BB, 0x105BC, -39, 0, 
 0x10C80, 0x10CB2, 0, 64, 0x10CC0, 0x10CF2, -64, 0, 0x118A0, 0x118BF, 0, 32, 0x118C0, 0x118DF, -32, 0, 
 0x16E40, 0x16E5F, 0, 32, 0x16E60, 0x16E7F, -32, 0, 0x1E900, 0x1E921, 0, 34, 0x1E922, 0x1E943, -34, 0}; // fixed array const
-Array_string _const_os__args; // inited later
+static const u8 _const_str_intp_has_dynamic_width = 1; // precomputed2
+static const u8 _const_str_intp_has_dynamic_precision = 2; // precomputed2
+static rune _const_utf8_replacement_rune; // inited later
+Array_fixed_u8_128 g_v_os_execute_mutex_storage = {0}; // global 6
+
+Array_fixed_int_64 g_autostr_type_stack = {0}; // global 6
+
+Array_fixed_voidptr_64 g_autostr_addr_stack = {0}; // global 6
+
+static Array_string _const_os__args; // inited later
 
 // V interface table:
 static IError I_None___to_Interface_IError(None__* x);
-const u32 _IError_None___index = 0;
+enum { _IError_None___index = 1 };
 static IError I_voidptr_to_Interface_IError(voidptr* x);
-const u32 _IError_voidptr_index = 1;
-static IError I_Error_to_Interface_IError(Error* x);
-const u32 _IError_Error_index = 2;
+enum { _IError_voidptr_index = 2 };
 static IError I_MessageError_to_Interface_IError(MessageError* x);
-const u32 _IError_MessageError_index = 3;
+enum { _IError_MessageError_index = 3 };
 static IError I_os__Eof_to_Interface_IError(os__Eof* x);
-const u32 _IError_os__Eof_index = 4;
+enum { _IError_os__Eof_index = 4 };
 static IError I_os__NotExpected_to_Interface_IError(os__NotExpected* x);
-const u32 _IError_os__NotExpected_index = 5;
+enum { _IError_os__NotExpected_index = 5 };
 static IError I_os__FileNotOpenedError_to_Interface_IError(os__FileNotOpenedError* x);
-const u32 _IError_os__FileNotOpenedError_index = 6;
+enum { _IError_os__FileNotOpenedError_index = 6 };
 static IError I_os__SizeOfTypeIs0Error_to_Interface_IError(os__SizeOfTypeIs0Error* x);
-const u32 _IError_os__SizeOfTypeIs0Error_index = 7;
+enum { _IError_os__SizeOfTypeIs0Error_index = 7 };
 static IError I_os__ExecutableNotFoundError_to_Interface_IError(os__ExecutableNotFoundError* x);
-const u32 _IError_os__ExecutableNotFoundError_index = 8;
+enum { _IError_os__ExecutableNotFoundError_index = 8 };
+static IError I_Error_to_Interface_IError(Error* x);
+enum { _IError_Error_index = 9 };
 // ^^^ number of types for interface IError: 9
 
 // Methods wrapper for interface "IError"
 static inline int builtin__None___code_Interface_IError_method_wrapper(None__* err) {
 	return builtin__Error_code(err->Error);
 }
+static inline int builtin__None___code_Interface_IError_method_adapter(void* _x) {
+	return builtin__None___code_Interface_IError_method_wrapper((None__*)_x);
+}
 static inline string builtin__None___msg_Interface_IError_method_wrapper(None__* err) {
 	return builtin__Error_msg(err->Error);
 }
-static inline int builtin__Error_code_Interface_IError_method_wrapper(Error* err) {
-	return builtin__Error_code(*err);
-}
-static inline string builtin__Error_msg_Interface_IError_method_wrapper(Error* err) {
-	return builtin__Error_msg(*err);
+static inline string builtin__None___msg_Interface_IError_method_adapter(void* _x) {
+	return builtin__None___msg_Interface_IError_method_wrapper((None__*)_x);
 }
 static inline int builtin__MessageError_code_Interface_IError_method_wrapper(MessageError* err) {
 	return builtin__MessageError_code(*err);
 }
+static inline int builtin__MessageError_code_Interface_IError_method_adapter(void* _x) {
+	return builtin__MessageError_code_Interface_IError_method_wrapper((MessageError*)_x);
+}
 static inline string builtin__MessageError_msg_Interface_IError_method_wrapper(MessageError* err) {
 	return builtin__MessageError_msg(*err);
+}
+static inline string builtin__MessageError_msg_Interface_IError_method_adapter(void* _x) {
+	return builtin__MessageError_msg_Interface_IError_method_wrapper((MessageError*)_x);
 }
 static inline int builtin__os__Eof_code_Interface_IError_method_wrapper(os__Eof* err) {
 	return builtin__Error_code(err->Error);
 }
+static inline int builtin__os__Eof_code_Interface_IError_method_adapter(void* _x) {
+	return builtin__os__Eof_code_Interface_IError_method_wrapper((os__Eof*)_x);
+}
 static inline string builtin__os__Eof_msg_Interface_IError_method_wrapper(os__Eof* err) {
 	return builtin__Error_msg(err->Error);
+}
+static inline string builtin__os__Eof_msg_Interface_IError_method_adapter(void* _x) {
+	return builtin__os__Eof_msg_Interface_IError_method_wrapper((os__Eof*)_x);
 }
 static inline int os__NotExpected_code_Interface_IError_method_wrapper(os__NotExpected* err) {
 	return os__NotExpected_code(*err);
 }
+static inline int os__NotExpected_code_Interface_IError_method_adapter(void* _x) {
+	return os__NotExpected_code_Interface_IError_method_wrapper((os__NotExpected*)_x);
+}
 static inline string os__NotExpected_msg_Interface_IError_method_wrapper(os__NotExpected* err) {
 	return os__NotExpected_msg(*err);
+}
+static inline string os__NotExpected_msg_Interface_IError_method_adapter(void* _x) {
+	return os__NotExpected_msg_Interface_IError_method_wrapper((os__NotExpected*)_x);
 }
 static inline int builtin__os__FileNotOpenedError_code_Interface_IError_method_wrapper(os__FileNotOpenedError* err) {
 	return builtin__Error_code(err->Error);
 }
+static inline int builtin__os__FileNotOpenedError_code_Interface_IError_method_adapter(void* _x) {
+	return builtin__os__FileNotOpenedError_code_Interface_IError_method_wrapper((os__FileNotOpenedError*)_x);
+}
 static inline string os__FileNotOpenedError_msg_Interface_IError_method_wrapper(os__FileNotOpenedError* err) {
 	return os__FileNotOpenedError_msg(*err);
+}
+static inline string os__FileNotOpenedError_msg_Interface_IError_method_adapter(void* _x) {
+	return os__FileNotOpenedError_msg_Interface_IError_method_wrapper((os__FileNotOpenedError*)_x);
 }
 static inline int builtin__os__SizeOfTypeIs0Error_code_Interface_IError_method_wrapper(os__SizeOfTypeIs0Error* err) {
 	return builtin__Error_code(err->Error);
 }
+static inline int builtin__os__SizeOfTypeIs0Error_code_Interface_IError_method_adapter(void* _x) {
+	return builtin__os__SizeOfTypeIs0Error_code_Interface_IError_method_wrapper((os__SizeOfTypeIs0Error*)_x);
+}
 static inline string os__SizeOfTypeIs0Error_msg_Interface_IError_method_wrapper(os__SizeOfTypeIs0Error* err) {
 	return os__SizeOfTypeIs0Error_msg(*err);
+}
+static inline string os__SizeOfTypeIs0Error_msg_Interface_IError_method_adapter(void* _x) {
+	return os__SizeOfTypeIs0Error_msg_Interface_IError_method_wrapper((os__SizeOfTypeIs0Error*)_x);
 }
 static inline int builtin__os__ExecutableNotFoundError_code_Interface_IError_method_wrapper(os__ExecutableNotFoundError* err) {
 	return builtin__Error_code(err->Error);
 }
+static inline int builtin__os__ExecutableNotFoundError_code_Interface_IError_method_adapter(void* _x) {
+	return builtin__os__ExecutableNotFoundError_code_Interface_IError_method_wrapper((os__ExecutableNotFoundError*)_x);
+}
 static inline string os__ExecutableNotFoundError_msg_Interface_IError_method_wrapper(os__ExecutableNotFoundError* err) {
 	return os__ExecutableNotFoundError_msg(*err);
+}
+static inline string os__ExecutableNotFoundError_msg_Interface_IError_method_adapter(void* _x) {
+	return os__ExecutableNotFoundError_msg_Interface_IError_method_wrapper((os__ExecutableNotFoundError*)_x);
+}
+static inline int builtin__Error_code_Interface_IError_method_wrapper(Error* err) {
+	return builtin__Error_code(*err);
+}
+static inline int builtin__Error_code_Interface_IError_method_adapter(void* _x) {
+	return builtin__Error_code_Interface_IError_method_wrapper((Error*)_x);
+}
+static inline string builtin__Error_msg_Interface_IError_method_wrapper(Error* err) {
+	return builtin__Error_msg(*err);
+}
+static inline string builtin__Error_msg_Interface_IError_method_adapter(void* _x) {
+	return builtin__Error_msg_Interface_IError_method_wrapper((Error*)_x);
 }
 
 struct _IError_interface_methods {
@@ -1972,42 +3397,43 @@ struct _IError_interface_methods {
 	string (*_method_msg)(void* _);
 };
 
-struct _IError_interface_methods IError_name_table[9] = {
+struct _IError_interface_methods IError_name_table[10] = {
+	{0},
 	{
-		._method_code = (void*) builtin__None___code_Interface_IError_method_wrapper,
-		._method_msg = (void*) builtin__None___msg_Interface_IError_method_wrapper,
+		._method_code = builtin__None___code_Interface_IError_method_adapter,
+		._method_msg = builtin__None___msg_Interface_IError_method_adapter,
 	},
 	{
 		._method_code = (void*) 0,
 		._method_msg = (void*) 0,
 	},
 	{
-		._method_code = (void*) builtin__Error_code_Interface_IError_method_wrapper,
-		._method_msg = (void*) builtin__Error_msg_Interface_IError_method_wrapper,
+		._method_code = builtin__MessageError_code_Interface_IError_method_adapter,
+		._method_msg = builtin__MessageError_msg_Interface_IError_method_adapter,
 	},
 	{
-		._method_code = (void*) builtin__MessageError_code_Interface_IError_method_wrapper,
-		._method_msg = (void*) builtin__MessageError_msg_Interface_IError_method_wrapper,
+		._method_code = builtin__os__Eof_code_Interface_IError_method_adapter,
+		._method_msg = builtin__os__Eof_msg_Interface_IError_method_adapter,
 	},
 	{
-		._method_code = (void*) builtin__os__Eof_code_Interface_IError_method_wrapper,
-		._method_msg = (void*) builtin__os__Eof_msg_Interface_IError_method_wrapper,
+		._method_code = os__NotExpected_code_Interface_IError_method_adapter,
+		._method_msg = os__NotExpected_msg_Interface_IError_method_adapter,
 	},
 	{
-		._method_code = (void*) os__NotExpected_code_Interface_IError_method_wrapper,
-		._method_msg = (void*) os__NotExpected_msg_Interface_IError_method_wrapper,
+		._method_code = builtin__os__FileNotOpenedError_code_Interface_IError_method_adapter,
+		._method_msg = os__FileNotOpenedError_msg_Interface_IError_method_adapter,
 	},
 	{
-		._method_code = (void*) builtin__os__FileNotOpenedError_code_Interface_IError_method_wrapper,
-		._method_msg = (void*) os__FileNotOpenedError_msg_Interface_IError_method_wrapper,
+		._method_code = builtin__os__SizeOfTypeIs0Error_code_Interface_IError_method_adapter,
+		._method_msg = os__SizeOfTypeIs0Error_msg_Interface_IError_method_adapter,
 	},
 	{
-		._method_code = (void*) builtin__os__SizeOfTypeIs0Error_code_Interface_IError_method_wrapper,
-		._method_msg = (void*) os__SizeOfTypeIs0Error_msg_Interface_IError_method_wrapper,
+		._method_code = builtin__os__ExecutableNotFoundError_code_Interface_IError_method_adapter,
+		._method_msg = os__ExecutableNotFoundError_msg_Interface_IError_method_adapter,
 	},
 	{
-		._method_code = (void*) builtin__os__ExecutableNotFoundError_code_Interface_IError_method_wrapper,
-		._method_msg = (void*) os__ExecutableNotFoundError_msg_Interface_IError_method_wrapper,
+		._method_code = builtin__Error_code_Interface_IError_method_adapter,
+		._method_msg = builtin__Error_msg_Interface_IError_method_adapter,
 	},
 };
 
@@ -2018,6 +3444,7 @@ static inline IError I_None___to_Interface_IError(None__* x) {
 return (IError) {
 		._None__ = x,
 		._typ = _IError_None___index,
+		._methods = &IError_name_table[_IError_None___index],
 	};
 }
 
@@ -2027,15 +3454,7 @@ static inline IError I_voidptr_to_Interface_IError(voidptr* x) {
 return (IError) {
 		._voidptr = x,
 		._typ = _IError_voidptr_index,
-	};
-}
-
-// Casting functions for converting "Error" to interface "IError"
-
-static inline IError I_Error_to_Interface_IError(Error* x) {
-return (IError) {
-		._Error = x,
-		._typ = _IError_Error_index,
+		._methods = &IError_name_table[_IError_voidptr_index],
 	};
 }
 
@@ -2045,6 +3464,7 @@ static inline IError I_MessageError_to_Interface_IError(MessageError* x) {
 return (IError) {
 		._MessageError = x,
 		._typ = _IError_MessageError_index,
+		._methods = &IError_name_table[_IError_MessageError_index],
 	};
 }
 
@@ -2054,6 +3474,7 @@ static inline IError I_os__Eof_to_Interface_IError(os__Eof* x) {
 return (IError) {
 		._os__Eof = x,
 		._typ = _IError_os__Eof_index,
+		._methods = &IError_name_table[_IError_os__Eof_index],
 	};
 }
 
@@ -2063,6 +3484,7 @@ static inline IError I_os__NotExpected_to_Interface_IError(os__NotExpected* x) {
 return (IError) {
 		._os__NotExpected = x,
 		._typ = _IError_os__NotExpected_index,
+		._methods = &IError_name_table[_IError_os__NotExpected_index],
 	};
 }
 
@@ -2072,6 +3494,7 @@ static inline IError I_os__FileNotOpenedError_to_Interface_IError(os__FileNotOpe
 return (IError) {
 		._os__FileNotOpenedError = x,
 		._typ = _IError_os__FileNotOpenedError_index,
+		._methods = &IError_name_table[_IError_os__FileNotOpenedError_index],
 	};
 }
 
@@ -2081,6 +3504,7 @@ static inline IError I_os__SizeOfTypeIs0Error_to_Interface_IError(os__SizeOfType
 return (IError) {
 		._os__SizeOfTypeIs0Error = x,
 		._typ = _IError_os__SizeOfTypeIs0Error_index,
+		._methods = &IError_name_table[_IError_os__SizeOfTypeIs0Error_index],
 	};
 }
 
@@ -2090,9 +3514,100 @@ static inline IError I_os__ExecutableNotFoundError_to_Interface_IError(os__Execu
 return (IError) {
 		._os__ExecutableNotFoundError = x,
 		._typ = _IError_os__ExecutableNotFoundError_index,
+		._methods = &IError_name_table[_IError_os__ExecutableNotFoundError_index],
 	};
 }
 
+// Casting functions for converting "Error" to interface "IError"
+
+static inline IError I_Error_to_Interface_IError(Error* x) {
+return (IError) {
+		._Error = x,
+		._typ = _IError_Error_index,
+		._methods = &IError_name_table[_IError_Error_index],
+	};
+}
+
+
+static inline IError __v_interface_clone_variant__IError__None__(void* x) {
+return I_None___to_Interface_IError((None__*)builtin__memdup(x, sizeof(None__)));
+}
+
+static inline IError __v_interface_clone_variant__IError__voidptr(void* x) {
+return I_voidptr_to_Interface_IError((voidptr*)builtin__memdup(x, sizeof(voidptr)));
+}
+
+static inline IError __v_interface_clone_variant__IError__MessageError(void* x) {
+return I_MessageError_to_Interface_IError((MessageError*)builtin__memdup(x, sizeof(MessageError)));
+}
+
+static inline IError __v_interface_clone_variant__IError__os__Eof(void* x) {
+return I_os__Eof_to_Interface_IError((os__Eof*)builtin__memdup(x, sizeof(os__Eof)));
+}
+
+static inline IError __v_interface_clone_variant__IError__os__NotExpected(void* x) {
+return I_os__NotExpected_to_Interface_IError((os__NotExpected*)builtin__memdup(x, sizeof(os__NotExpected)));
+}
+
+static inline IError __v_interface_clone_variant__IError__os__FileNotOpenedError(void* x) {
+return I_os__FileNotOpenedError_to_Interface_IError((os__FileNotOpenedError*)builtin__memdup(x, sizeof(os__FileNotOpenedError)));
+}
+
+static inline IError __v_interface_clone_variant__IError__os__SizeOfTypeIs0Error(void* x) {
+return I_os__SizeOfTypeIs0Error_to_Interface_IError((os__SizeOfTypeIs0Error*)builtin__memdup(x, sizeof(os__SizeOfTypeIs0Error)));
+}
+
+static inline IError __v_interface_clone_variant__IError__os__ExecutableNotFoundError(void* x) {
+return I_os__ExecutableNotFoundError_to_Interface_IError((os__ExecutableNotFoundError*)builtin__memdup(x, sizeof(os__ExecutableNotFoundError)));
+}
+
+static inline IError __v_interface_clone_variant__IError__Error(void* x) {
+return I_Error_to_Interface_IError((Error*)builtin__memdup(x, sizeof(Error)));
+}
+
+static inline IError __v_interface_clone__IError(IError x) {
+	if (x._object == 0) {
+		return x;
+	}
+	if (x._typ == _IError_None___index) {
+		return __v_interface_clone_variant__IError__None__(x._object);
+	}
+	if (x._typ == _IError_voidptr_index) {
+		return __v_interface_clone_variant__IError__voidptr(x._object);
+	}
+	if (x._typ == _IError_MessageError_index) {
+		return __v_interface_clone_variant__IError__MessageError(x._object);
+	}
+	if (x._typ == _IError_os__Eof_index) {
+		return __v_interface_clone_variant__IError__os__Eof(x._object);
+	}
+	if (x._typ == _IError_os__NotExpected_index) {
+		return __v_interface_clone_variant__IError__os__NotExpected(x._object);
+	}
+	if (x._typ == _IError_os__FileNotOpenedError_index) {
+		return __v_interface_clone_variant__IError__os__FileNotOpenedError(x._object);
+	}
+	if (x._typ == _IError_os__SizeOfTypeIs0Error_index) {
+		return __v_interface_clone_variant__IError__os__SizeOfTypeIs0Error(x._object);
+	}
+	if (x._typ == _IError_os__ExecutableNotFoundError_index) {
+		return __v_interface_clone_variant__IError__os__ExecutableNotFoundError(x._object);
+	}
+	if (x._typ == _IError_Error_index) {
+		return __v_interface_clone_variant__IError__Error(x._object);
+	}
+	return x;
+}
+
+static inline u64 VSAFE_DIV_u64(u64 x, u64 y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("division by zero")); } return x / y; }
+static inline u64 VSAFE_MOD_u64(u64 x, u64 y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("modulo by zero")); } return x % y; }
+static inline u32 VSAFE_DIV_u32(u32 x, u32 y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("division by zero")); } return x / y; }
+static inline u32 VSAFE_MOD_u32(u32 x, u32 y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("modulo by zero")); } return x % y; }
+static inline int VSAFE_MOD_int(int x, int y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("modulo by zero")); } return x % y; }
+static inline int VSAFE_DIV_int(int x, int y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("division by zero")); } return x / y; }
+static inline i64 VSAFE_MOD_i64(i64 x, i64 y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("modulo by zero")); } return x % y; }
+static inline i64 VSAFE_DIV_i64(i64 x, i64 y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("division by zero")); } return x / y; }
+static inline rune VSAFE_MOD_rune(rune x, rune y) { if (_unlikely_(0 == y)) { builtin___v_panic(_S("modulo by zero")); } return x % y; }
 
 // end of V out (header)
 
@@ -2120,26 +3635,26 @@ static bool Array_string_contains(Array_string a, string v) {
 static char * v_typeof_interface_IError(u32 sidx) {
 	if (sidx == _IError_None___index) return "None__";
 	if (sidx == _IError_voidptr_index) return "voidptr";
-	if (sidx == _IError_Error_index) return "Error";
 	if (sidx == _IError_MessageError_index) return "MessageError";
 	if (sidx == _IError_os__Eof_index) return "os.Eof";
 	if (sidx == _IError_os__NotExpected_index) return "os.NotExpected";
 	if (sidx == _IError_os__FileNotOpenedError_index) return "os.FileNotOpenedError";
 	if (sidx == _IError_os__SizeOfTypeIs0Error_index) return "os.SizeOfTypeIs0Error";
 	if (sidx == _IError_os__ExecutableNotFoundError_index) return "os.ExecutableNotFoundError";
+	if (sidx == _IError_Error_index) return "Error";
 	return "unknown IError";
 }
 
 u32 v_typeof_interface_idx_IError(u32 sidx) {
-	if (sidx == _IError_None___index) return 62;
+	if (sidx == _IError_None___index) return 65;
 	if (sidx == _IError_voidptr_index) return 2;
-	if (sidx == _IError_Error_index) return 63;
-	if (sidx == _IError_MessageError_index) return 64;
-	if (sidx == _IError_os__Eof_index) return 140;
-	if (sidx == _IError_os__NotExpected_index) return 141;
-	if (sidx == _IError_os__FileNotOpenedError_index) return 143;
-	if (sidx == _IError_os__SizeOfTypeIs0Error_index) return 144;
-	if (sidx == _IError_os__ExecutableNotFoundError_index) return 164;
+	if (sidx == _IError_MessageError_index) return 67;
+	if (sidx == _IError_os__Eof_index) return 165;
+	if (sidx == _IError_os__NotExpected_index) return 163;
+	if (sidx == _IError_os__FileNotOpenedError_index) return 166;
+	if (sidx == _IError_os__SizeOfTypeIs0Error_index) return 167;
+	if (sidx == _IError_os__ExecutableNotFoundError_index) return 187;
+	if (sidx == _IError_Error_index) return 66;
 	return 30;
 }
 // << typeof() support for sum types
@@ -2149,11 +3664,23 @@ strings__Builder strings__new_builder(int initial_size) {
 	builtin__ArrayFlags_set(&res.flags, ArrayFlags__noslices);
 	return res;
 }
+Array_u8 strings__Builder_reuse_as_plain_u8_array(strings__Builder* b) {
+	builtin__ArrayFlags_clear(&b->flags, ArrayFlags__noslices);
+	return *b;
+}
 void strings__Builder_write_ptr(strings__Builder* b, u8* ptr, int len) {
 	if (len == 0) {
 		return;
 	}
 	builtin__array_push_many(b, ptr, len);
+}
+void strings__Builder_write_rune(strings__Builder* b, rune r) {
+	Array_fixed_u8_5 buffer = {0};
+	string res = builtin__utf32_to_str_no_malloc(((u32)(r)), &buffer[0]);
+	if (res.len == 0) {
+		return;
+	}
+	builtin__array_push_many(b, res.str, res.len);
 }
 void strings__Builder_write_runes(strings__Builder* b, Array_rune runes) {
 	Array_fixed_u8_5 buffer = {0};
@@ -2169,24 +3696,93 @@ void strings__Builder_write_runes(strings__Builder* b, Array_rune runes) {
 inline void strings__Builder_write_u8(strings__Builder* b, u8 data) {
 	builtin__array_push((array*)b, _MOV((u8[]){ data }));
 }
+inline void strings__Builder_write_byte(strings__Builder* b, u8 data) {
+	builtin__array_push((array*)b, _MOV((u8[]){ data }));
+}
+void strings__Builder_write_u_decimal(strings__Builder* b, u64 n) {
+	if (n == 0) {
+		strings__Builder_write_u8(b, 0x30);
+		return;
+	}
+	Array_fixed_u8_20 buf = {0};
+	u64 x = n;
+	int i = 19;
+	for (;;) {
+		if (!(x != 0)) break;
+		u64 nextx = VSAFE_DIV_u64(x , 10);
+		u64 r = VSAFE_MOD_u64(x , 10);
+		buf[i] = (u8)(((u8)(r)) + 0x30);
+		x = nextx;
+		i--;
+	}
+	strings__Builder_write_ptr(b, &buf[i + 1], 19 - i);
+}
 inline void strings__Builder_write_string(strings__Builder* b, string s) {
 	if (s.len == 0) {
 		return;
 	}
 	builtin__array_push_many(b, s.str, s.len);
 }
+inline string strings__Builder_spart(strings__Builder* b, int start_pos, int n) {
+	{ // Unsafe block
+		u8* x = builtin__malloc_noscan(n + 1);
+		builtin__vmemcpy(x, ((u8*)(b->data)) + start_pos, n);
+		x[n] = 0;
+		return builtin__tos(x, n);
+	}
+	return (string){.str=(byteptr)"", .is_lit=1};
+}
+string strings__Builder_cut_last(strings__Builder* b, int n) {
+	int cut_pos = b->len - n;
+	string res = strings__Builder_spart(b, cut_pos, n);
+	builtin__array_trim(b, cut_pos);
+	return res;
+}
 string strings__Builder_str(strings__Builder* b) {
 	builtin__array_push((array*)b, _MOV((u8[]){ ((u8)(0)) }));
 	u8* bcopy = ((u8*)(builtin__memdup_noscan(b->data, b->len)));
-	string s = builtin__u8_vstring_with_len(bcopy, (int)(b->len - 1));
+	string s = builtin__u8_vstring_with_len(bcopy, b->len - 1);
 	builtin__array_clear(b);
 	return s;
 }
+void strings__Builder_ensure_cap(strings__Builder* b, int n) {
+	Array_u8* arr = ((Array_u8*)(b));
+	builtin__array_ensure_cap(arr, n);
+}
 void strings__Builder_free(strings__Builder* b) {
 	if (b->data != 0) {
-		builtin___v_free(b->data);
+		Array_u8* arr = ((Array_u8*)(b));
+		builtin__array_free(arr);
+	}
+}
+void strings__Builder_write_repeated_rune(strings__Builder* b, rune r, int count) {
+	if (count <= 0) {
+		return;
+	}
+	Array_fixed_u8_5 buffer = {0};
+	string res = builtin__utf32_to_str_no_malloc(((u32)(r)), &buffer[0]);
+	if (res.len == 0) {
+		return;
+	}
+	if (res.len == 1) {
+		strings__Builder_ensure_cap(b, b->len + count);
 		{ // Unsafe block
-			b->data = ((void*)0);
+			builtin__vmemset(((u8*)(b->data)) + b->len, buffer[0], count);
+			b->len += count;
+		}
+		return;
+	} else {
+		int total_needed = count * res.len;
+		strings__Builder_ensure_cap(b, b->len + total_needed);
+		u8* dest = ((u8*)(b->data)) + b->len;
+		for (int _t1 = 0; _t1 < count; ++_t1) {
+			{ // Unsafe block
+				builtin__vmemcpy(dest, res.str, res.len);
+				dest += res.len;
+			}
+		}
+		{ // Unsafe block
+			b->len += total_needed;
 		}
 	}
 }
@@ -2194,14 +3790,14 @@ string strings__repeat(u8 c, int n) {
 	if (n <= 0) {
 		return _S("");
 	}
-	u8* bytes = builtin__malloc_noscan((int)(n + 1));
+	u8* bytes = builtin__malloc_noscan(n + 1);
 	{ // Unsafe block
 		memset(bytes, c, n);
 		bytes[n] = 0;
 	}
 	return builtin__u8_vstring_with_len(bytes, n);
 }
-#if !defined(_VFREESTANDING) && !defined(__vinix__)
+#if 1
 #endif
 inline multi_return_u64_u64 math__bits__mul_64(u64 x, u64 y) {
 	u64 hi = ((u64)(0));
@@ -2254,39 +3850,39 @@ inline VV_LOC int math__bits__trailing_zeros_32_default(u32 x) {
 	if (x == 0) {
 		return 32;
 	}
-	return ((int)(_const_math__bits__de_bruijn32tab[((u32)(((x & -x)) * _const_math__bits__de_bruijn32) >> 27)]));
+	return ((int)(_const_math__bits__de_bruijn32tab[v__rshift_u32(((x & -x)) * _const_math__bits__de_bruijn32, (u64)27)]));
 }
 inline VV_LOC int math__bits__trailing_zeros_64_default(u64 x) {
 	if (x == 0) {
 		return 64;
 	}
-	return ((int)(_const_math__bits__de_bruijn64tab[((u64)(((x & -x)) * _const_math__bits__de_bruijn64) >> 58)]));
+	return ((int)(_const_math__bits__de_bruijn64tab[((int)(v__rshift_u64(((x & -x)) * _const_math__bits__de_bruijn64, (u64)58)))]));
 }
 VV_LOC multi_return_u64_u64 math__bits__mul_64_default(u64 x, u64 y) {
 	u64 x0 = (x & _const_math__bits__mask32);
-	u64 x1 = (x >> 32);
+	u64 x1 = v__rshift_u64(x, (u64)32);
 	u64 y0 = (y & _const_math__bits__mask32);
-	u64 y1 = (y >> 32);
-	u64 w0 = (u64)(x0 * y0);
-	u64 t = (u64)((u64)(x1 * y0) + ((w0 >> 32)));
+	u64 y1 = v__rshift_u64(y, (u64)32);
+	u64 w0 = x0 * y0;
+	u64 t = x1 * y0 + (v__rshift_u64(w0, (u64)32));
 	u64 w1 = (t & _const_math__bits__mask32);
-	u64 w2 = (t >> 32);
-	w1 += (u64)(x0 * y1);
-	u64 hi = (u64)((u64)((u64)(x1 * y1) + w2) + ((w1 >> 32)));
-	u64 lo = (u64)(x * y);
+	u64 w2 = v__rshift_u64(t, (u64)32);
+	w1 += x0 * y1;
+	u64 hi = x1 * y1 + w2 + (v__rshift_u64(w1, (u64)32));
+	u64 lo = x * y;
 	return (multi_return_u64_u64){.arg0=hi, .arg1=lo};
 }
 string strconv__Dec32_get_string_32(strconv__Dec32 d, bool neg, int i_n_digit, int i_pad_digit) {
-	int n_digit = (int)(i_n_digit + 1);
-	int pad_digit = (int)(i_pad_digit + 1);
+	int n_digit = i_n_digit + 1;
+	int pad_digit = i_pad_digit + 1;
 	u32 out = d.m;
 	int out_len = strconv__dec_digits(out);
 	int out_len_original = out_len;
 	int fw_zeros = 0;
 	if (pad_digit > out_len) {
-		fw_zeros = (int)(pad_digit - out_len);
+		fw_zeros = pad_digit - out_len;
 	}
-	Array_u8 buf = builtin____new_array_with_default(((int)((int)((int)((int)(out_len + 5) + 1) + 1))), 0, sizeof(u8), 0);
+	Array_u8 buf = builtin____new_array_with_default(((int)(out_len + 5 + 1 + 1)), 0, sizeof(u8), 0);
 	int i = 0;
 	if (neg) {
 		if (buf.data != 0) {
@@ -2299,32 +3895,32 @@ string strconv__Dec32_get_string_32(strconv__Dec32 d, bool neg, int i_n_digit, i
 		disp = 1;
 	}
 	if (n_digit < out_len) {
-		out += (u32)(_const_strconv__ten_pow_table_32[(int)((int)(out_len - n_digit) - 1)] * 5);
-		out /= _const_strconv__ten_pow_table_32[(int)(out_len - n_digit)];
+		out += _const_strconv__ten_pow_table_32[out_len - n_digit - 1] * 5;
+		out = VSAFE_DIV_u32(out,_const_strconv__ten_pow_table_32[out_len - n_digit]);
 		out_len = n_digit;
 	}
-	int y = (int)(i + out_len);
+	int y = i + out_len;
 	int x = 0;
 	for (;;) {
-		if (!(x < ((int)((int)(out_len - disp) - 1)))) break;
-		((u8*)buf.data)[(int)(y - x)] = (rune)('0' + ((u8)((u32)(out % 10))));
-		out /= 10;
+		if (!(x < (out_len - disp - 1))) break;
+		((u8*)buf.data)[y - x] = (rune)('0' + ((u8)(VSAFE_MOD_u32(out , 10))));
+		out = VSAFE_DIV_u32(out,10);
 		i++;
 		x++;
 	}
 	if (i_n_digit == 0) {
 		{ // Unsafe block
 			((u8*)buf.data)[i] = 0;
-			return builtin__tos(((u8*)(&((u8*)buf.data)[0])), i);
+			return builtin__tos(builtin__memdup(&((u8*)buf.data)[0], i + 1), i);
 		}
 	}
 	if (out_len > 1 || fw_zeros > 0) {
-		((u8*)buf.data)[(int)(y - x)] = '.';
+		((u8*)buf.data)[y - x] = '.';
 		i++;
 	}
 	x++;
-	if ((int)(y - x) >= 0) {
-		((u8*)buf.data)[(int)(y - x)] = (rune)('0' + ((u8)((u32)(out % 10))));
+	if (y - x >= 0) {
+		((u8*)buf.data)[y - x] = (rune)('0' + ((u8)(VSAFE_MOD_u32(out , 10))));
 		i++;
 	}
 	for (;;) {
@@ -2335,7 +3931,7 @@ string strconv__Dec32_get_string_32(strconv__Dec32 d, bool neg, int i_n_digit, i
 	}
 	((u8*)buf.data)[i] = 'e';
 	i++;
-	int exp = (int)((int)(d.e + out_len_original) - 1);
+	int exp = d.e + out_len_original - 1;
 	if (exp < 0) {
 		((u8*)buf.data)[i] = '-';
 		i++;
@@ -2344,30 +3940,31 @@ string strconv__Dec32_get_string_32(strconv__Dec32 d, bool neg, int i_n_digit, i
 		((u8*)buf.data)[i] = '+';
 		i++;
 	}
-	int d1 = (int)(exp % 10);
-	int d0 = (int)(exp / 10);
+	int d1 = VSAFE_MOD_int(exp , 10);
+	int d0 = VSAFE_DIV_int(exp , 10);
 	((u8*)buf.data)[i] = (rune)('0' + ((u8)(d0)));
 	i++;
 	((u8*)buf.data)[i] = (rune)('0' + ((u8)(d1)));
 	i++;
 	((u8*)buf.data)[i] = 0;
-	return builtin__tos(((u8*)(&((u8*)buf.data)[0])), i);
+	return builtin__tos(builtin__memdup(&((u8*)buf.data)[0], i + 1), i);
 }
 VV_LOC multi_return_strconv__Dec32_bool strconv__f32_to_decimal_exact_int(u32 i_mant, u32 exp) {
-	strconv__Dec32 d = ((strconv__Dec32){.m = 0,.e = 0,});
-	u32 e = (u32)(exp - 127);
+	strconv__Dec32 _t1 = ((strconv__Dec32){.m = 0,.e = 0,});
+	strconv__Dec32 d = _t1;
+	u32 e = exp - 127;
 	if (e > _const_strconv__mantbits32) {
 		return (multi_return_strconv__Dec32_bool){.arg0=d, .arg1=false};
 	}
-	u32 shift = (u32)(_const_strconv__mantbits32 - e);
+	u32 shift = _const_strconv__mantbits32 - e;
 	u32 mant = (i_mant | 0x00800000);
-	d.m = (mant >> shift);
-	if (((d.m << shift)) != mant) {
+	d.m = v__rshift_u32(mant, (u64)shift);
+	if ((v__lshift_u32(d.m, (u64)shift)) != mant) {
 		return (multi_return_strconv__Dec32_bool){.arg0=d, .arg1=false};
 	}
 	for (;;) {
-		if (!(((u32)(d.m % 10)) == 0)) break;
-		d.m /= 10;
+		if (!((VSAFE_MOD_u32(d.m , 10)) == 0)) break;
+		d.m = VSAFE_DIV_u32(d.m,10);
 		d.e++;
 	}
 	return (multi_return_strconv__Dec32_bool){.arg0=d, .arg1=true};
@@ -2376,18 +3973,18 @@ VV_LOC strconv__Dec32 strconv__f32_to_decimal(u32 mant, u32 exp) {
 	int e2 = 0;
 	u32 m2 = ((u32)(0));
 	if (exp == 0) {
-		e2 = (int)((int)(-126 - ((int)(_const_strconv__mantbits32))) - 2);
+		e2 = -126 - ((int)(_const_strconv__mantbits32)) - 2;
 		m2 = mant;
 	} else {
-		e2 = (int)((int)((int)(((int)(exp)) - 127) - ((int)(_const_strconv__mantbits32))) - 2);
-		m2 = (((((u32)(1)) << _const_strconv__mantbits32)) | mant);
+		e2 = ((int)(exp)) - 127 - ((int)(_const_strconv__mantbits32)) - 2;
+		m2 = ((v__lshift_u32(((u32)(1)), (u64)_const_strconv__mantbits32)) | mant);
 	}
 	bool even = ((m2 & 1)) == 0;
 	bool accept_bounds = even;
-	u32 mv = ((u32)((u32)(4 * m2)));
-	u32 mp = ((u32)((u32)((u32)(4 * m2) + 2)));
+	u32 mv = ((u32)(4 * m2));
+	u32 mp = ((u32)(4 * m2 + 2));
 	u32 mm_shift = strconv__bool_to_u32(mant != 0 || exp <= 1);
-	u32 mm = ((u32)((u32)((u32)((u32)(4 * m2) - 1) - mm_shift)));
+	u32 mm = ((u32)(4 * m2 - 1 - mm_shift));
 	u32 vr = ((u32)(0));
 	u32 vp = ((u32)(0));
 	u32 vm = ((u32)(0));
@@ -2398,17 +3995,17 @@ VV_LOC strconv__Dec32 strconv__f32_to_decimal(u32 mant, u32 exp) {
 	if (e2 >= 0) {
 		u32 q = strconv__log10_pow2(e2);
 		e10 = ((int)(q));
-		int k = (int)((int)(59 + strconv__pow5_bits(((int)(q)))) - 1);
-		int i = (int)((int)(-e2 + ((int)(q))) + k);
+		int k = 59 + strconv__pow5_bits(((int)(q))) - 1;
+		int i = -e2 + ((int)(q)) + k;
 		vr = strconv__mul_pow5_invdiv_pow2(mv, q, i);
 		vp = strconv__mul_pow5_invdiv_pow2(mp, q, i);
 		vm = strconv__mul_pow5_invdiv_pow2(mm, q, i);
-		if (q != 0 && (u32)(((u32)(vp - 1)) / 10) <= (u32)(vm / 10)) {
-			int l = (int)((int)(59 + strconv__pow5_bits(((int)((u32)(q - 1))))) - 1);
-			last_removed_digit = ((u8)((u32)(strconv__mul_pow5_invdiv_pow2(mv, (u32)(q - 1), (int)((int)(-e2 + ((int)((u32)(q - 1)))) + l)) % 10)));
+		if (q != 0 && VSAFE_DIV_u32((vp - 1) , 10) <= VSAFE_DIV_u32(vm , 10)) {
+			int l = 59 + strconv__pow5_bits(((int)(q - 1))) - 1;
+			last_removed_digit = ((u8)(VSAFE_MOD_u32(strconv__mul_pow5_invdiv_pow2(mv, q - 1, -e2 + ((int)(q - 1)) + l) , 10)));
 		}
 		if (q <= 9) {
-			if ((u32)(mv % 5) == 0) {
+			if (VSAFE_MOD_u32(mv , 5) == 0) {
 				vr_is_trailing_zeros = strconv__multiple_of_power_of_five_32(mv, q);
 			} else if (accept_bounds) {
 				vm_is_trailing_zeros = strconv__multiple_of_power_of_five_32(mm, q);
@@ -2418,16 +4015,16 @@ VV_LOC strconv__Dec32 strconv__f32_to_decimal(u32 mant, u32 exp) {
 		}
 	} else {
 		u32 q = strconv__log10_pow5(-e2);
-		e10 = (int)(((int)(q)) + e2);
-		int i = (int)(-e2 - ((int)(q)));
-		int k = (int)(strconv__pow5_bits(i) - 61);
-		int j = (int)(((int)(q)) - k);
+		e10 = ((int)(q)) + e2;
+		int i = -e2 - ((int)(q));
+		int k = strconv__pow5_bits(i) - 61;
+		int j = ((int)(q)) - k;
 		vr = strconv__mul_pow5_div_pow2(mv, ((u32)(i)), j);
 		vp = strconv__mul_pow5_div_pow2(mp, ((u32)(i)), j);
 		vm = strconv__mul_pow5_div_pow2(mm, ((u32)(i)), j);
-		if (q != 0 && ((u32)(((u32)(vp - 1)) / 10)) <= (u32)(vm / 10)) {
-			j = (int)((int)(((int)(q)) - 1) - ((int)(strconv__pow5_bits((int)(i + 1)) - 61)));
-			last_removed_digit = ((u8)((u32)(strconv__mul_pow5_div_pow2(mv, ((u32)((int)(i + 1))), j) % 10)));
+		if (q != 0 && (VSAFE_DIV_u32((vp - 1) , 10)) <= VSAFE_DIV_u32(vm , 10)) {
+			j = ((int)(q)) - 1 - (strconv__pow5_bits(i + 1) - 61);
+			last_removed_digit = ((u8)(VSAFE_MOD_u32(strconv__mul_pow5_div_pow2(mv, ((u32)(i + 1)), j) , 10)));
 		}
 		if (q <= 1) {
 			vr_is_trailing_zeros = true;
@@ -2437,34 +4034,34 @@ VV_LOC strconv__Dec32 strconv__f32_to_decimal(u32 mant, u32 exp) {
 				vp--;
 			}
 		} else if (q < 31) {
-			vr_is_trailing_zeros = strconv__multiple_of_power_of_two_32(mv, (u32)(q - 1));
+			vr_is_trailing_zeros = strconv__multiple_of_power_of_two_32(mv, q - 1);
 		}
 	}
 	int removed = 0;
 	u32 out = ((u32)(0));
 	if (vm_is_trailing_zeros || vr_is_trailing_zeros) {
 		for (;;) {
-			if (!((u32)(vp / 10) > (u32)(vm / 10))) break;
-			vm_is_trailing_zeros = vm_is_trailing_zeros && ((u32)(vm % 10)) == 0;
+			if (!(VSAFE_DIV_u32(vp , 10) > VSAFE_DIV_u32(vm , 10))) break;
+			vm_is_trailing_zeros = vm_is_trailing_zeros && (VSAFE_MOD_u32(vm , 10)) == 0;
 			vr_is_trailing_zeros = vr_is_trailing_zeros && last_removed_digit == 0;
-			last_removed_digit = ((u8)((u32)(vr % 10)));
-			vr /= 10;
-			vp /= 10;
-			vm /= 10;
+			last_removed_digit = ((u8)(VSAFE_MOD_u32(vr , 10)));
+			vr = VSAFE_DIV_u32(vr,10);
+			vp = VSAFE_DIV_u32(vp,10);
+			vm = VSAFE_DIV_u32(vm,10);
 			removed++;
 		}
 		if (vm_is_trailing_zeros) {
 			for (;;) {
-				if (!((u32)(vm % 10) == 0)) break;
+				if (!(VSAFE_MOD_u32(vm , 10) == 0)) break;
 				vr_is_trailing_zeros = vr_is_trailing_zeros && last_removed_digit == 0;
-				last_removed_digit = ((u8)((u32)(vr % 10)));
-				vr /= 10;
-				vp /= 10;
-				vm /= 10;
+				last_removed_digit = ((u8)(VSAFE_MOD_u32(vr , 10)));
+				vr = VSAFE_DIV_u32(vr,10);
+				vp = VSAFE_DIV_u32(vp,10);
+				vm = VSAFE_DIV_u32(vm,10);
 				removed++;
 			}
 		}
-		if (vr_is_trailing_zeros && last_removed_digit == 5 && ((u32)(vr % 2)) == 0) {
+		if (vr_is_trailing_zeros && last_removed_digit == 5 && (VSAFE_MOD_u32(vr , 2)) == 0) {
 			last_removed_digit = 4;
 		}
 		out = vr;
@@ -2473,47 +4070,48 @@ VV_LOC strconv__Dec32 strconv__f32_to_decimal(u32 mant, u32 exp) {
 		}
 	} else {
 		for (;;) {
-			if (!((u32)(vp / 10) > (u32)(vm / 10))) break;
-			last_removed_digit = ((u8)((u32)(vr % 10)));
-			vr /= 10;
-			vp /= 10;
-			vm /= 10;
+			if (!(VSAFE_DIV_u32(vp , 10) > VSAFE_DIV_u32(vm , 10))) break;
+			last_removed_digit = ((u8)(VSAFE_MOD_u32(vr , 10)));
+			vr = VSAFE_DIV_u32(vr,10);
+			vp = VSAFE_DIV_u32(vp,10);
+			vm = VSAFE_DIV_u32(vm,10);
 			removed++;
 		}
-		out = (u32)(vr + strconv__bool_to_u32(vr == vm || last_removed_digit >= 5));
+		out = vr + strconv__bool_to_u32(vr == vm || last_removed_digit >= 5);
 	}
-	return ((strconv__Dec32){.m = out,.e = (int)(e10 + removed),});
+	return ((strconv__Dec32){.m = out,.e = e10 + removed,});
 }
 string strconv__f32_to_str(f32 f, int n_digit) {
-	strconv__Uf32 u1 = ((strconv__Uf32){0});
+	strconv__Uf32 _t1 = ((strconv__Uf32){0});
+	strconv__Uf32 u1 = _t1;
 	u1.f = f;
 	u32 u = u1.u;
-	bool neg = ((u >> ((u32)(_const_strconv__mantbits32 + _const_strconv__expbits32)))) != 0;
-	u32 mant = (u & ((u32)(((((u32)(1)) << _const_strconv__mantbits32)) - ((u32)(1)))));
-	u32 exp = (((u >> _const_strconv__mantbits32)) & ((u32)(((((u32)(1)) << _const_strconv__expbits32)) - ((u32)(1)))));
+	bool neg = (v__rshift_u32(u, (u64)(_const_strconv__mantbits32 + _const_strconv__expbits32))) != 0;
+	u32 mant = (u & ((v__lshift_u32(((u32)(1)), (u64)_const_strconv__mantbits32)) - ((u32)(1))));
+	u32 exp = ((v__rshift_u32(u, (u64)_const_strconv__mantbits32)) & ((v__lshift_u32(((u32)(1)), (u64)_const_strconv__expbits32)) - ((u32)(1))));
 	if (exp == 255 || (exp == 0 && mant == 0)) {
 		return strconv__get_string_special(neg, exp == 0, mant == 0);
 	}
-	multi_return_strconv__Dec32_bool mr_8580 = strconv__f32_to_decimal_exact_int(mant, exp);
-	strconv__Dec32 d = mr_8580.arg0;
-	bool ok = mr_8580.arg1;
+	multi_return_strconv__Dec32_bool mr_8600 = strconv__f32_to_decimal_exact_int(mant, exp);
+	strconv__Dec32 d = mr_8600.arg0;
+	bool ok = mr_8600.arg1;
 	if (!ok) {
 		d = strconv__f32_to_decimal(mant, exp);
 	}
 	return strconv__Dec32_get_string_32(d, neg, n_digit, 0);
 }
 VV_LOC string strconv__Dec64_get_string_64(strconv__Dec64 d, bool neg, int i_n_digit, int i_pad_digit) {
-	int n_digit = (i_n_digit < 1 ? (1) : ((int)(i_n_digit + 1)));
-	int pad_digit = (int)(i_pad_digit + 1);
+	int n_digit = (i_n_digit < 1 ? (1) : (i_n_digit + 1));
+	int pad_digit = i_pad_digit + 1;
 	u64 out = d.m;
 	int d_exp = d.e;
 	int out_len = strconv__dec_digits(out);
 	int out_len_original = out_len;
 	int fw_zeros = 0;
 	if (pad_digit > out_len) {
-		fw_zeros = (int)(pad_digit - out_len);
+		fw_zeros = pad_digit - out_len;
 	}
-	Array_u8 buf = builtin____new_array_with_default(((int)((int)((int)((int)(out_len + 6) + 1) + 1) + fw_zeros)), 0, sizeof(u8), 0);
+	Array_u8 buf = builtin____new_array_with_default((out_len + 6 + 1 + 1 + fw_zeros), 0, sizeof(u8), 0);
 	int i = 0;
 	if (neg) {
 		((u8*)buf.data)[i] = '-';
@@ -2524,31 +4122,31 @@ VV_LOC string strconv__Dec64_get_string_64(strconv__Dec64 d, bool neg, int i_n_d
 		disp = 1;
 	}
 	if (n_digit < out_len) {
-		out += (u64)(_const_strconv__ten_pow_table_64[(int)((int)(out_len - n_digit) - 1)] * 5);
-		out /= _const_strconv__ten_pow_table_64[(int)(out_len - n_digit)];
-		u64 out_div = (u64)(d.m / _const_strconv__ten_pow_table_64[(int)(out_len - n_digit)]);
+		out += _const_strconv__ten_pow_table_64[out_len - n_digit - 1] * 5;
+		out = VSAFE_DIV_u64(out,_const_strconv__ten_pow_table_64[out_len - n_digit]);
+		u64 out_div = VSAFE_DIV_u64(d.m , _const_strconv__ten_pow_table_64[out_len - n_digit]);
 		if (out_div < out && strconv__dec_digits(out_div) < strconv__dec_digits(out)) {
 			d_exp++;
 			n_digit++;
 		}
 		out_len = n_digit;
 	}
-	int y = (int)(i + out_len);
+	int y = i + out_len;
 	int x = 0;
 	for (;;) {
-		if (!(x < ((int)((int)(out_len - disp) - 1)))) break;
-		((u8*)buf.data)[(int)(y - x)] = (rune)('0' + ((u8)((u64)(out % 10))));
-		out /= 10;
+		if (!(x < (out_len - disp - 1))) break;
+		((u8*)buf.data)[y - x] = (rune)('0' + ((u8)(VSAFE_MOD_u64(out , 10))));
+		out = VSAFE_DIV_u64(out,10);
 		i++;
 		x++;
 	}
 	if (out_len > 1 || fw_zeros > 0) {
-		((u8*)buf.data)[(int)(y - x)] = '.';
+		((u8*)buf.data)[y - x] = '.';
 		i++;
 	}
 	x++;
-	if ((int)(y - x) >= 0) {
-		((u8*)buf.data)[(int)(y - x)] = (rune)('0' + ((u8)((u64)(out % 10))));
+	if (y - x >= 0) {
+		((u8*)buf.data)[y - x] = (rune)('0' + ((u8)(VSAFE_MOD_u64(out , 10))));
 		i++;
 	}
 	for (;;) {
@@ -2559,7 +4157,7 @@ VV_LOC string strconv__Dec64_get_string_64(strconv__Dec64 d, bool neg, int i_n_d
 	}
 	((u8*)buf.data)[i] = 'e';
 	i++;
-	int exp = (int)((int)(d_exp + out_len_original) - 1);
+	int exp = d_exp + out_len_original - 1;
 	if (exp < 0) {
 		((u8*)buf.data)[i] = '-';
 		i++;
@@ -2568,10 +4166,10 @@ VV_LOC string strconv__Dec64_get_string_64(strconv__Dec64 d, bool neg, int i_n_d
 		((u8*)buf.data)[i] = '+';
 		i++;
 	}
-	int d2 = (int)(exp % 10);
-	exp /= 10;
-	int d1 = (int)(exp % 10);
-	int d0 = (int)(exp / 10);
+	int d2 = VSAFE_MOD_int(exp , 10);
+	exp = VSAFE_DIV_int(exp,10);
+	int d1 = VSAFE_MOD_int(exp , 10);
+	int d0 = VSAFE_DIV_int(exp , 10);
 	if (d0 > 0) {
 		((u8*)buf.data)[i] = (rune)('0' + ((u8)(d0)));
 		i++;
@@ -2581,23 +4179,24 @@ VV_LOC string strconv__Dec64_get_string_64(strconv__Dec64 d, bool neg, int i_n_d
 	((u8*)buf.data)[i] = (rune)('0' + ((u8)(d2)));
 	i++;
 	((u8*)buf.data)[i] = 0;
-	return builtin__tos(((u8*)(&((u8*)buf.data)[0])), i);
+	return builtin__tos(builtin__memdup(&((u8*)buf.data)[0], i + 1), i);
 }
 VV_LOC multi_return_strconv__Dec64_bool strconv__f64_to_decimal_exact_int(u64 i_mant, u64 exp) {
-	strconv__Dec64 d = ((strconv__Dec64){.m = 0,.e = 0,});
-	u64 e = (u64)(exp - 1023);
+	strconv__Dec64 _t1 = ((strconv__Dec64){.m = 0,.e = 0,});
+	strconv__Dec64 d = _t1;
+	u64 e = exp - 1023;
 	if (e > _const_strconv__mantbits64) {
 		return (multi_return_strconv__Dec64_bool){.arg0=d, .arg1=false};
 	}
 	u64 shift = (u64)(_const_strconv__mantbits64 - e);
 	u64 mant = (i_mant | ((u64)(0x0010000000000000LL)));
-	d.m = (mant >> shift);
-	if (((d.m << shift)) != mant) {
+	d.m = v__rshift_u64(mant, (u64)shift);
+	if ((v__lshift_u64(d.m, (u64)shift)) != mant) {
 		return (multi_return_strconv__Dec64_bool){.arg0=d, .arg1=false};
 	}
 	for (;;) {
-		if (!(((u64)(d.m % 10)) == 0)) break;
-		d.m /= 10;
+		if (!((VSAFE_MOD_u64(d.m , 10)) == 0)) break;
+		d.m = VSAFE_DIV_u64(d.m,10);
 		d.e++;
 	}
 	return (multi_return_strconv__Dec64_bool){.arg0=d, .arg1=true};
@@ -2606,15 +4205,15 @@ VV_LOC strconv__Dec64 strconv__f64_to_decimal(u64 mant, u64 exp) {
 	int e2 = 0;
 	u64 m2 = ((u64)(0));
 	if (exp == 0) {
-		e2 = (int)((int)(-1022 - ((int)(_const_strconv__mantbits64))) - 2);
+		e2 = -1022 - ((int)(_const_strconv__mantbits64)) - 2;
 		m2 = mant;
 	} else {
-		e2 = (int)((int)((int)(((int)(exp)) - 1023) - ((int)(_const_strconv__mantbits64))) - 2);
-		m2 = (((((u64)(1)) << _const_strconv__mantbits64)) | mant);
+		e2 = ((int)(exp)) - 1023 - ((int)(_const_strconv__mantbits64)) - 2;
+		m2 = ((v__lshift_u64(((u64)(1)), (u64)_const_strconv__mantbits64)) | mant);
 	}
 	bool even = ((m2 & 1)) == 0;
 	bool accept_bounds = even;
-	u64 mv = ((u64)((u64)(4 * m2)));
+	u64 mv = ((u64)(4 * m2));
 	u64 mm_shift = strconv__bool_to_u64(mant != 0 || exp <= 1);
 	u64 vr = ((u64)(0));
 	u64 vp = ((u64)(0));
@@ -2623,33 +4222,33 @@ VV_LOC strconv__Dec64 strconv__f64_to_decimal(u64 mant, u64 exp) {
 	bool vm_is_trailing_zeros = false;
 	bool vr_is_trailing_zeros = false;
 	if (e2 >= 0) {
-		u32 q = (u32)(strconv__log10_pow2(e2) - strconv__bool_to_u32(e2 > 3));
+		u32 q = strconv__log10_pow2(e2) - strconv__bool_to_u32(e2 > 3);
 		e10 = ((int)(q));
-		int k = (int)((int)(122 + strconv__pow5_bits(((int)(q)))) - 1);
-		int i = (int)((int)(-e2 + ((int)(q))) + k);
-		strconv__Uint128 mul = *(((strconv__Uint128*)(&_const_strconv__pow5_inv_split_64_x[builtin__v_fixed_index((u32)(q * 2), 584)])));
-		vr = strconv__mul_shift_64((u64)(((u64)(4)) * m2), mul, i);
-		vp = strconv__mul_shift_64((u64)((u64)(((u64)(4)) * m2) + ((u64)(2))), mul, i);
-		vm = strconv__mul_shift_64((u64)((u64)((u64)(((u64)(4)) * m2) - ((u64)(1))) - mm_shift), mul, i);
+		int k = 122 + strconv__pow5_bits(((int)(q))) - 1;
+		int i = -e2 + ((int)(q)) + k;
+		strconv__Uint128 mul = *(((strconv__Uint128*)(&_const_strconv__pow5_inv_split_64_x[builtin__v_fixed_index(q * 2, 584)])));
+		vr = strconv__mul_shift_64(((u64)(4)) * m2, mul, i);
+		vp = strconv__mul_shift_64(((u64)(4)) * m2 + ((u64)(2)), mul, i);
+		vm = strconv__mul_shift_64(((u64)(4)) * m2 - ((u64)(1)) - mm_shift, mul, i);
 		if (q <= 21) {
-			if ((u64)(mv % 5) == 0) {
+			if (VSAFE_MOD_u64(mv , 5) == 0) {
 				vr_is_trailing_zeros = strconv__multiple_of_power_of_five_64(mv, q);
 			} else if (accept_bounds) {
-				vm_is_trailing_zeros = strconv__multiple_of_power_of_five_64((u64)((u64)(mv - 1) - mm_shift), q);
-			} else if (strconv__multiple_of_power_of_five_64((u64)(mv + 2), q)) {
+				vm_is_trailing_zeros = strconv__multiple_of_power_of_five_64(mv - 1 - mm_shift, q);
+			} else if (strconv__multiple_of_power_of_five_64(mv + 2, q)) {
 				vp--;
 			}
 		}
 	} else {
-		u32 q = (u32)(strconv__log10_pow5(-e2) - strconv__bool_to_u32(-e2 > 1));
-		e10 = (int)(((int)(q)) + e2);
-		int i = (int)(-e2 - ((int)(q)));
-		int k = (int)(strconv__pow5_bits(i) - 121);
-		int j = (int)(((int)(q)) - k);
-		strconv__Uint128 mul = *(((strconv__Uint128*)(&_const_strconv__pow5_split_64_x[builtin__v_fixed_index((int)(i * 2), 652)])));
-		vr = strconv__mul_shift_64((u64)(((u64)(4)) * m2), mul, j);
-		vp = strconv__mul_shift_64((u64)((u64)(((u64)(4)) * m2) + ((u64)(2))), mul, j);
-		vm = strconv__mul_shift_64((u64)((u64)((u64)(((u64)(4)) * m2) - ((u64)(1))) - mm_shift), mul, j);
+		u32 q = strconv__log10_pow5(-e2) - strconv__bool_to_u32(-e2 > 1);
+		e10 = ((int)(q)) + e2;
+		int i = -e2 - ((int)(q));
+		int k = strconv__pow5_bits(i) - 121;
+		int j = ((int)(q)) - k;
+		strconv__Uint128 mul = *(((strconv__Uint128*)(&_const_strconv__pow5_split_64_x[builtin__v_fixed_index(i * 2, 652)])));
+		vr = strconv__mul_shift_64(((u64)(4)) * m2, mul, j);
+		vp = strconv__mul_shift_64(((u64)(4)) * m2 + ((u64)(2)), mul, j);
+		vm = strconv__mul_shift_64(((u64)(4)) * m2 - ((u64)(1)) - mm_shift, mul, j);
 		if (q <= 1) {
 			vr_is_trailing_zeros = true;
 			if (accept_bounds) {
@@ -2658,7 +4257,7 @@ VV_LOC strconv__Dec64 strconv__f64_to_decimal(u64 mant, u64 exp) {
 				vp--;
 			}
 		} else if (q < 63) {
-			vr_is_trailing_zeros = strconv__multiple_of_power_of_two_64(mv, (u32)(q - 1));
+			vr_is_trailing_zeros = strconv__multiple_of_power_of_two_64(mv, q - 1);
 		}
 	}
 	int removed = 0;
@@ -2666,14 +4265,14 @@ VV_LOC strconv__Dec64 strconv__f64_to_decimal(u64 mant, u64 exp) {
 	u64 out = ((u64)(0));
 	if (vm_is_trailing_zeros || vr_is_trailing_zeros) {
 		for (;;) {
-			u64 vp_div_10 = (u64)(vp / 10);
-			u64 vm_div_10 = (u64)(vm / 10);
+			u64 vp_div_10 = VSAFE_DIV_u64(vp , 10);
+			u64 vm_div_10 = VSAFE_DIV_u64(vm , 10);
 			if (vp_div_10 <= vm_div_10) {
 				break;
 			}
-			u64 vm_mod_10 = (u64)(vm % 10);
-			u64 vr_div_10 = (u64)(vr / 10);
-			u64 vr_mod_10 = (u64)(vr % 10);
+			u64 vm_mod_10 = VSAFE_MOD_u64(vm , 10);
+			u64 vr_div_10 = VSAFE_DIV_u64(vr , 10);
+			u64 vr_mod_10 = VSAFE_MOD_u64(vr , 10);
 			vm_is_trailing_zeros = vm_is_trailing_zeros && vm_mod_10 == 0;
 			vr_is_trailing_zeros = vr_is_trailing_zeros && last_removed_digit == 0;
 			last_removed_digit = ((u8)(vr_mod_10));
@@ -2684,14 +4283,14 @@ VV_LOC strconv__Dec64 strconv__f64_to_decimal(u64 mant, u64 exp) {
 		}
 		if (vm_is_trailing_zeros) {
 			for (;;) {
-				u64 vm_div_10 = (u64)(vm / 10);
-				u64 vm_mod_10 = (u64)(vm % 10);
+				u64 vm_div_10 = VSAFE_DIV_u64(vm , 10);
+				u64 vm_mod_10 = VSAFE_MOD_u64(vm , 10);
 				if (vm_mod_10 != 0) {
 					break;
 				}
-				u64 vp_div_10 = (u64)(vp / 10);
-				u64 vr_div_10 = (u64)(vr / 10);
-				u64 vr_mod_10 = (u64)(vr % 10);
+				u64 vp_div_10 = VSAFE_DIV_u64(vp , 10);
+				u64 vr_div_10 = VSAFE_DIV_u64(vr , 10);
+				u64 vr_mod_10 = VSAFE_MOD_u64(vr , 10);
 				vr_is_trailing_zeros = vr_is_trailing_zeros && last_removed_digit == 0;
 				last_removed_digit = ((u8)(vr_mod_10));
 				vr = vr_div_10;
@@ -2700,7 +4299,7 @@ VV_LOC strconv__Dec64 strconv__f64_to_decimal(u64 mant, u64 exp) {
 				removed++;
 			}
 		}
-		if (vr_is_trailing_zeros && last_removed_digit == 5 && ((u64)(vr % 2)) == 0) {
+		if (vr_is_trailing_zeros && last_removed_digit == 5 && (VSAFE_MOD_u64(vr , 2)) == 0) {
 			last_removed_digit = 4;
 		}
 		out = vr;
@@ -2710,56 +4309,58 @@ VV_LOC strconv__Dec64 strconv__f64_to_decimal(u64 mant, u64 exp) {
 	} else {
 		bool round_up = false;
 		for (;;) {
-			if (!((u64)(vp / 100) > (u64)(vm / 100))) break;
-			round_up = ((u64)(vr % 100)) >= 50;
-			vr /= 100;
-			vp /= 100;
-			vm /= 100;
+			if (!(VSAFE_DIV_u64(vp , 100) > VSAFE_DIV_u64(vm , 100))) break;
+			round_up = (VSAFE_MOD_u64(vr , 100)) >= 50;
+			vr = VSAFE_DIV_u64(vr,100);
+			vp = VSAFE_DIV_u64(vp,100);
+			vm = VSAFE_DIV_u64(vm,100);
 			removed += 2;
 		}
 		for (;;) {
-			if (!((u64)(vp / 10) > (u64)(vm / 10))) break;
-			round_up = ((u64)(vr % 10)) >= 5;
-			vr /= 10;
-			vp /= 10;
-			vm /= 10;
+			if (!(VSAFE_DIV_u64(vp , 10) > VSAFE_DIV_u64(vm , 10))) break;
+			round_up = (VSAFE_MOD_u64(vr , 10)) >= 5;
+			vr = VSAFE_DIV_u64(vr,10);
+			vp = VSAFE_DIV_u64(vp,10);
+			vm = VSAFE_DIV_u64(vm,10);
 			removed++;
 		}
-		out = (u64)(vr + strconv__bool_to_u64(vr == vm || round_up));
+		out = vr + strconv__bool_to_u64(vr == vm || round_up);
 	}
-	return ((strconv__Dec64){.m = out,.e = (int)(e10 + removed),});
+	return ((strconv__Dec64){.m = out,.e = e10 + removed,});
 }
 string strconv__f64_to_str(f64 f, int n_digit) {
-	strconv__Uf64 u1 = ((strconv__Uf64){0});
+	strconv__Uf64 _t1 = ((strconv__Uf64){0});
+	strconv__Uf64 u1 = _t1;
 	u1.f = f;
 	u64 u = u1.u;
-	bool neg = ((u >> ((u32)(_const_strconv__mantbits64 + _const_strconv__expbits64)))) != 0;
-	u64 mant = (u & ((u64)(((((u64)(1)) << _const_strconv__mantbits64)) - ((u64)(1)))));
-	u64 exp = (((u >> _const_strconv__mantbits64)) & ((u64)(((((u64)(1)) << _const_strconv__expbits64)) - ((u64)(1)))));
+	bool neg = (v__rshift_u64(u, (u64)(_const_strconv__mantbits64 + _const_strconv__expbits64))) != 0;
+	u64 mant = (u & ((v__lshift_u64(((u64)(1)), (u64)_const_strconv__mantbits64)) - ((u64)(1))));
+	u64 exp = ((v__rshift_u64(u, (u64)_const_strconv__mantbits64)) & ((v__lshift_u64(((u64)(1)), (u64)_const_strconv__expbits64)) - ((u64)(1))));
 	if (exp == 2047 || (exp == 0 && mant == 0)) {
 		return strconv__get_string_special(neg, exp == 0, mant == 0);
 	}
-	multi_return_strconv__Dec64_bool mr_9590 = strconv__f64_to_decimal_exact_int(mant, exp);
-	strconv__Dec64 d = mr_9590.arg0;
-	bool ok = mr_9590.arg1;
+	multi_return_strconv__Dec64_bool mr_9595 = strconv__f64_to_decimal_exact_int(mant, exp);
+	strconv__Dec64 d = mr_9595.arg0;
+	bool ok = mr_9595.arg1;
 	if (!ok) {
 		d = strconv__f64_to_decimal(mant, exp);
 	}
 	return strconv__Dec64_get_string_64(d, neg, n_digit, 0);
 }
 string strconv__f64_to_str_pad(f64 f, int n_digit) {
-	strconv__Uf64 u1 = ((strconv__Uf64){0});
+	strconv__Uf64 _t1 = ((strconv__Uf64){0});
+	strconv__Uf64 u1 = _t1;
 	u1.f = f;
 	u64 u = u1.u;
-	bool neg = ((u >> ((u32)(_const_strconv__mantbits64 + _const_strconv__expbits64)))) != 0;
-	u64 mant = (u & ((u64)(((((u64)(1)) << _const_strconv__mantbits64)) - ((u64)(1)))));
-	u64 exp = (((u >> _const_strconv__mantbits64)) & ((u64)(((((u64)(1)) << _const_strconv__expbits64)) - ((u64)(1)))));
+	bool neg = (v__rshift_u64(u, (u64)(_const_strconv__mantbits64 + _const_strconv__expbits64))) != 0;
+	u64 mant = (u & ((v__lshift_u64(((u64)(1)), (u64)_const_strconv__mantbits64)) - ((u64)(1))));
+	u64 exp = ((v__rshift_u64(u, (u64)_const_strconv__mantbits64)) & ((v__lshift_u64(((u64)(1)), (u64)_const_strconv__expbits64)) - ((u64)(1))));
 	if (exp == 2047 || (exp == 0 && mant == 0)) {
 		return strconv__get_string_special(neg, exp == 0, mant == 0);
 	}
-	multi_return_strconv__Dec64_bool mr_10371 = strconv__f64_to_decimal_exact_int(mant, exp);
-	strconv__Dec64 d = mr_10371.arg0;
-	bool ok = mr_10371.arg1;
+	multi_return_strconv__Dec64_bool mr_10376 = strconv__f64_to_decimal_exact_int(mant, exp);
+	strconv__Dec64 d = mr_10376.arg0;
+	bool ok = mr_10376.arg1;
 	if (!ok) {
 		d = strconv__f64_to_decimal(mant, exp);
 	}
@@ -2770,7 +4371,7 @@ void strconv__format_str_sb(string s, strconv__BF_param p, strings__Builder* sb)
 		strings__Builder_write_string(sb, s);
 		return;
 	}
-	int dif = (int)(p.len0 - builtin__utf8_str_visible_length(s));
+	int dif = p.len0 - builtin__utf8_str_visible_length(s);
 	if (dif <= 0) {
 		strings__Builder_write_string(sb, s);
 		return;
@@ -2790,8 +4391,8 @@ void strconv__format_str_sb(string s, strconv__BF_param p, strings__Builder* sb)
 void strconv__format_dec_sb(u64 d, strconv__BF_param p, strings__Builder* res) {
 	int n_char = strconv__dec_digits(d);
 	int sign_len = (!p.positive || p.sign_flag ? (1) : (0));
-	int number_len = (int)(sign_len + n_char);
-	int dif = (int)(p.len0 - number_len);
+	int number_len = sign_len + n_char;
+	int dif = p.len0 - number_len;
 	bool sign_written = false;
 	if (p.align == strconv__Align_text__right) {
 		if (p.pad_ch == '0') {
@@ -2825,8 +4426,8 @@ void strconv__format_dec_sb(u64 d, strconv__BF_param p, strings__Builder* res) {
 	if (n > 0) {
 		for (;;) {
 			if (!(n > 0)) break;
-			u64 n1 = (u64)(n / 100);
-			d_i = (((u64)(n - ((u64)(n1 * 100)))) << 1);
+			u64 n1 = VSAFE_DIV_u64(n , 100);
+			d_i = v__lshift_u64((n - (n1 * 100)), (u64)1);
 			n = n1;
 			{ // Unsafe block
 				buf[i] = _const_strconv__digit_pairs.str[d_i];
@@ -2855,7 +4456,8 @@ void strconv__format_dec_sb(u64 d, strconv__BF_param p, strings__Builder* res) {
 }
 string strconv__f64_to_str_lnd1(f64 f, int dec_digit) {
 	{ // Unsafe block
-		string s = strconv__f64_to_str((f64)(f + _const_strconv__dec_round[dec_digit]), 18);
+		int clamped_dec = (dec_digit >= 36 ? (36 - 1) : (dec_digit));
+		string s = strconv__f64_to_str(f + _const_strconv__dec_round[clamped_dec], 18);
 		if (s.len > 2 && (s.str[ 0] == 'n' || s.str[ 1] == 'i')) {
 			return s;
 		}
@@ -2888,7 +4490,7 @@ string strconv__f64_to_str_lnd1(f64 f, int dec_digit) {
 				if (sgn > 0) {
 					d_pos = i;
 				} else {
-					d_pos = (int)(i - 1);
+					d_pos = i - 1;
 				}
 				i++;
 			}
@@ -2912,10 +4514,12 @@ string strconv__f64_to_str_lnd1(f64 f, int dec_digit) {
 		int c = i;
 		for (;;) {
 			if (!(c < s.len)) break;
-			exp = (int)((int)(exp * 10) + ((int)((rune)(s.str[ c] - '0'))));
+			exp = exp * 10 + ((int)((rune)(s.str[ c] - '0')));
 			c++;
 		}
-		Array_u8 res = builtin____new_array_with_default((int)(exp + 40), 0, sizeof(u8), &(u8[]){0});
+		int extra_frac_digits = (dec_digit > 0 ? (dec_digit) : (0));
+		int sign_len = (sgn < 0 ? (1) : (0));
+		Array_u8 res = builtin____new_array_with_default(sign_len + i1 + exp + extra_frac_digits + 4, 0, sizeof(u8), &(u8[]){0});
 		int r_i = 0;
 		builtin__string_free(&s);
 		if (sgn == 1) {
@@ -2972,16 +4576,16 @@ string strconv__f64_to_str_lnd1(f64 f, int dec_digit) {
 		}
 		if (dec_digit <= 0) {
 			if (dot_res_sp < 0) {
-				dot_res_sp = (int)(i + 1);
+				dot_res_sp = i + 1;
 			}
 			string tmp_res = builtin__string_clone(builtin__tos(res.data, dot_res_sp));
 			builtin__array_free(&res);
 			return tmp_res;
 		}
 		if (dot_res_sp >= 0) {
-			r_i = (int)((int)(dot_res_sp + dec_digit) + 1);
+			r_i = dot_res_sp + dec_digit + 1;
 			((u8*)res.data)[r_i] = 0;
-			for (int c1 = 1; c1 < (int)(dec_digit + 1); ++c1) {
+			for (int c1 = 1; c1 < dec_digit + 1; ++c1) {
 				if (((u8*)res.data)[(int)(r_i - c1)] == 0) {
 					((u8*)res.data)[(int)(r_i - c1)] = '0';
 				}
@@ -3050,7 +4654,7 @@ string strconv__format_fl(f64 f, strconv__BF_param p) {
 		}
 		builtin__vmemcpy(&buf[buf_i], fs.str, fs.len);
 		buf_i += fs.len;
-		int dif = (int)((int)(p.len0 - buf_i) + sign_len_diff);
+		int dif = p.len0 - buf_i + sign_len_diff;
 		if (p.align == strconv__Align_text__right) {
 			for (int i1 = 0; i1 < dif; i1++) {
 				out[out_i] = p.pad_ch;
@@ -3111,7 +4715,7 @@ string strconv__format_es(f64 f, strconv__BF_param p) {
 		}
 		builtin__vmemcpy(&buf[buf_i], fs.str, fs.len);
 		buf_i += fs.len;
-		int dif = (int)((int)(p.len0 - buf_i) + sign_len_diff);
+		int dif = p.len0 - buf_i + sign_len_diff;
 		if (p.align == strconv__Align_text__right) {
 			for (int i1 = 0; i1 < dif; i1++) {
 				out[out_i] = p.pad_ch;
@@ -3136,7 +4740,7 @@ string strconv__format_es(f64 f, strconv__BF_param p) {
 }
 string strconv__remove_tail_zeros(string s) {
 	{ // Unsafe block
-		u8* buf = builtin__malloc_noscan((int)(s.len + 1));
+		u8* buf = builtin__malloc_noscan(s.len + 1);
 		int i_d = 0;
 		int i_s = 0;
 		for (;;) {
@@ -3157,19 +4761,19 @@ string strconv__remove_tail_zeros(string s) {
 			i_d++;
 		}
 		if (i_s < s.len && s.str[ i_s] == '.') {
-			int i_s1 = (int)(i_s + 1);
+			int i_s1 = i_s + 1;
 			int sum = 0;
 			int i_s2 = i_s1;
 			for (;;) {
 				if (!(i_s1 < s.len && s.str[ i_s1] >= '0' && s.str[ i_s1] <= '9')) break;
-				sum += (u8)(s.str[ i_s1] - ((u8)('0')));
+				sum += (s.str[ i_s1] - ((u8)('0')));
 				if (s.str[ i_s1] != '0') {
 					i_s2 = i_s1;
 				}
 				i_s1++;
 			}
 			if (sum > 0) {
-				for (int c_i = i_s; c_i < (int)(i_s2 + 1); ++c_i) {
+				for (int c_i = i_s; c_i < i_s2 + 1; ++c_i) {
 					buf[i_d] = s.str[ c_i];
 					i_d++;
 				}
@@ -3216,12 +4820,12 @@ string strconv__format_int(i64 n, int radix) {
 		for (;;) {
 			if (!(n_copy != 0)) break;
 			string tmp_0 = res;
-			int bdx = ((int)((i64)(n_copy % radix)));
+			int bdx = ((int)((i64)(VSAFE_MOD_i64(n_copy , radix))));
 			string tmp_1 = builtin__u8_ascii_str(_const_strconv__base_digits.str[ bdx]);
 			res = builtin__string__plus(tmp_1, res);
 			builtin__string_free(&tmp_0);
 			builtin__string_free(&tmp_1);
-			n_copy /= radix;
+			n_copy = VSAFE_DIV_i64(n_copy,radix);
 		}
 		if (have_minus) {
 			string final_res = builtin__string__plus(_S("-"), res);
@@ -3247,11 +4851,11 @@ string strconv__format_uint(u64 n, int radix) {
 		for (;;) {
 			if (!(n_copy != 0)) break;
 			string tmp_0 = res;
-			string tmp_1 = builtin__u8_ascii_str(_const_strconv__base_digits.str[ (u64)(n_copy % uradix)]);
+			string tmp_1 = builtin__u8_ascii_str(_const_strconv__base_digits.str[ ((int)(VSAFE_MOD_u64(n_copy , uradix)))]);
 			res = builtin__string__plus(tmp_1, res);
 			builtin__string_free(&tmp_0);
 			builtin__string_free(&tmp_1);
-			n_copy /= uradix;
+			n_copy = VSAFE_DIV_u64(n_copy,uradix);
 		}
 		return res;
 	}
@@ -3309,7 +4913,7 @@ string strconv__fxx_to_str_l_parse(string s) {
 			if (sgn > 0) {
 				d_pos = i;
 			} else {
-				d_pos = (int)(i - 1);
+				d_pos = i - 1;
 			}
 			i++;
 		} else if (c == 'e') {
@@ -3330,10 +4934,10 @@ string strconv__fxx_to_str_l_parse(string s) {
 	int c = i;
 	for (;;) {
 		if (!(c < s.len)) break;
-		exp = (int)((int)(exp * 10) + ((int)((rune)(s.str[ c] - '0'))));
+		exp = exp * 10 + ((int)((rune)(s.str[ c] - '0')));
 		c++;
 	}
-	Array_u8 res = builtin____new_array_with_default((int)(exp + 32), 0, sizeof(u8), &(u8[]){0});
+	Array_u8 res = builtin____new_array_with_default(exp + 32, 0, sizeof(u8), &(u8[]){0});
 	int r_i = 0;
 	if (sgn == 1) {
 		if (m_sgn_flag) {
@@ -3385,7 +4989,7 @@ string strconv__fxx_to_str_l_parse(string s) {
 			i++;
 		}
 	}
-	if (r_i > 1 && ((u8*)res.data)[(int)(r_i - 1)] == '.') {
+	if (r_i > 1 && ((u8*)res.data)[r_i - 1] == '.') {
 		((u8*)res.data)[r_i] = '0';
 		r_i++;
 	} else if (!(Array_u8_contains(res, '.'))) {
@@ -3395,7 +4999,9 @@ string strconv__fxx_to_str_l_parse(string s) {
 		r_i++;
 	}
 	((u8*)res.data)[r_i] = 0;
-	return builtin__tos(res.data, r_i);
+	string tmp_res = builtin__string_clone(builtin__tos(res.data, r_i));
+	builtin__array_free(&res);
+	return tmp_res;
 }
 string strconv__fxx_to_str_l_parse_with_dot(string s) {
 	if (s.len > 2 && (s.str[ 0] == 'n' || s.str[ 1] == 'i')) {
@@ -3425,7 +5031,7 @@ string strconv__fxx_to_str_l_parse_with_dot(string s) {
 			if (sgn > 0) {
 				d_pos = i;
 			} else {
-				d_pos = (int)(i - 1);
+				d_pos = i - 1;
 			}
 			i++;
 		} else if (c == 'e') {
@@ -3446,10 +5052,10 @@ string strconv__fxx_to_str_l_parse_with_dot(string s) {
 	int c = i;
 	for (;;) {
 		if (!(c < s.len)) break;
-		exp = (int)((int)(exp * 10) + ((int)((rune)(s.str[ c] - '0'))));
+		exp = exp * 10 + ((int)((rune)(s.str[ c] - '0')));
 		c++;
 	}
-	Array_u8 res = builtin____new_array_with_default((int)(exp + 32), 0, sizeof(u8), &(u8[]){0});
+	Array_u8 res = builtin____new_array_with_default(exp + 32, 0, sizeof(u8), &(u8[]){0});
 	int r_i = 0;
 	if (sgn == 1) {
 		if (m_sgn_flag) {
@@ -3501,7 +5107,7 @@ string strconv__fxx_to_str_l_parse_with_dot(string s) {
 			i++;
 		}
 	}
-	if (r_i > 1 && ((u8*)res.data)[(int)(r_i - 1)] == '.') {
+	if (r_i > 1 && ((u8*)res.data)[r_i - 1] == '.') {
 		((u8*)res.data)[r_i] = '0';
 		r_i++;
 	} else if (!(Array_u8_contains(res, '.'))) {
@@ -3511,7 +5117,9 @@ string strconv__fxx_to_str_l_parse_with_dot(string s) {
 		r_i++;
 	}
 	((u8*)res.data)[r_i] = 0;
-	return builtin__tos(res.data, r_i);
+	string tmp_res = builtin__string_clone(builtin__tos(res.data, r_i));
+	builtin__array_free(&res);
+	return tmp_res;
 }
 inline VV_LOC u32 strconv__bool_to_u32(bool b) {
 	if (b) {
@@ -3545,7 +5153,7 @@ VV_LOC u32 strconv__mul_shift_32(u32 m, u64 mul, int ishift) {
 	multi_return_u64_u64 mr_750 = math__bits__mul_64(((u64)(m)), mul);
 	u64 hi = mr_750.arg0;
 	u64 lo = mr_750.arg1;
-	u64 shifted_sum = (u64)(((lo >> ((u64)(ishift)))) + ((hi << ((u64)((int)(64 - ishift))))));
+	u64 shifted_sum = (v__rshift_u64(lo, (u64)((u64)(ishift)))) + (v__lshift_u64(hi, (u64)((u64)(64 - ishift))));
 	;
 	return ((u32)(shifted_sum));
 }
@@ -3560,8 +5168,8 @@ inline VV_LOC u32 strconv__mul_pow5_div_pow2(u32 m, u32 i, int j) {
 VV_LOC u32 strconv__pow5_factor_32(u32 i_v) {
 	u32 v = i_v;
 	for (u32 n = ((u32)(0)); true; n++) {
-		u32 q = (u32)(v / 5);
-		u32 r = (u32)(v % 5);
+		u32 q = VSAFE_DIV_u32(v , 5);
+		u32 r = VSAFE_MOD_u32(v , 5);
 		if (r != 0) {
 			return n;
 		}
@@ -3578,21 +5186,21 @@ VV_LOC bool strconv__multiple_of_power_of_two_32(u32 v, u32 p) {
 VV_LOC u32 strconv__log10_pow2(int e) {
 	;
 	;
-	return (((u32)(((u32)(e)) * 78913)) >> 18);
+	return v__rshift_u32((((u32)(e)) * 78913), (u64)18);
 }
 VV_LOC u32 strconv__log10_pow5(int e) {
 	;
 	;
-	return (((u32)(((u32)(e)) * 732923)) >> 20);
+	return v__rshift_u32((((u32)(e)) * 732923), (u64)20);
 }
 VV_LOC int strconv__pow5_bits(int e) {
 	;
 	;
-	return ((int)((u32)(((((u32)(((u32)(e)) * 1217359)) >> 19)) + 1)));
+	return ((int)((v__rshift_u32((((u32)(e)) * 1217359), (u64)19)) + 1));
 }
 VV_LOC u64 strconv__shift_right_128(strconv__Uint128 v, int shift) {
 	;
-	return (((v.hi << ((u64)((int)(64 - shift))))) | ((v.lo >> ((u32)(shift)))));
+	return ((v__lshift_u64(v.hi, (u64)((u64)(64 - shift)))) | (v__rshift_u64(v.lo, (u64)((u32)(shift)))));
 }
 VV_LOC u64 strconv__mul_shift_64(u64 m, strconv__Uint128 mul, int shift) {
 	multi_return_u64_u64 mr_3253 = math__bits__mul_64(m, mul.hi);
@@ -3600,17 +5208,17 @@ VV_LOC u64 strconv__mul_shift_64(u64 m, strconv__Uint128 mul, int shift) {
 	u64 hilo = mr_3253.arg1;
 	multi_return_u64_u64 mr_3288 = math__bits__mul_64(m, mul.lo);
 	u64 lohi = mr_3288.arg0;
-	strconv__Uint128 sum = ((strconv__Uint128){.lo = (u64)(lohi + hilo),.hi = hihi,});
+	strconv__Uint128 sum = ((strconv__Uint128){.lo = lohi + hilo,.hi = hihi,});
 	if (sum.lo < lohi) {
 		sum.hi++;
 	}
-	return strconv__shift_right_128(sum, (int)(shift - 64));
+	return strconv__shift_right_128(sum, shift - 64);
 }
 VV_LOC u32 strconv__pow5_factor_64(u64 v_i) {
 	u64 v = v_i;
 	for (u32 n = ((u32)(0)); true; n++) {
-		u64 q = (u64)(v / 5);
-		u64 r = (u64)(v % 5);
+		u64 q = VSAFE_DIV_u64(v , 5);
+		u64 r = VSAFE_MOD_u64(v , 5);
 		if (r != 0) {
 			return n;
 		}
@@ -3706,7 +5314,7 @@ VNORETURN VV_LOC void builtin___memory_panic(string fname, isize size) {
 	v_memory_panic = true;
 	builtin__eprint(fname);
 	builtin__eprint(_S("("));
-	#if defined(_VFREESTANDING) || defined(__vinix__)
+	#if 0
 	{
 	}
 	#else
@@ -3730,18 +5338,21 @@ u8* builtin___v_malloc(isize n) {
 		return ((u8*)(((void*)0)));
 	}
 	u8* res = ((u8*)(((void*)0)));
-	#if defined(_VPREALLOC)
+	#if 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_vgc)
 	{
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
 	}
-	#elif defined(_VFREESTANDING)
+	#elif 0
 	{
 	}
 	#else
 	{
-		#if defined(_WIN32)
+		#if 0
 		{
 		}
 		#else
@@ -3755,6 +5366,7 @@ u8* builtin___v_malloc(isize n) {
 		builtin___memory_panic(_S("malloc"), n);
 		VUNREACHABLE();
 	}
+	;
 	return res;
 }
 u8* builtin__malloc_noscan(isize n) {
@@ -3763,21 +5375,21 @@ u8* builtin__malloc_noscan(isize n) {
 		VUNREACHABLE();
 	}
 	u8* res = ((u8*)(((void*)0)));
-	#if defined(_VNATIVE)
+	#if 0
 	{
 	}
-	#elif defined(_VPREALLOC)
+	#elif defined(CUSTOM_DEFINE_vgc)
 	{
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
 	}
-	#elif defined(_VFREESTANDING)
+	#elif 0
 	{
 	}
 	#else
 	{
-		#if defined(_WIN32)
+		#if 0
 		{
 		}
 		#else
@@ -3791,7 +5403,17 @@ u8* builtin__malloc_noscan(isize n) {
 		builtin___memory_panic(_S("malloc_noscan"), n);
 		VUNREACHABLE();
 	}
+	;
 	return res;
+}
+VV_LOC u8* builtin__malloc_uninit(isize n) {
+	if (n < 0) {
+		builtin___memory_panic(_S("malloc_uninit"), n);
+		VUNREACHABLE();
+	} else if (n == 0) {
+		return ((u8*)(((void*)0)));
+	}
+	return builtin___v_malloc(n);
 }
 inline VV_LOC u64 builtin____at_least_one(u64 how_many) {
 	if (how_many == 0) {
@@ -3801,7 +5423,10 @@ inline VV_LOC u64 builtin____at_least_one(u64 how_many) {
 }
 u8* builtin__v_realloc(u8* b, isize n) {
 	u8* new_ptr = ((u8*)(((void*)0)));
-	#if defined(_VPREALLOC)
+	#if 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_vgc)
 	{
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
@@ -3809,7 +5434,7 @@ u8* builtin__v_realloc(u8* b, isize n) {
 	}
 	#else
 	{
-		#if defined(_WIN32)
+		#if 0
 		{
 		}
 		#else
@@ -3823,16 +5448,23 @@ u8* builtin__v_realloc(u8* b, isize n) {
 		builtin___memory_panic(_S("v_realloc"), n);
 		VUNREACHABLE();
 	}
+	if (b != ((void*)0)) {
+		;
+	}
+	;
 	return new_ptr;
 }
 u8* builtin__realloc_data(u8* old_data, int old_size, int new_size) {
 	u8* nptr = ((u8*)(((void*)0)));
-	#if defined(CUSTOM_DEFINE_gcboehm)
+	#if defined(CUSTOM_DEFINE_vgc)
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_gcboehm)
 	{
 	}
 	#else
 	{
-		#if defined(_WIN32)
+		#if 0
 		{
 		}
 		#else
@@ -3846,6 +5478,10 @@ u8* builtin__realloc_data(u8* old_data, int old_size, int new_size) {
 		builtin___memory_panic(_S("realloc_data"), ((isize)(new_size)));
 		VUNREACHABLE();
 	}
+	if (old_data != ((void*)0)) {
+		;
+	}
+	;
 	return nptr;
 }
 u8* builtin__vcalloc(isize n) {
@@ -3855,10 +5491,10 @@ u8* builtin__vcalloc(isize n) {
 	} else if (n == 0) {
 		return ((u8*)(((void*)0)));
 	}
-	#if defined(_VPREALLOC)
+	#if 0
 	{
 	}
-	#elif defined(_VNATIVE)
+	#elif defined(CUSTOM_DEFINE_vgc)
 	{
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
@@ -3866,12 +5502,14 @@ u8* builtin__vcalloc(isize n) {
 	}
 	#else
 	{
-		#if defined(_WIN32)
+		#if 0
 		{
 		}
 		#else
 		{
-			return calloc(1, n);
+			voidptr r = calloc(1, n);
+			;
+			return r;
 		}
 		#endif
 	}
@@ -3879,7 +5517,10 @@ u8* builtin__vcalloc(isize n) {
 	return ((u8*)(((void*)0)));
 }
 u8* builtin__vcalloc_noscan(isize n) {
-	#if defined(_VPREALLOC)
+	#if 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_vgc)
 	{
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
@@ -3896,7 +5537,18 @@ void builtin___v_free(voidptr ptr) {
 	if (ptr == 0) {
 		return;
 	}
-	#if defined(_VPREALLOC)
+	IError* none_err = ((IError*)(&_const_none__));
+	if (ptr == none_err->_object) {
+		return;
+	}
+	IError* sentinel_err = ((IError*)(&_const_error_sentinel));
+	if (ptr == sentinel_err->_object) {
+		return;
+	}
+	#if 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_vgc)
 	{
 	}
 	#elif defined(CUSTOM_DEFINE_gcboehm)
@@ -3904,7 +5556,8 @@ void builtin___v_free(voidptr ptr) {
 	}
 	#else
 	{
-		#if defined(_WIN32)
+		;
+		#if 0
 		{
 		}
 		#else
@@ -3935,23 +5588,128 @@ voidptr builtin__memdup_noscan(voidptr src, isize sz) {
 	}
 	return 0;
 }
+inline VV_LOC int builtin__array_data_header_size(void) {
+	return ((int)(sizeof(voidptr)));
+}
+inline VV_LOC u64 builtin__array_data_allocation_size(u64 total_size) {
+	return ((u64)(builtin__array_data_header_size())) + builtin____at_least_one(total_size);
+}
+inline VV_LOC voidptr builtin__alloc_array_data(u64 total_size) {
+	u8* raw = builtin__vcalloc(builtin__array_data_allocation_size(total_size));
+	return ((u8*)(raw)) + builtin__array_data_header_size();
+}
+inline VV_LOC voidptr builtin__alloc_array_data_uninit(u64 total_size) {
+	u8* raw = builtin__malloc_uninit(builtin__array_data_allocation_size(total_size));
+	{ // Unsafe block
+		(((ArrayDataHeader*)(raw)))->has_slices = false;
+		return ((u8*)(raw)) + builtin__array_data_header_size();
+	}
+	return 0;
+}
+inline VV_LOC bool builtin__array_uses_noscan_data(array a) {
+	return builtin__ArrayFlags_has(&a.flags, ArrayFlags__noscan_data);
+}
+inline VV_LOC voidptr builtin__array_alloc_array_data_like(array a, u64 total_size) {
+	return builtin__alloc_array_data(total_size);
+}
+inline VV_LOC voidptr builtin__array_alloc_array_data_like_uninit(array a, u64 total_size) {
+	return builtin__alloc_array_data_uninit(total_size);
+}
+inline VV_LOC ArrayDataHeader* builtin__array_data_header(array a) {
+	if (!builtin__ArrayFlags_has(&a.flags, ArrayFlags__managed) || a.data == ((void*)0)) {
+		return ((void*)0);
+	}
+	u8* base_data = ((u8*)(a.data)) - ((u64)(a.offset));
+	return ((ArrayDataHeader*)(base_data - builtin__array_data_header_size()));
+}
+inline VV_LOC bool builtin__array_buffer_has_slices(array a) {
+	if (!builtin__ArrayFlags_has(&a.flags, ArrayFlags__managed) || a.data == ((void*)0)) {
+		return false;
+	}
+	ArrayDataHeader* header = builtin__array_data_header(a);
+	if (header == ((void*)0)) {
+		return false;
+	}
+	return header->has_slices;
+}
+inline VV_LOC void builtin__array_mark_buffer_has_slices(array* a) {
+	if (!builtin__ArrayFlags_has(&a->flags, ArrayFlags__managed) || a->data == ((void*)0)) {
+		return;
+	}
+	{ // Unsafe block
+		u8* base_data = ((u8*)(a->data)) - ((u64)(a->offset));
+		ArrayDataHeader* header = ((ArrayDataHeader*)(base_data - builtin__array_data_header_size()));
+		if (!header->has_slices) {
+			header->has_slices = true;
+		}
+	}
+}
+inline VV_LOC void builtin__array_set_managed_flags(array* a, bool is_slice) {
+	{ // Unsafe block
+		builtin__ArrayFlags_set(&a->flags, ArrayFlags__managed);
+		if (is_slice) {
+			builtin__ArrayFlags_set(&a->flags, ArrayFlags__is_slice);
+		} else {
+			builtin__ArrayFlags_clear(&a->flags, ArrayFlags__is_slice);
+		}
+	}
+}
+inline VV_LOC void builtin__array_clone_shallow_to_cap(array* a, int new_cap) {
+	if (new_cap <= 0) {
+		builtin__ArrayFlags_clear(&a->flags, ((ArrayFlags__managed | ArrayFlags__noscan_data) | ArrayFlags__is_slice));
+		a->data = ((void*)0);
+		a->offset = 0;
+		a->cap = 0;
+		return;
+	}
+	bool use_noscan_data = builtin__array_uses_noscan_data(*a);
+	u64 total_size = ((u64)(new_cap)) * ((u64)(a->element_size));
+	voidptr new_data = builtin__array_alloc_array_data_like_uninit(*a, total_size);
+	u64 copy_size = ((u64)(a->len)) * ((u64)(a->element_size));
+	if (a->data != ((void*)0) && copy_size > 0) {
+		builtin__vmemcpy(new_data, a->data, copy_size);
+	}
+	a->data = new_data;
+	a->offset = 0;
+	a->cap = new_cap;
+	{ // Unsafe block
+		if (use_noscan_data) {
+			builtin__ArrayFlags_set(&a->flags, ArrayFlags__noscan_data);
+		} else {
+			builtin__ArrayFlags_clear(&a->flags, ArrayFlags__noscan_data);
+		}
+	}
+	builtin__array_set_managed_flags(a, false);
+}
+inline VV_LOC int builtin__v_ni_index(int i, int len) {
+	return (i < 0 ? (len + i) : (i));
+}
 VV_LOC array builtin____new_array(int mylen, int cap, int elm_size) {
 	builtin__panic_on_negative_len(mylen);
 	builtin__panic_on_negative_cap(cap);
 	int cap_ = (cap < mylen ? (mylen) : (cap));
-	array arr = ((array){.data = (voidptr)builtin__vcalloc((u64)(((u64)(cap_)) * ((u64)(elm_size)))),.offset = 0,.len = mylen,.cap = cap_,.flags = 0,.element_size = elm_size,});
+	u64 total_size = ((u64)(cap_)) * ((u64)(elm_size));
+	voidptr data = ((void*)0);
+	if (cap_ > 0 && mylen == 0) {
+		data = builtin__alloc_array_data_uninit(total_size);
+	} else if (cap_ > 0) {
+		data = builtin__alloc_array_data(total_size);
+	}
+	array _t1 = ((array){.data = (voidptr)data,.offset = 0,.len = mylen,.cap = cap_,.flags = ArrayFlags__managed,.element_size = elm_size,});
+	array arr = _t1;
 	return arr;
 }
 VV_LOC array builtin____new_array_with_default(int mylen, int cap, int elm_size, voidptr val) {
 	builtin__panic_on_negative_len(mylen);
 	builtin__panic_on_negative_cap(cap);
 	int cap_ = (cap < mylen ? (mylen) : (cap));
-	array arr = ((array){.data = 0,.offset = 0,.len = mylen,.cap = cap_,.flags = 0,.element_size = elm_size,});
-	u64 total_size = (u64)(((u64)(cap_)) * ((u64)(elm_size)));
+	array _t1 = ((array){.data = 0,.offset = 0,.len = mylen,.cap = cap_,.flags = ArrayFlags__managed,.element_size = elm_size,});
+	array arr = _t1;
+	u64 total_size = ((u64)(cap_)) * ((u64)(elm_size));
 	if (cap_ > 0 && mylen == 0) {
-		arr.data = builtin___v_malloc(builtin____at_least_one(total_size));
-	} else {
-		arr.data = builtin__vcalloc(total_size);
+		arr.data = builtin__alloc_array_data_uninit(total_size);
+	} else if (cap_ > 0) {
+		arr.data = builtin__alloc_array_data(total_size);
 	}
 	if (val != 0) {
 		u8* eptr = ((u8*)(arr.data));
@@ -3963,7 +5721,7 @@ VV_LOC array builtin____new_array_with_default(int mylen, int cap, int elm_size,
 						eptr[i] = byte_value;
 					}
 				} else {
-					for (int _t1 = 0; _t1 < arr.len; ++_t1) {
+					for (int _t2 = 0; _t2 < arr.len; ++_t2) {
 						builtin__vmemcpy(eptr, val, arr.element_size);
 						eptr += arr.element_size;
 					}
@@ -3977,9 +5735,12 @@ VV_LOC array builtin____new_array_with_multi_default(int mylen, int cap, int elm
 	builtin__panic_on_negative_len(mylen);
 	builtin__panic_on_negative_cap(cap);
 	int cap_ = (cap < mylen ? (mylen) : (cap));
-	array arr = ((array){.data = 0,.offset = 0,.len = mylen,.cap = cap_,.flags = 0,.element_size = elm_size,});
-	u64 total_size = (u64)(((u64)(cap_)) * ((u64)(elm_size)));
-	arr.data = builtin__vcalloc(builtin____at_least_one(total_size));
+	array _t1 = ((array){.data = 0,.offset = 0,.len = mylen,.cap = cap_,.flags = ArrayFlags__managed,.element_size = elm_size,});
+	array arr = _t1;
+	u64 total_size = ((u64)(cap_)) * ((u64)(elm_size));
+	if (cap_ > 0) {
+		arr.data = builtin__alloc_array_data(total_size);
+	}
 	if (val != 0) {
 		u8* eptr = ((u8*)(arr.data));
 		{ // Unsafe block
@@ -3997,11 +5758,15 @@ VV_LOC array builtin____new_array_with_array_default(int mylen, int cap, int elm
 	builtin__panic_on_negative_len(mylen);
 	builtin__panic_on_negative_cap(cap);
 	int cap_ = (cap < mylen ? (mylen) : (cap));
-	array arr = ((array){.data = (voidptr)builtin___v_malloc(builtin____at_least_one((u64)(((u64)(cap_)) * ((u64)(elm_size))))),.offset = 0,.len = mylen,.cap = cap_,.flags = 0,.element_size = elm_size,});
+	array _t1 = ((array){.data = 0,.offset = 0,.len = mylen,.cap = cap_,.flags = ArrayFlags__managed,.element_size = elm_size,});
+	array arr = _t1;
+	if (cap_ > 0) {
+		arr.data = builtin__alloc_array_data(((u64)(cap_)) * ((u64)(elm_size)));
+	}
 	u8* eptr = ((u8*)(arr.data));
 	{ // Unsafe block
 		if (eptr != ((void*)0)) {
-			for (int _t1 = 0; _t1 < arr.len; ++_t1) {
+			for (int _t2 = 0; _t2 < arr.len; ++_t2) {
 				array val_clone = builtin__array_clone_to_depth(&val, depth);
 				builtin__vmemcpy(eptr, &val_clone, arr.element_size);
 				eptr += arr.element_size;
@@ -4013,9 +5778,13 @@ VV_LOC array builtin____new_array_with_array_default(int mylen, int cap, int elm
 VV_LOC array builtin__new_array_from_c_array(int len, int cap, int elm_size, voidptr c_array) {
 	builtin__panic_on_negative_len(len);
 	builtin__panic_on_negative_cap(cap);
-	int cap_ = (cap < len ? (len) : (cap));
-	array arr = ((array){.data = (voidptr)builtin__vcalloc((u64)(((u64)(cap_)) * ((u64)(elm_size)))),.offset = 0,.len = len,.cap = cap_,.flags = 0,.element_size = elm_size,});
-	builtin__vmemcpy(arr.data, c_array, (u64)(((u64)(len)) * ((u64)(elm_size))));
+	int cap_ = cap;
+	if (cap < len) {
+		cap_ = len;
+	}
+	array _t1 = ((array){.data = builtin__alloc_array_data(((u64)(cap_)) * ((u64)(elm_size))),.offset = 0,.len = len,.cap = cap_,.flags = ArrayFlags__managed,.element_size = elm_size,});
+	array arr = _t1;
+	builtin__vmemcpy(arr.data, c_array, ((u64)(len)) * ((u64)(elm_size)));
 	return arr;
 }
 void builtin__array_ensure_cap(array* a, int required) {
@@ -4039,17 +5808,41 @@ void builtin__array_ensure_cap(array* a, int required) {
 			VUNREACHABLE();
 		}
 	}
-	u64 new_size = (u64)(((u64)(cap)) * ((u64)(a->element_size)));
-	u8* new_data = builtin___v_malloc(builtin____at_least_one(new_size));
+	u64 new_size = ((u64)(cap)) * ((u64)(a->element_size));
+	bool use_noscan_data = builtin__array_uses_noscan_data(*a);
+	voidptr new_data = builtin__array_alloc_array_data_like_uninit(*a, new_size);
 	if (a->data != ((void*)0)) {
-		builtin__vmemcpy(new_data, a->data, (u64)(((u64)(a->len)) * ((u64)(a->element_size))));
-		if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__noslices)) {
-			builtin___v_free(a->data);
+		builtin__vmemcpy(new_data, a->data, ((u64)(a->len)) * ((u64)(a->element_size)));
+		if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__noslices) && !builtin__ArrayFlags_has(&a->flags, ArrayFlags__is_slice) && !builtin__array_buffer_has_slices(*a)) {
+			{ // Unsafe block
+				if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__managed)) {
+					builtin___v_free(((u8*)(a->data)) - ((u64)(builtin__array_data_header_size())));
+				} else {
+					builtin___v_free(a->data);
+				}
+			}
 		}
 	}
 	a->data = new_data;
 	a->offset = 0;
 	a->cap = ((int)(cap));
+	{ // Unsafe block
+		if (use_noscan_data) {
+			builtin__ArrayFlags_set(&a->flags, ArrayFlags__noscan_data);
+		} else {
+			builtin__ArrayFlags_clear(&a->flags, ArrayFlags__noscan_data);
+		}
+	}
+	builtin__array_set_managed_flags(a, false);
+}
+inline VV_LOC bool builtin__array_needs_unique_shift(array a, int required) {
+	return required <= a.cap && (builtin__ArrayFlags_has(&a.flags, ArrayFlags__is_slice) || builtin__array_buffer_has_slices(a));
+}
+inline VV_LOC bool builtin__array_needs_unique_append(array a, int required) {
+	return required <= a.cap && builtin__ArrayFlags_has(&a.flags, ArrayFlags__is_slice);
+}
+inline VV_LOC bool builtin__array_needs_unique_shrink(array a) {
+	return builtin__ArrayFlags_has(&a.flags, ArrayFlags__is_slice) || builtin__array_buffer_has_slices(a);
 }
 void builtin__array_insert(array* a, int i, voidptr val) {
 	if (i < 0 || i > a->len) {
@@ -4060,11 +5853,14 @@ void builtin__array_insert(array* a, int i, voidptr val) {
 		builtin___v_panic(_S("array.insert: a.len reached max_int"));
 		VUNREACHABLE();
 	}
-	if (a->len >= a->cap) {
-		builtin__array_ensure_cap(a, (int)(a->len + 1));
+	int required = a->len + 1;
+	if (builtin__array_needs_unique_shift(*a, required)) {
+		builtin__array_clone_shallow_to_cap(a, a->cap);
+	} else if (required > a->cap) {
+		builtin__array_ensure_cap(a, required);
 	}
 	{ // Unsafe block
-		builtin__vmemmove(builtin__array_get_unsafe(*a, (int)(i + 1)), builtin__array_get_unsafe(*a, i), (u64)(((u64)(((int)(a->len - i)))) * ((u64)(a->element_size))));
+		builtin__vmemmove(builtin__array_get_unsafe(*a, i + 1), builtin__array_get_unsafe(*a, i), ((u64)((a->len - i))) * ((u64)(a->element_size)));
 		builtin__array_set_unsafe(a, i, val);
 	}
 	a->len++;
@@ -4074,17 +5870,21 @@ VV_LOC void builtin__array_insert_many(array* a, int i, voidptr val, int size) {
 		builtin__panic_n2(_S("array.insert_many: index out of range (i,a.len):"), i, a->len);
 		VUNREACHABLE();
 	}
-	i64 new_len = (i64)(((i64)(a->len)) + ((i64)(size)));
+	i64 new_len = ((i64)(a->len)) + ((i64)(size));
 	if (new_len > _const_max_int) {
 		builtin__panic_n(_S("array.insert_many: max_int will be exceeded by a.len:"), new_len);
 		VUNREACHABLE();
 	}
-	builtin__array_ensure_cap(a, ((int)(new_len)));
+	if (builtin__array_needs_unique_shift(*a, ((int)(new_len)))) {
+		builtin__array_clone_shallow_to_cap(a, a->cap);
+	} else if (((int)(new_len)) > a->cap) {
+		builtin__array_ensure_cap(a, ((int)(new_len)));
+	}
 	int elem_size = a->element_size;
 	{ // Unsafe block
 		voidptr iptr = builtin__array_get_unsafe(*a, i);
-		builtin__vmemmove(builtin__array_get_unsafe(*a, (int)(i + size)), iptr, (u64)(((u64)((int)(a->len - i))) * ((u64)(elem_size))));
-		builtin__vmemcpy(iptr, val, (u64)(((u64)(size)) * ((u64)(elem_size))));
+		builtin__vmemmove(builtin__array_get_unsafe(*a, i + size), iptr, ((u64)(a->len - i)) * ((u64)(elem_size)));
+		builtin__vmemcpy(iptr, val, ((u64)(size)) * ((u64)(elem_size)));
 	}
 	a->len = ((int)(new_len));
 }
@@ -4094,17 +5894,99 @@ void builtin__array_prepend(array* a, voidptr val) {
 VV_LOC void builtin__array_prepend_many(array* a, voidptr val, int size) {
 	builtin__array_insert_many(a, 0, val, size);
 }
+void builtin__array_delete(array* a, int i) {
+	if (i < 0 || i >= a->len) {
+		builtin__panic_n2(_S("array.delete: index out of range (i,a.len):"), i, a->len);
+		VUNREACHABLE();
+	}
+	if (i == a->len - 1 && !builtin__array_needs_unique_shrink(*a)) {
+		a->len--;
+		builtin__vmemset(((u8*)(a->data)) + ((u64)(a->len)) * ((u64)(a->element_size)), 0, ((u64)(a->element_size)));
+		return;
+	}
+	builtin__array_delete_many(a, i, 1);
+}
+void builtin__array_delete_many(array* a, int i, int size) {
+	if (i < 0 || ((i64)(i)) + ((i64)(size)) > ((i64)(a->len))) {
+		if (size > 1) {
+			builtin__panic_n3(_S("array.delete: index out of range (i,i+size,a.len):"), i, i + size, a->len);
+			VUNREACHABLE();
+		} else {
+			builtin__panic_n2(_S("array.delete: index out of range (i,a.len):"), i, a->len);
+			VUNREACHABLE();
+		}
+	}
+	if (size == 0) {
+		if (builtin__array_needs_unique_shrink(*a)) {
+			builtin__array_clone_shallow_to_cap(a, a->len);
+		}
+		return;
+	}
+	if (!builtin__array_needs_unique_shrink(*a)) {
+		int new_len = a->len - size;
+		{ // Unsafe block
+			builtin__vmemmove(((u8*)(a->data)) + ((u64)(i)) * ((u64)(a->element_size)), ((u8*)(a->data)) + ((u64)(i + size)) * ((u64)(a->element_size)), ((u64)(a->len - i - size)) * ((u64)(a->element_size)));
+			builtin__vmemset(((u8*)(a->data)) + ((u64)(new_len)) * ((u64)(a->element_size)), 0, ((u64)(size)) * ((u64)(a->element_size)));
+		}
+		a->len = new_len;
+		return;
+	}
+	voidptr old_data = a->data;
+	int new_size = a->len - size;
+	if (new_size == 0) {
+		builtin__ArrayFlags_clear(&a->flags, ((ArrayFlags__managed | ArrayFlags__noscan_data) | ArrayFlags__is_slice));
+		a->data = ((void*)0);
+		a->offset = 0;
+		a->len = 0;
+		a->cap = 0;
+		return;
+	}
+	int new_cap = new_size;
+	bool use_noscan_data = builtin__array_uses_noscan_data(*a);
+	a->data = builtin__array_alloc_array_data_like(*a, ((u64)(new_cap)) * ((u64)(a->element_size)));
+	builtin__vmemcpy(a->data, old_data, ((u64)(i)) * ((u64)(a->element_size)));
+	builtin__vmemcpy(((u8*)(a->data)) + ((u64)(i)) * ((u64)(a->element_size)), ((u8*)(old_data)) + ((u64)(i + size)) * ((u64)(a->element_size)), ((u64)(a->len - i - size)) * ((u64)(a->element_size)));
+	if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__noslices) && !builtin__ArrayFlags_has(&a->flags, ArrayFlags__managed)) {
+		builtin___v_free(old_data);
+	}
+	a->len = new_size;
+	a->cap = new_cap;
+	a->offset = 0;
+	{ // Unsafe block
+		if (use_noscan_data) {
+			builtin__ArrayFlags_set(&a->flags, ArrayFlags__noscan_data);
+		} else {
+			builtin__ArrayFlags_clear(&a->flags, ArrayFlags__noscan_data);
+		}
+	}
+	builtin__array_set_managed_flags(a, false);
+}
 void builtin__array_clear(array* a) {
+	if (builtin__array_needs_unique_shrink(*a)) {
+		builtin__ArrayFlags_clear(&a->flags, ((ArrayFlags__managed | ArrayFlags__noscan_data) | ArrayFlags__is_slice));
+		a->data = ((void*)0);
+		a->offset = 0;
+		a->cap = 0;
+	}
 	a->len = 0;
+}
+void builtin__array_trim(array* a, int index) {
+	if (index < a->len) {
+		if (index >= 0 && builtin__array_needs_unique_shrink(*a)) {
+			builtin__array_delete_many(a, index, a->len - index);
+			return;
+		}
+		a->len = index;
+	}
 }
 inline VV_LOC voidptr builtin__array_get_unsafe(array a, int i) {
 	{ // Unsafe block
-		return ((u8*)(a.data)) + (u64)(((u64)(i)) * ((u64)(a.element_size)));
+		return ((u8*)(a.data)) + ((u64)(i)) * ((u64)(a.element_size));
 	}
 	return 0;
 }
 VV_LOC voidptr builtin__array_get(array a, int i) {
-	#if !defined(CUSTOM_DEFINE_no_bounds_checking)
+	#if 1
 	{
 		if (i < 0 || i >= a.len) {
 			builtin__panic_n2(_S("array.get: index out of range (i,a.len):"), i, a.len);
@@ -4113,29 +5995,81 @@ VV_LOC voidptr builtin__array_get(array a, int i) {
 	}
 	#endif
 	{ // Unsafe block
-		return ((u8*)(a.data)) + (u64)(((u64)(i)) * ((u64)(a.element_size)));
+		return ((u8*)(a.data)) + ((u64)(i)) * ((u64)(a.element_size));
 	}
 	return 0;
+}
+VV_LOC voidptr builtin__array_get_i64(array a, i64 i) {
+	#if 1
+	{
+		if (i < 0 || i >= ((i64)(a.len))) {
+			builtin__panic_n2(_S("array.get: index out of range (i,a.len):"), i, a.len);
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	{ // Unsafe block
+		return ((u8*)(a.data)) + ((u64)(i)) * ((u64)(a.element_size));
+	}
+	return 0;
+}
+VV_LOC voidptr builtin__array_get_u64(array a, u64 i) {
+	#if 1
+	{
+		if (i >= ((u64)(a.len))) {
+			builtin___v_panic(builtin__string_plus_many(4, _MOV((string[4]){_S("array.get: index out of range (i,a.len): "), builtin__u64_str(i), _S(", "), builtin__impl_i64_to_string(a.len)})));
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	{ // Unsafe block
+		return ((u8*)(a.data)) + i * ((u64)(a.element_size));
+	}
+	return 0;
+}
+VV_LOC voidptr builtin__array_get_ni(array a, int i) {
+	return builtin__array_get(a, builtin__v_ni_index(i, a.len));
 }
 VV_LOC voidptr builtin__array_get_with_check(array a, int i) {
 	if (i < 0 || i >= a.len) {
 		return 0;
 	}
 	{ // Unsafe block
-		return ((u8*)(a.data)) + (u64)(((u64)(i)) * ((u64)(a.element_size)));
+		return ((u8*)(a.data)) + ((u64)(i)) * ((u64)(a.element_size));
 	}
 	return 0;
 }
+VV_LOC voidptr builtin__array_get_with_check_i64(array a, i64 i) {
+	if (i < 0 || i >= ((i64)(a.len))) {
+		return 0;
+	}
+	{ // Unsafe block
+		return ((u8*)(a.data)) + ((u64)(i)) * ((u64)(a.element_size));
+	}
+	return 0;
+}
+VV_LOC voidptr builtin__array_get_with_check_u64(array a, u64 i) {
+	if (i >= ((u64)(a.len))) {
+		return 0;
+	}
+	{ // Unsafe block
+		return ((u8*)(a.data)) + i * ((u64)(a.element_size));
+	}
+	return 0;
+}
+VV_LOC voidptr builtin__array_get_with_check_ni(array a, int i) {
+	return builtin__array_get_with_check(a, builtin__v_ni_index(i, a.len));
+}
 VV_LOC array builtin__array_slice(array a, int start, int _end) {
 	int end = (_end == _const_max_i64 || _end == _const_max_i32 ? (a.len) : (_end));
-	#if !defined(CUSTOM_DEFINE_no_bounds_checking)
+	#if 1
 	{
 		if (start > end) {
-			builtin___v_panic(builtin__string__plus(builtin__string__plus(builtin__string__plus(_S("array.slice: invalid slice index (start>end):"), builtin__impl_i64_to_string(((i64)(start)))), _S(", ")), builtin__impl_i64_to_string(end)));
+			builtin___v_panic(builtin__string_plus_many(4, _MOV((string[4]){_S("array.slice: invalid slice index (start>end):"), builtin__impl_i64_to_string(((i64)(start))), _S(", "), builtin__impl_i64_to_string(end)})));
 			VUNREACHABLE();
 		}
 		if (end > a.len) {
-			builtin___v_panic(builtin__string__plus(builtin__string__plus(builtin__string__plus(builtin__string__plus(_S("array.slice: slice bounds out of range ("), builtin__impl_i64_to_string(end)), _S(" >= ")), builtin__impl_i64_to_string(a.len)), _S(")")));
+			builtin___v_panic(builtin__string_plus_many(5, _MOV((string[5]){_S("array.slice: slice bounds out of range ("), builtin__impl_i64_to_string(end), _S(" >= "), builtin__impl_i64_to_string(a.len), _S(")")})));
 			VUNREACHABLE();
 		}
 		if (start < 0) {
@@ -4144,10 +6078,22 @@ VV_LOC array builtin__array_slice(array a, int start, int _end) {
 		}
 	}
 	#endif
-	u64 offset = (u64)(((u64)(start)) * ((u64)(a.element_size)));
+	builtin__array_mark_buffer_has_slices(&a);
+	u64 offset = ((u64)(start)) * ((u64)(a.element_size));
 	u8* data = ((u8*)(a.data)) + offset;
-	int l = (int)(end - start);
-	array res = ((array){.data = (voidptr)data,.offset = (int)(a.offset + ((int)(offset))),.len = l,.cap = l,.flags = 0,.element_size = a.element_size,});
+	int l = end - start;
+	ArrayFlags flags = ArrayFlags__is_slice;
+	if (builtin__array_uses_noscan_data(a)) {
+		builtin__ArrayFlags_set(&flags, ArrayFlags__noscan_data);
+	}
+	array res = ((array){
+		.data = (voidptr)data,
+		.offset = a.offset + ((int)(offset)),
+		.len = l,
+		.cap = l,
+		.flags = flags,
+		.element_size = a.element_size,
+	});
 	return res;
 }
 VV_LOC array builtin__array_clone_static_to_depth(array a, int depth) {
@@ -4157,14 +6103,25 @@ array builtin__array_clone(array* a) {
 	return builtin__array_clone_to_depth(a, 0);
 }
 array builtin__array_clone_to_depth(array* a, int depth) {
-	u64 source_capacity_in_bytes = (u64)(((u64)(a->cap)) * ((u64)(a->element_size)));
-	array arr = ((array){.data = (voidptr)builtin__vcalloc(source_capacity_in_bytes),.offset = 0,.len = a->len,.cap = a->cap,.flags = 0,.element_size = a->element_size,});
+	u64 source_capacity_in_bytes = ((u64)(a->cap)) * ((u64)(a->element_size));
+	bool use_noscan_data = depth == 0 && builtin__array_uses_noscan_data(*a);
+	voidptr data = ((void*)0);
+	if (a->cap > 0) {
+		if (use_noscan_data) {
+			data = builtin__array_alloc_array_data_like(*a, source_capacity_in_bytes);
+		} else {
+			data = builtin__alloc_array_data(source_capacity_in_bytes);
+		}
+	}
+	array _t1 = ((array){.data = (voidptr)data,.offset = 0,.len = a->len,.cap = a->cap,.flags = (use_noscan_data ? ((ArrayFlags__managed | ArrayFlags__noscan_data)) : (ArrayFlags__managed)),.element_size = a->element_size,});
+	array arr = _t1;
 	if (depth > 0 && _us32_eq(sizeof(array),a->element_size) && a->len >= 0 && a->cap >= a->len) {
-		array ar = ((array){.data = 0,.offset = 0,.len = 0,.cap = 0,.flags = 0,.element_size = 0,});
+		array _t2 = ((array){.data = 0,.offset = 0,.len = 0,.cap = 0,.flags = 0,.element_size = 0,});
+		array ar = _t2;
 		int asize = ((int)(sizeof(array)));
 		for (int i = 0; i < a->len; ++i) {
 			builtin__vmemcpy(&ar, builtin__array_get_unsafe(*a, i), asize);
-			array ar_clone = builtin__array_clone_to_depth(&ar, (int)(depth - 1));
+			array ar_clone = builtin__array_clone_to_depth(&ar, depth - 1);
 			builtin__array_set_unsafe(&arr, i, &ar_clone);
 		}
 		return arr;
@@ -4175,19 +6132,17 @@ array builtin__array_clone_to_depth(array* a, int depth) {
 			builtin__array_set_unsafe(&arr, i, &str_clone);
 		}
 		return arr;
-	} else {
-		if (a->data != 0 && source_capacity_in_bytes > 0) {
-			builtin__vmemcpy(((u8*)(arr.data)), a->data, source_capacity_in_bytes);
-		}
-		return arr;
 	}
-	return (array){.data = 0,.offset = 0,.len = 0,.cap = 0,.flags = 0,.element_size = 0,};
+	if (a->data != 0 && source_capacity_in_bytes > 0) {
+		builtin__vmemcpy(arr.data, a->data, source_capacity_in_bytes);
+	}
+	return arr;
 }
 inline VV_LOC void builtin__array_set_unsafe(array* a, int i, voidptr val) {
-	builtin__vmemcpy(((u8*)(a->data)) + (u64)(((u64)(a->element_size)) * ((u64)(i))), val, a->element_size);
+	builtin__vmemcpy(((u8*)(a->data)) + ((u64)(a->element_size)) * ((u64)(i)), val, a->element_size);
 }
 VV_LOC void builtin__array_set(array* a, int i, voidptr val) {
-	#if !defined(CUSTOM_DEFINE_no_bounds_checking)
+	#if 1
 	{
 		if (i < 0 || i >= a->len) {
 			builtin__panic_n2(_S("array.set: index out of range (i,a.len):"), i, a->len);
@@ -4195,41 +6150,110 @@ VV_LOC void builtin__array_set(array* a, int i, voidptr val) {
 		}
 	}
 	#endif
-	builtin__vmemcpy(((u8*)(a->data)) + (u64)(((u64)(a->element_size)) * ((u64)(i))), val, a->element_size);
+	builtin__vmemcpy(((u8*)(a->data)) + ((u64)(a->element_size)) * ((u64)(i)), val, a->element_size);
+}
+VV_LOC void builtin__array_set_i64(array* a, i64 i, voidptr val) {
+	#if 1
+	{
+		if (i < 0 || i >= ((i64)(a->len))) {
+			builtin__panic_n2(_S("array.set: index out of range (i,a.len):"), i, a->len);
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	builtin__vmemcpy(((u8*)(a->data)) + ((u64)(a->element_size)) * ((u64)(i)), val, a->element_size);
+}
+VV_LOC void builtin__array_set_u64(array* a, u64 i, voidptr val) {
+	#if 1
+	{
+		if (i >= ((u64)(a->len))) {
+			builtin___v_panic(builtin__string_plus_many(4, _MOV((string[4]){_S("array.set: index out of range (i,a.len): "), builtin__u64_str(i), _S(", "), builtin__impl_i64_to_string(a->len)})));
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	builtin__vmemcpy(((u8*)(a->data)) + ((u64)(a->element_size)) * i, val, a->element_size);
+}
+VV_LOC void builtin__array_set_ni(array* a, int i, voidptr val) {
+	builtin__array_set(a, builtin__v_ni_index(i, a->len), val);
+}
+inline VV_LOC void builtin__copy_element_to(voidptr dest, voidptr src, int element_size) {
+	{ // Unsafe block
+		switch (element_size) {
+			case 1: {
+				builtin__vmemcpy(dest, src, 1);
+				break;
+			}
+			case 2: {
+				builtin__vmemcpy(dest, src, 2);
+				break;
+			}
+			case 4: {
+				builtin__vmemcpy(dest, src, 4);
+				break;
+			}
+			case 8: {
+				builtin__vmemcpy(dest, src, 8);
+				break;
+			}
+			case 16: {
+				builtin__vmemcpy(dest, src, 16);
+				break;
+			}
+			default: {
+				{
+					builtin__vmemcpy(dest, src, element_size);
+					break;
+				}
+			}
+		}
+		
+	}
 }
 VV_LOC void builtin__array_push(array* a, voidptr val) {
-	if (a->len < 0) {
-		builtin___v_panic(_S("array.push: negative len"));
-		VUNREACHABLE();
+	#if 1
+	{
+		if (a->len < 0) {
+			builtin___v_panic(_S("array.push: negative len"));
+			VUNREACHABLE();
+		}
 	}
+	#endif
 	if (a->len >= _const_max_int) {
 		builtin___v_panic(_S("array.push: len bigger than max_int"));
 		VUNREACHABLE();
 	}
-	if (a->len >= a->cap) {
-		builtin__array_ensure_cap(a, (int)(a->len + 1));
+	int required = a->len + 1;
+	if (required > a->cap) {
+		builtin__array_ensure_cap(a, required);
+	} else if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__is_slice)) {
+		builtin__array_clone_shallow_to_cap(a, a->cap);
 	}
-	builtin__vmemcpy(((u8*)(a->data)) + (u64)(((u64)(a->element_size)) * ((u64)(a->len))), val, a->element_size);
+	builtin__copy_element_to(((u8*)(a->data)) + ((u64)(a->element_size)) * ((u64)(a->len)), val, a->element_size);
 	a->len++;
 }
 void builtin__array_push_many(array* a, voidptr val, int size) {
 	if (size <= 0 || val == ((void*)0)) {
 		return;
 	}
-	i64 new_len = (i64)(((i64)(a->len)) + ((i64)(size)));
+	i64 new_len = ((i64)(a->len)) + ((i64)(size));
 	if (new_len > _const_max_int) {
 		builtin___v_panic(_S("array.push_many: new len exceeds max_int"));
 		VUNREACHABLE();
 	}
-	if (new_len >= a->cap) {
+	if (builtin__array_needs_unique_append(*a, ((int)(new_len)))) {
+		builtin__array_clone_shallow_to_cap(a, a->cap);
+	}
+	bool is_self_append = a->data == val && a->data != 0;
+	if (((int)(new_len)) > a->cap) {
 		builtin__array_ensure_cap(a, ((int)(new_len)));
 	}
-	if (a->data == val && a->data != 0) {
-		array copy = builtin__array_clone(a);
-		builtin__vmemcpy(((u8*)(a->data)) + (u64)(((u64)(a->element_size)) * ((u64)(a->len))), copy.data, (u64)(((u64)(a->element_size)) * ((u64)(size))));
+	if (is_self_append) {
+		array cloned = builtin__array_clone(a);
+		builtin__vmemcpy(((u8*)(a->data)) + ((u64)(a->element_size)) * ((u64)(a->len)), cloned.data, ((u64)(a->element_size)) * ((u64)(size)));
 	} else {
 		if (a->data != 0 && val != 0) {
-			builtin__vmemcpy(((u8*)(a->data)) + (u64)(((u64)(a->element_size)) * ((u64)(a->len))), val, (u64)(((u64)(a->element_size)) * ((u64)(size))));
+			builtin__vmemcpy(((u8*)(a->data)) + ((u64)(a->element_size)) * ((u64)(a->len)), val, ((u64)(a->element_size)) * ((u64)(size)));
 		}
 	}
 	a->len = ((int)(new_len));
@@ -4238,9 +6262,15 @@ void builtin__array_free(array* a) {
 	if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__nofree)) {
 		return;
 	}
-	u8* mblock_ptr = ((u8*)((u64)(((u64)(a->data)) - ((u64)(a->offset)))));
+	u8* mblock_ptr = ((u8*)(((u64)(a->data)) - ((u64)(a->offset))));
 	if (mblock_ptr != ((void*)0)) {
-		builtin___v_free(mblock_ptr);
+		{ // Unsafe block
+			if (builtin__ArrayFlags_has(&a->flags, ArrayFlags__managed)) {
+				builtin___v_free(mblock_ptr - builtin__array_data_header_size());
+			} else {
+				builtin___v_free(mblock_ptr);
+			}
+		}
 	}
 	{ // Unsafe block
 		a->data = ((void*)0);
@@ -4255,7 +6285,8 @@ void Array_string_free(Array_string* a) {
 		string* s = ((string*)a->data) + _t1;
 		builtin__string_free(s);
 	}
-	builtin__array_free((((array*)(a))));
+	array* arr = ((array*)(a));
+	builtin__array_free(arr);
 }
 string Array_string_str(Array_string a) {
 	int sb_len = 4;
@@ -4271,7 +6302,7 @@ string Array_string_str(Array_string a) {
 		strings__Builder_write_u8(&sb, '\'');
 		strings__Builder_write_string(&sb, val);
 		strings__Builder_write_u8(&sb, '\'');
-		if (i < (int)(a.len - 1)) {
+		if (i < a.len - 1) {
 			strings__Builder_write_string(&sb, _S(", "));
 		}
 	}
@@ -4307,118 +6338,166 @@ VV_LOC void builtin__array_push_noscan(array* a, voidptr val) {
 VV_LOC void builtin__array_push_many_noscan(array* a, voidptr val, int size) {
 	builtin__array_push_many(a, val, size);
 }
-void builtin__print_backtrace(void) {
-	#if !defined(CUSTOM_DEFINE_no_backtrace)
-	{
-		#if defined(_VFREESTANDING)
-		{
+VV_LOC bool builtin__autostr_type_in_stack(int typ) {
+	for (int i = 0; i < g_autostr_type_stack_len; i++) {
+		if (g_autostr_type_stack[builtin__v_fixed_index(i, 64)] == typ) {
+			return true;
 		}
-		#elif defined(_VNATIVE)
-		{
-		}
-		#elif defined(__TINYC__)
-		{
-			tcc_backtrace("Backtrace");
-		}
-		#elif defined(CUSTOM_DEFINE_use_libbacktrace)
-		{
-		}
-		#else
-		{
-		}
-		#endif
 	}
-	#endif
+	return false;
+}
+VV_LOC void builtin__autostr_type_push(int typ) {
+	if (g_autostr_type_stack_len >= _const_autostr_type_stack_max_depth) {
+		return;
+	}
+	g_autostr_type_stack[builtin__v_fixed_index(g_autostr_type_stack_len, 64)] = typ;
+	g_autostr_type_stack_len++;
+}
+VV_LOC void builtin__autostr_type_pop(void) {
+	if (g_autostr_type_stack_len > 0) {
+		g_autostr_type_stack_len--;
+	}
+}
+VV_LOC bool builtin__autostr_addr_in_stack(voidptr addr) {
+	for (int i = 0; i < g_autostr_addr_stack_len; i++) {
+		if (g_autostr_addr_stack[builtin__v_fixed_index(i, 64)] == addr) {
+			return true;
+		}
+	}
+	return false;
+}
+VV_LOC void builtin__autostr_addr_push(voidptr addr) {
+	if (g_autostr_addr_stack_len >= _const_autostr_type_stack_max_depth) {
+		return;
+	}
+	g_autostr_addr_stack[builtin__v_fixed_index(g_autostr_addr_stack_len, 64)] = addr;
+	g_autostr_addr_stack_len++;
+}
+VV_LOC void builtin__autostr_addr_pop(void) {
+	if (g_autostr_addr_stack_len > 0) {
+		g_autostr_addr_stack_len--;
+	}
+}
+VV_LOC string builtin__autostr_array_circular(int len) {
+	if (len <= 0) {
+		return _S("[]");
+	}
+	strings__Builder sb = strings__new_builder(2 + len * 12);
+	strings__Builder_write_string(&sb, _S("["));
+	for (int i = 0; i < len; ++i) {
+		if (i > 0) {
+			strings__Builder_write_string(&sb, _S(", "));
+		}
+		strings__Builder_write_string(&sb, _S("<circular>"));
+	}
+	strings__Builder_write_string(&sb, _S("]"));
+	string res = strings__Builder_str(&sb);
+	strings__Builder_free(&sb);
+	return res;
 }
 bool builtin__print_backtrace_skipping_top_frames(int xskipframes) {
 	#if defined(CUSTOM_DEFINE_no_backtrace)
 	{
+		return false;
 	}
 	#else
 	{
-		int skipframes = (int)(xskipframes + 2);
-		#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+	}
+	#endif
+	return false;
+}
+VNORETURN void builtin___v_exit(int code) {
+	exit(code);
+	VUNREACHABLE();
+	for (;;) {
+	}
+	while(1);
+}
+VV_LOC void builtin__v_segmentation_fault_handler(i32 signal_number) {
+	#if defined(CUSTOM_DEFINE_v2_native_windows_pe_minimal)
+	{
+	}
+	#else
+	{
+		#if 0
 		{
 		}
-		#elif defined(__linux__)
+		#else
 		{
-			return builtin__print_backtrace_skipping_top_frames_linux(skipframes);
+			fprintf(stderr, "signal %d: segmentation fault\n", signal_number);
+		}
+		#endif
+		#if defined(CUSTOM_DEFINE_use_libbacktrace) && !defined(__TINYC__)
+		{
+		}
+		#elif 1
+		{
+			builtin__print_backtrace_skipping_top_frames(1);
 		}
 		#else
 		{
 		}
 		#endif
+		builtin___v_exit(128 + signal_number);
+		VUNREACHABLE();
 	}
 	#endif
-	return false;
-}
-VV_LOC bool builtin__print_backtrace_skipping_top_frames_linux(int skipframes) {
-	#if defined(_VNATIVE)
-	{
-	}
-	#elif defined(CUSTOM_DEFINE_no_backtrace)
-	{
-	}
-	#else
-	{
-		#if defined(__linux__) && !defined(_VFREESTANDING)
-		{
-			#if defined(__TINYC__)
-			{
-				tcc_backtrace("Backtrace");
-				return false;
-			}
-			#else
-			{
-			}
-			#endif
-		}
-		#endif
-	}
-	#endif
-	return true;
-}
-VNORETURN void builtin___v_exit(int code) {
-	exit(code);
-	VUNREACHABLE();
-	while(1);
-}
-VV_LOC void builtin__v_segmentation_fault_handler(i32 signal_number) {
-	#if defined(_VFREESTANDING)
-	{
-	}
-	#else
-	{
-		fprintf(stderr, "signal %d: segmentation fault\n", signal_number);
-	}
-	#endif
-	#if defined(CUSTOM_DEFINE_use_libbacktrace)
-	{
-	}
-	#else
-	{
-		builtin__print_backtrace();
-	}
-	#endif
-	builtin___v_exit((i32)(128 + signal_number));
-	VUNREACHABLE();
 }
 inline VV_LOC int builtin__v_fixed_index(int i, int len) {
-	#if !defined(CUSTOM_DEFINE_no_bounds_checking)
+	#if 1
 	{
 		if (i < 0 || i >= len) {
-			builtin___v_panic(builtin__string__plus(builtin__string__plus(builtin__string__plus(builtin__string__plus(_S("fixed array index out of range (index: "), builtin__i64_str(((i64)(i)))), _S(", len: ")), builtin__i64_str(((i64)(len)))), _S(")")));
+			builtin___v_panic(builtin__string_plus_many(5, _MOV((string[5]){_S("fixed array index out of range (index: "), builtin__i64_str(((i64)(i))), _S(", len: "), builtin__i64_str(((i64)(len))), _S(")")})));
 			VUNREACHABLE();
 		}
 	}
 	#endif
 	return i;
 }
+inline VV_LOC int builtin__v_fixed_index_i64(i64 i, int len) {
+	#if 1
+	{
+		if (i < 0 || i >= ((i64)(len))) {
+			builtin___v_panic(builtin__string_plus_many(5, _MOV((string[5]){_S("fixed array index out of range (index: "), builtin__i64_str(i), _S(", len: "), builtin__i64_str(((i64)(len))), _S(")")})));
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	return ((int)(i));
+}
+inline VV_LOC int builtin__v_fixed_index_u64(u64 i, int len) {
+	#if 1
+	{
+		if (i >= ((u64)(len))) {
+			builtin___v_panic(builtin__string_plus_many(5, _MOV((string[5]){_S("fixed array index out of range (index: "), builtin__u64_str(i), _S(", len: "), builtin__i64_str(((i64)(len))), _S(")")})));
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	return ((int)(i));
+}
+inline VV_LOC int builtin__v_fixed_index_ni(int i, int len) {
+	return builtin__v_fixed_index(builtin__v_ni_index(i, len), len);
+}
+inline VV_LOC int builtin__v_slice_index_i64(i64 i) {
+	if (i < ((i64)(_const_min_int)) || i > ((i64)(_const_max_int))) {
+		builtin___v_panic(builtin__string__plus(_S("slice index out of range for int: "), builtin__i64_str(i)));
+		VUNREACHABLE();
+	}
+	return ((int)(i));
+}
+inline VV_LOC int builtin__v_slice_index_u64(u64 i) {
+	if (i > ((u64)(_const_max_int))) {
+		builtin___v_panic(builtin__string__plus(_S("slice index out of range for int: "), builtin__u64_str(i)));
+		VUNREACHABLE();
+	}
+	return ((int)(i));
+}
 Array_string builtin__arguments(void) {
 	u8** argv = ((u8**)(g_main_argv));
 	Array_string res = builtin____new_array_with_default(0, g_main_argc, sizeof(string), 0);
 	for (int i = 0; i < g_main_argc; ++i) {
-		#if defined(_WIN32)
+		#if 0
 		{
 		}
 		#else
@@ -4430,13 +6509,13 @@ Array_string builtin__arguments(void) {
 	return res;
 }
 string builtin__vcurrent_hash(void) {
-	return _S("");
+	return _S("7647ce1");
 }
 u64 builtin__v_getpid(void) {
 	#if defined(CUSTOM_DEFINE_no_getpid)
 	{
 	}
-	#elif defined(_WIN32)
+	#elif 0
 	{
 	}
 	#else
@@ -4450,14 +6529,14 @@ u64 builtin__v_gettid(void) {
 	#if defined(CUSTOM_DEFINE_no_gettid)
 	{
 	}
-	#elif defined(_WIN32)
+	#elif 0
 	{
 	}
-	#elif defined(__linux__) && !defined(CUSTOM_DEFINE_musl)
+	#elif 1
 	{
 		return ((u64)(gettid()));
 	}
-	#elif defined(__VTHREADS__)
+	#elif 0
 	{
 	}
 	#else
@@ -4470,14 +6549,22 @@ inline bool builtin__isnil(voidptr v) {
 	return v == 0;
 }
 VV_LOC void builtin__builtin_init(void) {
+	#if 1
+	{
+		builtin__unbuffer_stdout();
+	}
+	#endif
 }
+#if 0
+#else
+#endif
 inline int builtin__vstrlen(u8* s) {
 	return ((int)(strlen(((char*)(s)))));
 }
 inline int builtin__vstrlen_char(char* s) {
 	return ((int)(strlen(s)));
 }
-inline voidptr builtin__vmemcpy(voidptr dest, const voidptr const_src, isize n) {
+inline voidptr builtin__vmemcpy(voidptr dest, const void* const_src, isize n) {
 	if (n == 0 || ((u64)(dest)) <= 0xFFFF || ((u64)(const_src)) <= 0xFFFF) {
 		return dest;
 	}
@@ -4486,7 +6573,7 @@ inline voidptr builtin__vmemcpy(voidptr dest, const voidptr const_src, isize n) 
 	}
 	return 0;
 }
-inline voidptr builtin__vmemmove(voidptr dest, const voidptr const_src, isize n) {
+inline voidptr builtin__vmemmove(voidptr dest, const void* const_src, isize n) {
 	if (n == 0 || ((u64)(dest)) <= 0xFFFF || ((u64)(const_src)) <= 0xFFFF) {
 		return dest;
 	}
@@ -4495,7 +6582,7 @@ inline voidptr builtin__vmemmove(voidptr dest, const voidptr const_src, isize n)
 	}
 	return 0;
 }
-inline int builtin__vmemcmp(const voidptr const_s1, const voidptr const_s2, isize n) {
+inline int builtin__vmemcmp(const void* const_s1, const void* const_s2, isize n) {
 	if (n == 0 || ((u64)(const_s1)) <= 0xFFFF || ((u64)(const_s2)) <= 0xFFFF) {
 		return 0;
 	}
@@ -4519,8 +6606,21 @@ VV_LOC void builtin___result_ok(voidptr data, _result* res, int size) {
 		builtin__vmemcpy(((u8*)(&res->err)) + sizeof(IError), data, size);
 	}
 }
+VV_LOC void builtin___result_clone(_result* current, _result* res, int size) {
+	{ // Unsafe block
+		*res = ((_result){.is_error = current->is_error,.err = current->err,});
+		builtin__vmemcpy(((u8*)(&res->err)) + sizeof(IError), ((u8*)(&current->err)) + sizeof(IError), size);
+	}
+}
 string builtin__IError_str(IError err) {
-	return ((err._typ == _IError_None___index)? (_S("none")) : (err._typ == _IError_Error_index)? (builtin__Error_msg(*(err._Error))) : (err._typ == _IError_MessageError_index)? (builtin__MessageError_str((*(err._MessageError)))) : (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = builtin__charptr_vstring_literal(v_typeof_interface_IError( (err)._typ ))}}, {_S(": "), 0xfe10, {.d_s = IError_name_table[err._typ]._method_msg(err._object)}}, {_SLIT0, 0, { .d_c = 0 }}}))));
+	if ((err)._typ == _IError_None___index) {
+		return _S("none");
+	}
+	int c = ((struct _IError_interface_methods*)(err._methods))->_method_code(err._object);
+	if (c > 0) {
+		return builtin__string_plus_many(3, _MOV((string[3]){((struct _IError_interface_methods*)(err._methods))->_method_msg(err._object), _S("; code: "), builtin__int_str(c)}));
+	}
+	return ((struct _IError_interface_methods*)(err._methods))->_method_msg(err._object);
 }
 string builtin__Error_msg(Error err) {
 	return _S("");
@@ -4530,7 +6630,7 @@ int builtin__Error_code(Error err) {
 }
 string builtin__MessageError_str(MessageError err) {
 	if (err.code > 0) {
-		return builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = err.msg}}, {_S("; code: "), 0xfe07, {.d_i32 = err.code}}, {_SLIT0, 0, { .d_c = 0 }}}));
+		return builtin__string_plus_many(3, _MOV((string[3]){err.msg, _S("; code: "), builtin__int_str(err.code)}));
 	}
 	return err.msg;
 }
@@ -4545,11 +6645,14 @@ void builtin__MessageError_free(MessageError* err) {
 }
 inline IError builtin___v_error(string message) {
 	;
-	return I_MessageError_to_Interface_IError(((MessageError*)builtin__memdup(&(MessageError){.msg = message,.code = 0,}, sizeof(MessageError))));
+	return I_MessageError_to_Interface_IError((HEAP(MessageError, ((MessageError){.msg = message,.code = 0,}))));
 }
 inline IError builtin__error_with_code(string message, int code) {
 	;
-	return I_MessageError_to_Interface_IError(((MessageError*)builtin__memdup(&(MessageError){.msg = message,.code = code,}, sizeof(MessageError))));
+	MessageError* _t2 = (MessageError*)builtin___v_malloc(sizeof(MessageError) == 0 ? 1 : sizeof(MessageError));
+	_t2->msg = message;
+	_t2->code = code;
+	return I_MessageError_to_Interface_IError( _t2);
 }
 VV_LOC void builtin___option_none(voidptr data, _option* option, int size) {
 	{ // Unsafe block
@@ -4569,16 +6672,20 @@ VV_LOC void builtin___option_clone(_option* current, _option* option, int size) 
 		builtin__vmemcpy(((u8*)(&option->err)) + sizeof(IError), ((u8*)(&current->err)) + sizeof(IError), size);
 	}
 }
+VV_LOC void builtin___result_ok_markused(void) {
+	_result _t1 = ((_result){.is_error = 0,.err = _const_none__,});
+	_result res = _t1;
+	builtin___result_ok(((void*)0), (voidptr)&res, 0);
+}
 VV_LOC string builtin__None___str(None__ _d1) {
 	return _S("none");
 }
 #if !defined(CUSTOM_DEFINE_nofloat)
 #endif
-#if !defined(_VNATIVE)
-#endif
 inline string builtin__f64_str(f64 x) {
 	{ // Unsafe block
-		strconv__Float64u f = ((strconv__Float64u){.f = x,});
+		strconv__Float64u _t1 = ((strconv__Float64u){.f = x,});
+		strconv__Float64u f = _t1;
 		if (f.u == _const_strconv__double_minus_zero) {
 			return _S("-0.0");
 		}
@@ -4595,8 +6702,12 @@ inline string builtin__f64_str(f64 x) {
 	return (string){.str=(byteptr)"", .is_lit=1};
 }
 inline string builtin__f64_strg(f64 x) {
-	if (x == 0) {
-		return _S("0.0");
+	{ // Unsafe block
+		strconv__Float64u _t1 = ((strconv__Float64u){.f = x,});
+		strconv__Float64u f = _t1;
+		if (f.u == _const_strconv__double_minus_zero || f.u == _const_strconv__double_plus_zero) {
+			return _S("0.0");
+		}
 	}
 	f64 abs_x = builtin__f64_abs(x);
 	if (abs_x >= ((f64)(0.0001)) && abs_x < ((f64)(1.0e6))) {
@@ -4608,7 +6719,8 @@ inline string builtin__f64_strg(f64 x) {
 }
 inline string builtin__f32_str(f32 x) {
 	{ // Unsafe block
-		strconv__Float32u f = ((strconv__Float32u){.f = x,});
+		strconv__Float32u _t1 = ((strconv__Float32u){.f = x,});
+		strconv__Float32u f = _t1;
 		if (f.u == _const_strconv__single_minus_zero) {
 			return _S("-0.0");
 		}
@@ -4625,8 +6737,12 @@ inline string builtin__f32_str(f32 x) {
 	return (string){.str=(byteptr)"", .is_lit=1};
 }
 inline string builtin__f32_strg(f32 x) {
-	if (x == 0) {
-		return _S("0.0");
+	{ // Unsafe block
+		strconv__Float32u _t1 = ((strconv__Float32u){.f = x,});
+		strconv__Float32u f = _t1;
+		if (f.u == _const_strconv__single_minus_zero || f.u == _const_strconv__single_plus_zero) {
+			return _S("0.0");
+		}
 	}
 	f32 abs_x = builtin__f32_abs(x);
 	if (abs_x >= ((f32)(0.0001)) && abs_x < ((f32)(1.0e6))) {
@@ -4637,10 +6753,202 @@ inline string builtin__f32_strg(f32 x) {
 	return (string){.str=(byteptr)"", .is_lit=1};
 }
 inline f32 builtin__f32_abs(f32 a) {
-	return (a < 0 ? (-a) : (a));
+	if (a < 0) {
+		return -a;
+	}
+	return a;
 }
 inline f64 builtin__f64_abs(f64 a) {
-	return (a < 0 ? (-a) : (a));
+	if (a < 0) {
+		return -a;
+	}
+	return a;
+}
+inline VV_LOC u32 builtin__grapheme_hex_nibble(u8 c) {
+	return (c <= '9' ? (((u32)((rune)(c - '0')))) : (((u32)((rune)(((c | 0x20)) - 'a') + 10))));
+}
+inline VV_LOC u32 builtin__grapheme_hex_byte(string ranges, int i) {
+	return ((v__lshift_u32(builtin__grapheme_hex_nibble(builtin__string_at(ranges, i)), (u64)4)) | builtin__grapheme_hex_nibble(builtin__string_at(ranges, i + 1)));
+}
+inline VV_LOC u32 builtin__grapheme_range_value(string ranges, int value_idx) {
+	int i = value_idx * 8;
+	u32 b0 = builtin__grapheme_hex_byte(ranges, i);
+	u32 b1 = builtin__grapheme_hex_byte(ranges, i + 2);
+	u32 b2 = builtin__grapheme_hex_byte(ranges, i + 4);
+	u32 b3 = builtin__grapheme_hex_byte(ranges, i + 6);
+	return (((b0 | (v__lshift_u32(b1, (u64)8))) | (v__lshift_u32(b2, (u64)16))) | (v__lshift_u32(b3, (u64)24)));
+}
+inline VV_LOC bool builtin__in_grapheme_ranges(rune r, string ranges) {
+	u32 target = ((u32)(r));
+	int low = 0;
+	int high = VSAFE_DIV_int(ranges.len , 16);
+	for (;;) {
+		if (!(low < high)) break;
+		int mid = low + VSAFE_DIV_int((high - low) , 2);
+		u32 lo = builtin__grapheme_range_value(ranges, mid * 2);
+		u32 hi = builtin__grapheme_range_value(ranges, mid * 2 + 1);
+		if (target < lo) {
+			high = mid;
+		} else if (target > hi) {
+			low = mid + 1;
+		} else {
+			return true;
+		}
+	}
+	return false;
+}
+inline VV_LOC GraphemeBreakProperty builtin__grapheme_break_property(rune r) {
+	if (r == '\r') {
+		return GraphemeBreakProperty__cr;
+	}
+	if (r == '\n') {
+		return GraphemeBreakProperty__lf;
+	}
+	if (r == 0x200d) {
+		return GraphemeBreakProperty__zwj;
+	}
+	if (r >= 0x1f1e6 && r <= 0x1f1ff) {
+		return GraphemeBreakProperty__regional_indicator;
+	}
+	if (r >= 0xac00 && r <= 0xd7a3) {
+		return (VSAFE_MOD_u32((((u32)(r)) - 0xac00) , 28) == 0 ? (GraphemeBreakProperty__lv) : (GraphemeBreakProperty__lvt));
+	}
+	if ((r >= 0x1100 && r <= 0x115f) || (r >= 0xa960 && r <= 0xa97c)) {
+		return GraphemeBreakProperty__l;
+	}
+	if ((r >= 0x1160 && r <= 0x11a7) || (r >= 0xd7b0 && r <= 0xd7c6)) {
+		return GraphemeBreakProperty__v;
+	}
+	if ((r >= 0x11a8 && r <= 0x11ff) || (r >= 0xd7cb && r <= 0xd7fb)) {
+		return GraphemeBreakProperty__t;
+	}
+	if (builtin__in_grapheme_ranges(r, _const_grapheme_control_ranges)) {
+		return GraphemeBreakProperty__control;
+	}
+	if (builtin__in_grapheme_ranges(r, _const_grapheme_extend_ranges)) {
+		return GraphemeBreakProperty__extend;
+	}
+	if (builtin__in_grapheme_ranges(r, _const_grapheme_spacing_mark_ranges)) {
+		return GraphemeBreakProperty__spacing_mark;
+	}
+	if (builtin__in_grapheme_ranges(r, _const_grapheme_prepend_ranges)) {
+		return GraphemeBreakProperty__prepend;
+	}
+	return GraphemeBreakProperty__other;
+}
+inline VV_LOC bool builtin__is_extended_pictographic(rune r) {
+	return builtin__in_grapheme_ranges(r, _const_grapheme_extended_pictographic_ranges);
+}
+inline VV_LOC GraphemeState builtin__grapheme_state_from_rune(rune r, GraphemeBreakProperty prop) {
+	return ((GraphemeState){.prev_prop = prop,.ri_count = (prop == GraphemeBreakProperty__regional_indicator ? (1) : (0)),.extended_pictographic_state = (builtin__is_extended_pictographic(r) ? (((u8)(1))) : (((u8)(0)))),});
+}
+inline VV_LOC void builtin__GraphemeState_push(GraphemeState* gs, rune r, GraphemeBreakProperty prop) {
+	gs->prev_prop = prop;
+	gs->ri_count = (prop == GraphemeBreakProperty__regional_indicator ? (gs->ri_count + 1) : (0));
+	if (builtin__is_extended_pictographic(r)) {
+		gs->extended_pictographic_state = 1;
+	} else if (prop == GraphemeBreakProperty__extend && gs->extended_pictographic_state == 1) {
+	} else if (prop == GraphemeBreakProperty__zwj && gs->extended_pictographic_state == 1) {
+		gs->extended_pictographic_state = 2;
+	} else {
+		gs->extended_pictographic_state = 0;
+	}
+}
+inline VV_LOC bool builtin__should_break_grapheme(GraphemeState gs, rune r, GraphemeBreakProperty prop) {
+	switch (gs.prev_prop) {
+		case GraphemeBreakProperty__cr: {
+			if (prop == GraphemeBreakProperty__lf) {
+				return false;
+			}
+			return true;
+		}
+		case GraphemeBreakProperty__lf: case GraphemeBreakProperty__control: {
+			return true;
+		}
+		case GraphemeBreakProperty__l: {
+			if (prop == GraphemeBreakProperty__l || prop == GraphemeBreakProperty__v || prop == GraphemeBreakProperty__lv || prop == GraphemeBreakProperty__lvt) {
+				return false;
+			}
+			break;
+		}
+		case GraphemeBreakProperty__lv: case GraphemeBreakProperty__v: {
+			if (prop == GraphemeBreakProperty__v || prop == GraphemeBreakProperty__t) {
+				return false;
+			}
+			break;
+		}
+		case GraphemeBreakProperty__lvt: case GraphemeBreakProperty__t: {
+			if (prop == GraphemeBreakProperty__t) {
+				return false;
+			}
+			break;
+		}
+		case GraphemeBreakProperty__prepend: {
+			return false;
+		}
+		case GraphemeBreakProperty__regional_indicator: {
+			if (prop == GraphemeBreakProperty__regional_indicator && VSAFE_MOD_int(gs.ri_count , 2) == 1) {
+				return false;
+			}
+			break;
+		}
+		case GraphemeBreakProperty__other:
+		case GraphemeBreakProperty__extend:
+		case GraphemeBreakProperty__spacing_mark:
+		case GraphemeBreakProperty__zwj:
+		default: {
+			{
+				break;
+			}
+		}
+	}
+	
+	if (prop == GraphemeBreakProperty__cr || prop == GraphemeBreakProperty__lf || prop == GraphemeBreakProperty__control) {
+		return true;
+	}
+	if (prop == GraphemeBreakProperty__extend || prop == GraphemeBreakProperty__zwj || prop == GraphemeBreakProperty__spacing_mark) {
+		return false;
+	}
+	if (gs.extended_pictographic_state == 2 && builtin__is_extended_pictographic(r)) {
+		return false;
+	}
+	return true;
+}
+inline VV_LOC int builtin__utf8_rune_visible_width(rune r, GraphemeBreakProperty prop) {
+	if (prop == GraphemeBreakProperty__extend || prop == GraphemeBreakProperty__zwj || prop == GraphemeBreakProperty__spacing_mark || prop == GraphemeBreakProperty__prepend) {
+		return 0;
+	}
+	if (r >= 0x1100 && (r <= 0x115f || r == 0x2329 || r == 0x232a || (r >= 0x2e80 && r <= 0xa4cf && r != 0x303f) || (r >= 0xac00 && r <= 0xd7a3) || (r >= 0xf900 && r <= 0xfaff) || (r >= 0xfe10 && r <= 0xfe19) || (r >= 0xfe30 && r <= 0xfe6f) || (r >= 0xff00 && r <= 0xff60) || (r >= 0xffe0 && r <= 0xffe6) || (r >= 0x1f300 && r <= 0x1f64f) || (r >= 0x1f680 && r <= 0x1f6ff) || (r >= 0x1f900 && r <= 0x1f9ff) || (r >= 0x1fa70 && r <= 0x1faff) || (r >= 0x20000 && r <= 0x3fffd))) {
+		return 2;
+	}
+	return 1;
+}
+inline VV_LOC int builtin__utf8_grapheme_visible_length(string s) {
+	Array_rune runes = builtin__string_runes(s);
+	if (runes.len == 0) {
+		return 0;
+	}
+	GraphemeBreakProperty first_prop = builtin__grapheme_break_property((*(rune*)builtin__array_get(runes, 0)));
+	GraphemeState state = builtin__grapheme_state_from_rune((*(rune*)builtin__array_get(runes, 0)), first_prop);
+	int total = 0;
+	int cluster_width = builtin__utf8_rune_visible_width((*(rune*)builtin__array_get(runes, 0)), first_prop);
+	Array_rune _t2 = builtin__array_slice(runes, 1, 2147483647);
+	for (int _t3 = 0; _t3 < _t2.len; ++_t3) {
+		rune r = ((rune*)_t2.data)[_t3];
+		GraphemeBreakProperty prop = builtin__grapheme_break_property(r);
+		if (builtin__should_break_grapheme(state, r, prop)) {
+			total += cluster_width;
+			cluster_width = builtin__utf8_rune_visible_width(r, prop);
+			state = builtin__grapheme_state_from_rune(r, prop);
+			continue;
+		}
+		int rune_width = builtin__utf8_rune_visible_width(r, prop);
+		if (rune_width > cluster_width) {
+			cluster_width = rune_width;
+		}
+		builtin__GraphemeState_push(&state, r, prop);
+	}
+	return total + cluster_width;
 }
 string builtin__ptr_str(voidptr ptr) {
 	string buf1 = builtin__u64_to_hex_no_leading_zeros(((u64)(ptr)), 16);
@@ -4662,7 +6970,7 @@ inline VV_LOC string builtin__int_str_l(int nn, int max) {
 		if (n == 0) {
 			return _S("0");
 		}
-		#if defined(CUSTOM_DEFINE_new_int) && defined(TARGET_IS_64BIT)
+		#if 0
 		{
 		}
 		#else
@@ -4678,13 +6986,13 @@ inline VV_LOC string builtin__int_str_l(int nn, int max) {
 			is_neg = true;
 		}
 		int index = max;
-		u8* buf = builtin__malloc_noscan((int)(max + 1));
+		u8* buf = builtin__malloc_noscan(max + 1);
 		buf[index] = 0;
 		index--;
 		for (;;) {
 			if (!(n > 0)) break;
-			int n1 = ((int)((i64)(n / 100)));
-			d = ((int)((((u32)((int)(((int)(n)) - ((int)(n1 * 100))))) << 1)));
+			int n1 = ((int)(VSAFE_DIV_i64(n , 100)));
+			d = ((int)(v__lshift_u32(((u32)(((int)(n)) - (n1 * 100))), (u64)1)));
 			n = n1;
 			buf[index] = _const_digit_pairs.str[d];
 			index--;
@@ -4700,8 +7008,8 @@ inline VV_LOC string builtin__int_str_l(int nn, int max) {
 			index--;
 			buf[index] = '-';
 		}
-		int diff = (int)(max - index);
-		builtin__vmemmove(buf, ((voidptr)(buf + index)), (int)(diff + 1));
+		int diff = max - index;
+		builtin__vmemmove(buf, ((voidptr)(buf + index)), diff + 1);
 		return builtin__tos(buf, diff);
 	}
 	return (string){.str=(byteptr)"", .is_lit=1};
@@ -4737,27 +7045,27 @@ inline string builtin__u32_str(u32 nn) {
 			return _S("0");
 		}
 		int max = 10;
-		u8* buf = builtin__malloc_noscan((int)(max + 1));
+		u8* buf = builtin__malloc_noscan(max + 1);
 		int index = max;
 		buf[index] = 0;
 		index--;
 		for (;;) {
 			if (!(n > 0)) break;
-			u32 n1 = (u32)(n / ((u32)(100)));
-			d = ((((u32)(n - ((u32)(n1 * ((u32)(100)))))) << ((u32)(1))));
+			u32 n1 = VSAFE_DIV_u32(n , ((u32)(100)));
+			d = (v__lshift_u32((n - (n1 * ((u32)(100)))), (u64)((u32)(1))));
 			n = n1;
-			buf[index] = _const_digit_pairs.str[ d];
+			buf[index] = _const_digit_pairs.str[ ((int)(d))];
 			index--;
 			d++;
-			buf[index] = _const_digit_pairs.str[ d];
+			buf[index] = _const_digit_pairs.str[ ((int)(d))];
 			index--;
 		}
 		index++;
 		if (d < ((u32)(20))) {
 			index++;
 		}
-		int diff = (int)(max - index);
-		builtin__vmemmove(buf, ((voidptr)(buf + index)), (int)(diff + 1));
+		int diff = max - index;
+		builtin__vmemmove(buf, ((voidptr)(buf + index)), diff + 1);
 		return builtin__tos(buf, diff);
 	}
 	return (string){.str=(byteptr)"", .is_lit=1};
@@ -4778,7 +7086,7 @@ VV_LOC string builtin__impl_i64_to_string(i64 nn) {
 			return _S("-9223372036854775808");
 		}
 		int max = 20;
-		u8* buf = builtin__malloc_noscan((int)(max + 1));
+		u8* buf = builtin__malloc_noscan(max + 1);
 		bool is_neg = false;
 		if (n < 0) {
 			n = -n;
@@ -4789,13 +7097,13 @@ VV_LOC string builtin__impl_i64_to_string(i64 nn) {
 		index--;
 		for (;;) {
 			if (!(n > 0)) break;
-			i64 n1 = (i64)(n / ((i64)(100)));
-			d = ((((u32)((i64)(n - ((i64)(n1 * ((i64)(100))))))) << ((i64)(1))));
+			i64 n1 = VSAFE_DIV_i64(n , ((i64)(100)));
+			d = (v__lshift_u32(((u32)(n - (n1 * ((i64)(100))))), (u64)((i64)(1))));
 			n = n1;
-			buf[index] = _const_digit_pairs.str[ d];
+			buf[index] = _const_digit_pairs.str[ ((int)(d))];
 			index--;
 			d++;
-			buf[index] = _const_digit_pairs.str[ d];
+			buf[index] = _const_digit_pairs.str[ ((int)(d))];
 			index--;
 		}
 		index++;
@@ -4806,8 +7114,8 @@ VV_LOC string builtin__impl_i64_to_string(i64 nn) {
 			index--;
 			buf[index] = '-';
 		}
-		int diff = (int)(max - index);
-		builtin__vmemmove(buf, ((voidptr)(buf + index)), (int)(diff + 1));
+		int diff = max - index;
+		builtin__vmemmove(buf, ((voidptr)(buf + index)), diff + 1);
 		return builtin__tos(buf, diff);
 	}
 	return (string){.str=(byteptr)"", .is_lit=1};
@@ -4820,27 +7128,27 @@ inline string builtin__u64_str(u64 nn) {
 			return _S("0");
 		}
 		int max = 20;
-		u8* buf = builtin__malloc_noscan((int)(max + 1));
+		u8* buf = builtin__malloc_noscan(max + 1);
 		int index = max;
 		buf[index] = 0;
 		index--;
 		for (;;) {
 			if (!(n > 0)) break;
-			u64 n1 = (u64)(n / 100);
-			d = ((((u64)(n - ((u64)(n1 * 100)))) << 1));
+			u64 n1 = VSAFE_DIV_u64(n , 100);
+			d = (v__lshift_u64((n - (n1 * 100)), (u64)1));
 			n = n1;
-			buf[index] = _const_digit_pairs.str[ d];
+			buf[index] = _const_digit_pairs.str[ ((int)(d))];
 			index--;
 			d++;
-			buf[index] = _const_digit_pairs.str[ d];
+			buf[index] = _const_digit_pairs.str[ ((int)(d))];
 			index--;
 		}
 		index++;
 		if (d < 20) {
 			index++;
 		}
-		int diff = (int)(max - index);
-		builtin__vmemmove(buf, ((voidptr)(buf + index)), (int)(diff + 1));
+		int diff = max - index;
+		builtin__vmemmove(buf, ((voidptr)(buf + index)), diff + 1);
 		return builtin__tos(buf, diff);
 	}
 	return (string){.str=(byteptr)"", .is_lit=1};
@@ -4856,16 +7164,16 @@ inline VV_LOC string builtin__u64_to_hex_no_leading_zeros(u64 nn, u8 len) {
 	Array_fixed_u8_17 buf = {0};
 	buf[len] = 0;
 	int i = 0;
-	for (i = (u8)(len - 1); i >= 0; i--) {
+	for (i = (len - 1); i >= 0; i--) {
 		u8 d = ((u8)((n & 0xF)));
 		buf[i] = (d < 10 ? ((rune)(d + '0')) : ((u8)(d + 87)));
-		n = (n >> 4);
+		n = v__rshift_u64(n, (u64)4);
 		if (n == 0) {
 			break;
 		}
 	}
 	int res_len = (int)(len - i);
-	return builtin__tos(builtin__memdup(&buf[i], (int)(res_len + 1)), res_len);
+	return builtin__tos(builtin__memdup(&buf[i], res_len + 1), res_len);
 }
 string builtin__u64_hex(u64 nn) {
 	if (nn == 0) {
@@ -4876,11 +7184,18 @@ string builtin__u64_hex(u64 nn) {
 string builtin__voidptr_str(voidptr nn) {
 	return builtin__string__plus(_S("0x"), builtin__u64_hex(((u64)(nn))));
 }
+string builtin__byteptr_str(byteptr nn) {
+	return builtin__string__plus(_S("0x"), builtin__u64_hex(((u64)(nn))));
+}
+string builtin__charptr_str(charptr nn) {
+	return builtin__string__plus(_S("0x"), builtin__u64_hex(((u64)(nn))));
+}
 string builtin__u8_str(u8 b) {
 	return builtin__int_str_l(((int)(b)), 4);
 }
 string builtin__u8_ascii_str(u8 b) {
-	string str = ((string){.str = builtin__malloc_noscan(2), .len = 1});
+	string _t1 = ((string){.str = builtin__malloc_noscan(2), .len = 1});
+	string str = _t1;
 	{ // Unsafe block
 		str.str[0] = b;
 		str.str[1] = 0;
@@ -4898,15 +7213,7 @@ inline VV_LOC bool builtin__fast_string_eq(string a, string b) {
 }
 VV_LOC u64 builtin__map_hash_string(voidptr pkey) {
 	string key = *((string*)(pkey));
-	#if defined(_VNATIVE)
-	{
-	}
-	#else
-	{
-		return wyhash(key.str, ((u64)(key.len)), 0, ((u64*)(((voidptr)(_wyp)))));
-	}
-	#endif
-	return 0;
+	return wyhash(key.str, ((u64)(key.len)), 0, ((u64*)(((voidptr)(_wyp)))));
 }
 VV_LOC u64 builtin__map_hash_int_1(voidptr pkey) {
 	return wyhash64(*((u8*)(pkey)), 0);
@@ -4997,13 +7304,18 @@ VV_LOC void builtin__DenseArray_zeros_to_end(DenseArray* d) {
 		builtin___v_free(tmp_key);
 		d->deletes = 0;
 		builtin___v_free(d->all_deleted);
+		d->all_deleted = ((void*)0);
 	}
 	d->len = count;
 	int old_cap = d->cap;
-	d->cap = (count < 8 ? (8) : (count));
+	if (count < 8) {
+		d->cap = 8;
+	} else {
+		d->cap = count;
+	}
 	{ // Unsafe block
-		d->values = builtin__realloc_data(d->values, (int)(d->value_bytes * old_cap), (int)(d->value_bytes * d->cap));
-		d->keys = builtin__realloc_data(d->keys, (int)(d->key_bytes * old_cap), (int)(d->key_bytes * d->cap));
+		d->values = builtin__realloc_data(d->values, d->value_bytes * old_cap, d->value_bytes * d->cap);
+		d->keys = builtin__realloc_data(d->keys, d->key_bytes * old_cap, d->key_bytes * d->cap);
 	}
 }
 inline VV_LOC DenseArray builtin__new_dense_array(int key_bytes, int value_bytes) {
@@ -5015,31 +7327,50 @@ inline VV_LOC DenseArray builtin__new_dense_array(int key_bytes, int value_bytes
 		.len = 0,
 		.deletes = 0,
 		.all_deleted = ((void*)0),
-		.keys = builtin___v_malloc(builtin____at_least_one((u64)(((u64)(cap)) * ((u64)(key_bytes))))),
-		.values = builtin___v_malloc(builtin____at_least_one((u64)(((u64)(cap)) * ((u64)(value_bytes))))),
+		.keys = builtin___v_malloc(builtin____at_least_one(((u64)(cap)) * ((u64)(key_bytes)))),
+		.values = builtin___v_malloc(builtin____at_least_one(((u64)(cap)) * ((u64)(value_bytes)))),
 	});
 }
 inline VV_LOC voidptr builtin__DenseArray_key(DenseArray* d, int i) {
-	return ((voidptr)(d->keys + (int)(i * d->key_bytes)));
+	return ((voidptr)(d->keys + i * d->key_bytes));
 }
 inline VV_LOC voidptr builtin__DenseArray_value(DenseArray* d, int i) {
-	return ((voidptr)(d->values + (int)(i * d->value_bytes)));
+	return ((voidptr)(d->values + i * d->value_bytes));
 }
 inline VV_LOC bool builtin__DenseArray_has_index(DenseArray* d, int i) {
 	return d->deletes == 0 || d->all_deleted[i] == 0;
 }
+inline VV_LOC void builtin__DenseArray_trim_deleted_tail(DenseArray* d) {
+	if (d->deletes == 0) {
+		return;
+	}
+	for (;;) {
+		if (!(d->len > 0 && d->all_deleted[d->len - 1] != 0)) break;
+		{ // Unsafe block
+			d->all_deleted[d->len - 1] = 0;
+		}
+		d->deletes--;
+		d->len--;
+	}
+	if (d->deletes == 0) {
+		{ // Unsafe block
+			builtin___v_free(d->all_deleted);
+			d->all_deleted = ((void*)0);
+		}
+	}
+}
 inline VV_LOC int builtin__DenseArray_expand(DenseArray* d) {
 	int old_cap = d->cap;
-	int old_key_size = (int)(d->key_bytes * old_cap);
-	int old_value_size = (int)(d->value_bytes * old_cap);
+	int old_key_size = d->key_bytes * old_cap;
+	int old_value_size = d->value_bytes * old_cap;
 	if (d->cap == d->len) {
-		d->cap += (d->cap >> 3);
+		d->cap += v__rshift_int(d->cap, (u64)3);
 		{ // Unsafe block
-			d->keys = builtin__realloc_data(d->keys, old_key_size, (int)(d->key_bytes * d->cap));
-			d->values = builtin__realloc_data(d->values, old_value_size, (int)(d->value_bytes * d->cap));
+			d->keys = builtin__realloc_data(d->keys, old_key_size, d->key_bytes * d->cap);
+			d->values = builtin__realloc_data(d->values, old_value_size, d->value_bytes * d->cap);
 			if (d->deletes != 0) {
 				d->all_deleted = builtin__realloc_data(d->all_deleted, old_cap, d->cap);
-				builtin__vmemset(((voidptr)(d->all_deleted + d->len)), 0, (int)(d->cap - d->len));
+				builtin__vmemset(((voidptr)(d->all_deleted + d->len)), 0, d->cap - d->len);
 			}
 		}
 	}
@@ -5081,7 +7412,7 @@ VV_LOC bool builtin__map_map_eq(map a, map b) {
 		}
 		voidptr va = builtin__DenseArray_value(&a.key_values, i);
 		voidptr vb = builtin__map_get(&b, k, va);
-		if (memcmp(va, vb, a.value_bytes) != 0) {
+		if (builtin__vmemcmp(va, vb, a.value_bytes) != 0) {
 			return false;
 		}
 	}
@@ -5091,7 +7422,7 @@ inline VV_LOC void builtin__map_clone_string(voidptr dest, voidptr pkey) {
 	{ // Unsafe block
 		string s = *((string*)(pkey));
 		string cloned = builtin__string_clone(s);
-		memcpy(dest, ((voidptr)(&cloned)), sizeof(string));
+		builtin__vmemcpy(dest, ((voidptr)(&cloned)), sizeof(string));
 	}
 }
 inline VV_LOC void builtin__map_clone_int_1(voidptr dest, voidptr pkey) {
@@ -5119,8 +7450,8 @@ inline VV_LOC void builtin__map_free_string(voidptr pkey) {
 }
 inline VV_LOC void builtin__map_free_nop(voidptr _d1) {
 }
-VV_LOC map builtin__new_map(int key_bytes, int value_bytes, u64 (*hash_fn)(voidptr ), bool (*key_eq_fn)(voidptr , voidptr ), void (*clone_fn)(voidptr , voidptr ), void (*free_fn)(voidptr )) {
-	int metasize = ((int)((u32)(sizeof(u32) * ((int_literal)(_const_init_capicity + _const_extra_metas_inc)))));
+VV_LOC map builtin__new_map(int key_bytes, int value_bytes, u64 (*hash_fn)(voidptr _d1), bool (*key_eq_fn)(voidptr _d1, voidptr _d2), void (*clone_fn)(voidptr _d1, voidptr _d2), void (*free_fn)(voidptr _d1)) {
+	int metasize = ((int)((u32)(sizeof(u32) * (_const_init_capicity + _const_extra_metas_inc))));
 	bool has_string_keys = key_bytes > ((int)(sizeof(voidptr)));
 	return ((map){
 		.key_bytes = key_bytes,
@@ -5132,15 +7463,15 @@ VV_LOC map builtin__new_map(int key_bytes, int value_bytes, u64 (*hash_fn)(voidp
 		.metas = ((u32*)(builtin__vcalloc_noscan(metasize))),
 		.extra_metas = _const_extra_metas_inc,
 		.has_string_keys = has_string_keys,
-		.hash_fn = (voidptr)hash_fn,
-		.key_eq_fn = (voidptr)key_eq_fn,
-		.clone_fn = (voidptr)clone_fn,
-		.free_fn = (voidptr)free_fn,
+		.hash_fn = hash_fn,
+		.key_eq_fn = key_eq_fn,
+		.clone_fn = clone_fn,
+		.free_fn = free_fn,
 		.len = 0,
 	});
 }
-VV_LOC map builtin__new_map_init(u64 (*hash_fn)(voidptr ), bool (*key_eq_fn)(voidptr , voidptr ), void (*clone_fn)(voidptr , voidptr ), void (*free_fn)(voidptr ), int n, int key_bytes, int value_bytes, voidptr keys, voidptr values) {
-	map out = builtin__new_map(key_bytes, value_bytes, (voidptr)hash_fn, (voidptr)key_eq_fn, (voidptr)clone_fn, (voidptr)free_fn);
+VV_LOC map builtin__new_map_init(u64 (*hash_fn)(voidptr _d1), bool (*key_eq_fn)(voidptr _d1, voidptr _d2), void (*clone_fn)(voidptr _d1, voidptr _d2), void (*free_fn)(voidptr _d1), int n, int key_bytes, int value_bytes, voidptr keys, voidptr values) {
+	map out = builtin__new_map(key_bytes, value_bytes, hash_fn, key_eq_fn, clone_fn, free_fn);
 	u8* pkey = ((u8*)(keys));
 	u8* pval = ((u8*)(values));
 	for (int _t1 = 0; _t1 < n; ++_t1) {
@@ -5163,8 +7494,8 @@ void builtin__map_clear(map* m) {
 			builtin___v_free(m->key_values.all_deleted);
 			m->key_values.all_deleted = ((void*)0);
 		}
-		builtin__vmemset(m->key_values.keys, 0, (int)(m->key_values.key_bytes * m->key_values.cap));
-		builtin__vmemset(m->metas, 0, (u32)(sizeof(u32) * ((u32)((u32)(m->even_index + 2) + m->extra_metas))));
+		builtin__vmemset(m->key_values.keys, 0, m->key_values.key_bytes * m->key_values.cap);
+		builtin__vmemset(m->metas, 0, sizeof(u32) * (m->even_index + 2 + m->extra_metas));
 	}
 	m->key_values.len = 0;
 	m->key_values.deletes = 0;
@@ -5174,9 +7505,18 @@ void builtin__map_clear(map* m) {
 	m->len = 0;
 }
 inline VV_LOC multi_return_u32_u32 builtin__map_key_to_index(map* m, voidptr pkey) {
+	if (((voidptr)(m->hash_fn)) == ((void*)0)) {
+		{ // Unsafe block
+			u64* p = ((u64*)(m));
+			u64 prev2 = (((u64*)(((usize)(m)) - ((usize)(16)))))[0];
+			u64 prev1 = (((u64*)(((usize)(m)) - ((usize)(8)))))[0];
+			builtin___v_panic(builtin__string_plus_many(34, _MOV((string[34]){_S("map.hash_fn is nil map_ptr="), builtin__usize_str(((usize)(m))), _S(" key_bytes="), builtin__int_str(m->key_bytes), _S(" value_bytes="), builtin__int_str(m->value_bytes), _S(" even_index="), builtin__u32_str(m->even_index), _S(" shift="), builtin__u8_str(m->shift), _S(" metas="), builtin__usize_str(((usize)(m->metas))), _S(" prev2="), builtin__u64_str(prev2), _S(" prev1="), builtin__u64_str(prev1), _S(" w0="), builtin__u64_str(p[0]), _S(" w1="), builtin__u64_str(p[1]), _S(" w2="), builtin__u64_str(p[2]), _S(" w3="), builtin__u64_str(p[3]), _S(" w4="), builtin__u64_str(p[4]), _S(" w5="), builtin__u64_str(p[5]), _S(" w6="), builtin__u64_str(p[6]), _S(" w7="), builtin__u64_str(p[7]), _S(" hash_fn="), builtin__usize_str(((usize)(((voidptr)(m->hash_fn)))))})));
+			VUNREACHABLE();
+		}
+	}
 	u64 hash = m->hash_fn(pkey);
 	u64 index = (hash & m->even_index);
-	u64 meta = (((((hash >> m->shift)) & _const_hash_mask)) | _const_probe_inc);
+	u64 meta = ((((v__rshift_u64(hash, (u64)m->shift)) & _const_hash_mask)) | _const_probe_inc);
 	return (multi_return_u32_u32){.arg0=((u32)(index)), .arg1=((u32)(meta))};
 }
 inline VV_LOC multi_return_u32_u32 builtin__map_meta_less(map* m, u32 _index, u32 _metas) {
@@ -5200,45 +7540,45 @@ inline VV_LOC void builtin__map_meta_greater(map* m, u32 _index, u32 _metas, u32
 				u32 tmp_meta = m->metas[index];
 				m->metas[index] = meta;
 				meta = tmp_meta;
-				u32 tmp_index = m->metas[(u32)(index + 1)];
-				m->metas[(u32)(index + 1)] = kv_index;
+				u32 tmp_index = m->metas[index + 1];
+				m->metas[index + 1] = kv_index;
 				kv_index = tmp_index;
 			}
 		}
 		index += 2;
 		meta += _const_probe_inc;
-		if ((u32)(index + 2) >= (u32)((u32)(m->even_index + 2) + m->extra_metas)) {
+		if (index + 2 >= m->even_index + 2 + m->extra_metas) {
 			builtin__map_ensure_extra_metas_grow(m);
 		}
 	}
 	{ // Unsafe block
 		m->metas[index] = meta;
-		m->metas[(u32)(index + 1)] = kv_index;
+		m->metas[index + 1] = kv_index;
 	}
-	u32 probe_count = (u32)(((meta >> _const_hashbits)) - 1);
+	u32 probe_count = (v__rshift_u32(meta, (u64)_const_hashbits)) - 1;
 	builtin__map_ensure_extra_metas(m, probe_count);
 }
 VV_LOC void builtin__map_ensure_extra_metas_grow(map* m) {
 	u32 size_of_u32 = sizeof(u32);
-	u32 old_mem_size = ((u32)((u32)(m->even_index + 2) + m->extra_metas));
+	u32 old_mem_size = (m->even_index + 2 + m->extra_metas);
 	m->extra_metas += _const_extra_metas_inc;
-	u32 mem_size = ((u32)((u32)(m->even_index + 2) + m->extra_metas));
+	u32 mem_size = (m->even_index + 2 + m->extra_metas);
 	{ // Unsafe block
-		u8* x = builtin__realloc_data(((u8*)(m->metas)), ((int)((u32)(size_of_u32 * old_mem_size))), ((int)((u32)(size_of_u32 * mem_size))));
+		u8* x = builtin__realloc_data(((byteptr)(m->metas)), ((int)(size_of_u32 * old_mem_size)), ((int)(size_of_u32 * mem_size)));
 		m->metas = ((u32*)(x));
-		builtin__vmemset(((u8*)(m->metas)) + (u32)(((u32)(mem_size - _const_extra_metas_inc)) * size_of_u32), 0, ((int)((u32)(sizeof(u32) * _const_extra_metas_inc))));
+		builtin__vmemset(((byteptr)(m->metas)) + (mem_size - _const_extra_metas_inc) * size_of_u32, 0, ((int)(sizeof(u32) * _const_extra_metas_inc)));
 	}
 }
 inline VV_LOC void builtin__map_ensure_extra_metas(map* m, u32 probe_count) {
-	if (((probe_count << 1)) == m->extra_metas) {
+	if ((v__lshift_u32(probe_count, (u64)1)) == m->extra_metas) {
 		u32 size_of_u32 = sizeof(u32);
-		u32 old_mem_size = ((u32)((u32)(m->even_index + 2) + m->extra_metas));
+		u32 old_mem_size = (m->even_index + 2 + m->extra_metas);
 		m->extra_metas += _const_extra_metas_inc;
-		u32 mem_size = ((u32)((u32)(m->even_index + 2) + m->extra_metas));
+		u32 mem_size = (m->even_index + 2 + m->extra_metas);
 		{ // Unsafe block
-			u8* x = builtin__realloc_data(((u8*)(m->metas)), ((int)((u32)(size_of_u32 * old_mem_size))), ((int)((u32)(size_of_u32 * mem_size))));
+			u8* x = builtin__realloc_data(((byteptr)(m->metas)), ((int)(size_of_u32 * old_mem_size)), ((int)(size_of_u32 * mem_size)));
 			m->metas = ((u32*)(x));
-			builtin__vmemset(((u8*)(m->metas)) + (u32)(((u32)(mem_size - _const_extra_metas_inc)) * size_of_u32), 0, ((int)((u32)(sizeof(u32) * _const_extra_metas_inc))));
+			builtin__vmemset(((byteptr)(m->metas)) + (mem_size - _const_extra_metas_inc) * size_of_u32, 0, ((int)(sizeof(u32) * _const_extra_metas_inc)));
 		}
 		if (probe_count == 252) {
 			builtin___v_panic(_S("Probe overflow"));
@@ -5247,18 +7587,18 @@ inline VV_LOC void builtin__map_ensure_extra_metas(map* m, u32 probe_count) {
 	}
 }
 VV_LOC void builtin__map_set(map* m, voidptr key, voidptr value) {
-	if ((u32)(((u32)(5)) * ((u32)(m->len))) > (u32)(((u32)(2)) * m->even_index)) {
+	if (((u32)(5)) * ((u32)(m->len)) > ((u32)(2)) * m->even_index) {
 		builtin__map_expand(m);
 	}
-	multi_return_u32_u32 mr_13875 = builtin__map_key_to_index(m, key);
-	u32 index = mr_13875.arg0;
-	u32 meta = mr_13875.arg1;
-	multi_return_u32_u32 mr_13911 = builtin__map_meta_less(m, index, meta);
-	index = mr_13911.arg0;
-	meta = mr_13911.arg1;
+	multi_return_u32_u32 mr_14546 = builtin__map_key_to_index(m, key);
+	u32 index = mr_14546.arg0;
+	u32 meta = mr_14546.arg1;
+	multi_return_u32_u32 mr_14582 = builtin__map_meta_less(m, index, meta);
+	index = mr_14582.arg0;
+	meta = mr_14582.arg1;
 	for (;;) {
 		if (!(meta == m->metas[index])) break;
-		int kv_index = ((int)(m->metas[(u32)(index + 1)]));
+		int kv_index = ((int)(m->metas[index + 1]));
 		voidptr pkey = builtin__DenseArray_key(&m->key_values, kv_index);
 		if (m->key_eq_fn(key, pkey)) {
 			{ // Unsafe block
@@ -5275,14 +7615,14 @@ VV_LOC void builtin__map_set(map* m, voidptr key, voidptr value) {
 		voidptr pkey = builtin__DenseArray_key(&m->key_values, kv_index);
 		voidptr pvalue = builtin__DenseArray_value(&m->key_values, kv_index);
 		m->clone_fn(pkey, key);
-		builtin__vmemcpy(((u8*)(pvalue)), value, m->value_bytes);
+		builtin__vmemcpy(pvalue, value, m->value_bytes);
 	}
 	builtin__map_meta_greater(m, index, meta, ((u32)(kv_index)));
 	m->len++;
 }
 VV_LOC void builtin__map_expand(map* m) {
 	u32 old_cap = m->even_index;
-	m->even_index = (u32)(((((u32)(m->even_index + 2)) << 1)) - 2);
+	m->even_index = (v__lshift_u32((m->even_index + 2), (u64)1)) - 2;
 	if (m->cached_hashbits == 0) {
 		m->shift += _const_max_cached_hashbits;
 		m->cached_hashbits = _const_max_cached_hashbits;
@@ -5293,12 +7633,12 @@ VV_LOC void builtin__map_expand(map* m) {
 	}
 }
 VV_LOC void builtin__map_rehash(map* m) {
-	u32 meta_bytes = (u32)(sizeof(u32) * ((u32)((u32)(m->even_index + 2) + m->extra_metas)));
-	builtin__map_reserve(m, meta_bytes);
+	u32 meta_bytes = sizeof(u32) * (m->even_index + 2 + m->extra_metas);
+	builtin__map_reserve_metas(m, meta_bytes);
 }
-void builtin__map_reserve(map* m, u32 meta_bytes) {
+VV_LOC void builtin__map_reserve_metas(map* m, u32 meta_bytes) {
 	{ // Unsafe block
-		u8* x = builtin__v_realloc(((u8*)(m->metas)), ((int)(meta_bytes)));
+		u8* x = builtin__v_realloc(((byteptr)(m->metas)), ((int)(meta_bytes)));
 		m->metas = ((u32*)(x));
 		builtin__vmemset(m->metas, 0, ((int)(meta_bytes)));
 	}
@@ -5307,45 +7647,51 @@ void builtin__map_reserve(map* m, u32 meta_bytes) {
 			continue;
 		}
 		voidptr pkey = builtin__DenseArray_key(&m->key_values, i);
-		multi_return_u32_u32 mr_15672 = builtin__map_key_to_index(m, pkey);
-		u32 index = mr_15672.arg0;
-		u32 meta = mr_15672.arg1;
-		multi_return_u32_u32 mr_15710 = builtin__map_meta_less(m, index, meta);
-		index = mr_15710.arg0;
-		meta = mr_15710.arg1;
+		multi_return_u32_u32 mr_16309 = builtin__map_key_to_index(m, pkey);
+		u32 index = mr_16309.arg0;
+		u32 meta = mr_16309.arg1;
+		multi_return_u32_u32 mr_16347 = builtin__map_meta_less(m, index, meta);
+		index = mr_16347.arg0;
+		meta = mr_16347.arg1;
 		builtin__map_meta_greater(m, index, meta, ((u32)(i)));
+	}
+}
+void builtin__map_reserve(map* m, u32 n) {
+	for (;;) {
+		if (!(((u64)(n)) * 5 > ((u64)(m->even_index)) * 2)) break;
+		builtin__map_expand(m);
 	}
 }
 VV_LOC void builtin__map_cached_rehash(map* m, u32 old_cap) {
 	u32* old_metas = m->metas;
-	int metasize = ((int)((u32)(sizeof(u32) * ((u32)((u32)(m->even_index + 2) + m->extra_metas)))));
+	int metasize = ((int)(sizeof(u32) * (m->even_index + 2 + m->extra_metas)));
 	m->metas = ((u32*)(builtin__vcalloc(metasize)));
 	u32 old_extra_metas = m->extra_metas;
-	for (u32 i = ((u32)(0)); i <= (u32)(old_cap + old_extra_metas); i += 2) {
+	for (u32 i = ((u32)(0)); i <= old_cap + old_extra_metas; i += 2) {
 		if (old_metas[i] == 0) {
 			continue;
 		}
 		u32 old_meta = old_metas[i];
-		u32 old_probe_count = (((u32)(((old_meta >> _const_hashbits)) - 1)) << 1);
-		u32 old_index = (((u32)(i - old_probe_count)) & ((m->even_index >> 1)));
-		u32 index = (((old_index | ((old_meta << m->shift)))) & m->even_index);
+		u32 old_probe_count = v__lshift_u32(((v__rshift_u32(old_meta, (u64)_const_hashbits)) - 1), (u64)1);
+		u32 old_index = ((i - old_probe_count) & (v__rshift_u32(m->even_index, (u64)1)));
+		u32 index = (((old_index | (v__lshift_u32(old_meta, (u64)m->shift)))) & m->even_index);
 		u32 meta = (((old_meta & _const_hash_mask)) | _const_probe_inc);
-		u32 kv_index = old_metas[(u32)(i + 1)];
-		multi_return_u32_u32 mr_16554 = builtin__map_meta_less(m, index, meta);
-		index = mr_16554.arg0;
-		meta = mr_16554.arg1;
+		u32 kv_index = old_metas[i + 1];
+		multi_return_u32_u32 mr_17370 = builtin__map_meta_less(m, index, meta);
+		index = mr_17370.arg0;
+		meta = mr_17370.arg1;
 		builtin__map_meta_greater(m, index, meta, kv_index);
 	}
 	builtin___v_free(old_metas);
 }
 VV_LOC voidptr builtin__map_get_and_set(map* m, voidptr key, voidptr zero) {
 	for (;;) {
-		multi_return_u32_u32 mr_16960 = builtin__map_key_to_index(m, key);
-		u32 index = mr_16960.arg0;
-		u32 meta = mr_16960.arg1;
+		multi_return_u32_u32 mr_17776 = builtin__map_key_to_index(m, key);
+		u32 index = mr_17776.arg0;
+		u32 meta = mr_17776.arg1;
 		for (;;) {
 			if (meta == m->metas[index]) {
-				int kv_index = ((int)(m->metas[(u32)(index + 1)]));
+				int kv_index = ((int)(m->metas[index + 1]));
 				voidptr pkey = builtin__DenseArray_key(&m->key_values, kv_index);
 				if (m->key_eq_fn(key, pkey)) {
 					voidptr pval = builtin__DenseArray_value(&m->key_values, kv_index);
@@ -5366,12 +7712,12 @@ VV_LOC voidptr builtin__map_get(map* m, voidptr key, voidptr zero) {
 	if (m->len == 0) {
 		return zero;
 	}
-	multi_return_u32_u32 mr_17721 = builtin__map_key_to_index(m, key);
-	u32 index = mr_17721.arg0;
-	u32 meta = mr_17721.arg1;
+	multi_return_u32_u32 mr_18537 = builtin__map_key_to_index(m, key);
+	u32 index = mr_18537.arg0;
+	u32 meta = mr_18537.arg1;
 	for (;;) {
 		if (meta == m->metas[index]) {
-			int kv_index = ((int)(m->metas[(u32)(index + 1)]));
+			int kv_index = ((int)(m->metas[index + 1]));
 			voidptr pkey = builtin__DenseArray_key(&m->key_values, kv_index);
 			if (m->key_eq_fn(key, pkey)) {
 				voidptr pval = builtin__DenseArray_value(&m->key_values, kv_index);
@@ -5390,12 +7736,12 @@ VV_LOC voidptr builtin__map_get_check(map* m, voidptr key) {
 	if (m->len == 0) {
 		return 0;
 	}
-	multi_return_u32_u32 mr_18417 = builtin__map_key_to_index(m, key);
-	u32 index = mr_18417.arg0;
-	u32 meta = mr_18417.arg1;
+	multi_return_u32_u32 mr_19233 = builtin__map_key_to_index(m, key);
+	u32 index = mr_19233.arg0;
+	u32 meta = mr_19233.arg1;
 	for (;;) {
 		if (meta == m->metas[index]) {
-			int kv_index = ((int)(m->metas[(u32)(index + 1)]));
+			int kv_index = ((int)(m->metas[index + 1]));
 			voidptr pkey = builtin__DenseArray_key(&m->key_values, kv_index);
 			if (m->key_eq_fn(key, pkey)) {
 				voidptr pval = builtin__DenseArray_value(&m->key_values, kv_index);
@@ -5414,12 +7760,12 @@ VV_LOC bool builtin__map_exists(map* m, voidptr key) {
 	if (m->len == 0) {
 		return false;
 	}
-	multi_return_u32_u32 mr_18962 = builtin__map_key_to_index(m, key);
-	u32 index = mr_18962.arg0;
-	u32 meta = mr_18962.arg1;
+	multi_return_u32_u32 mr_19778 = builtin__map_key_to_index(m, key);
+	u32 index = mr_19778.arg0;
+	u32 meta = mr_19778.arg1;
 	for (;;) {
 		if (meta == m->metas[index]) {
-			int kv_index = ((int)(m->metas[(u32)(index + 1)]));
+			int kv_index = ((int)(m->metas[index + 1]));
 			voidptr pkey = builtin__DenseArray_key(&m->key_values, kv_index);
 			if (m->key_eq_fn(key, pkey)) {
 				return true;
@@ -5434,6 +7780,11 @@ VV_LOC bool builtin__map_exists(map* m, voidptr key) {
 	return false;
 }
 inline VV_LOC void builtin__DenseArray_delete(DenseArray* d, int i) {
+	if (i == d->len - 1) {
+		d->len--;
+		builtin__DenseArray_trim_deleted_tail(d);
+		return;
+	}
 	if (d->deletes == 0) {
 		d->all_deleted = builtin__vcalloc(d->cap);
 	}
@@ -5443,22 +7794,22 @@ inline VV_LOC void builtin__DenseArray_delete(DenseArray* d, int i) {
 	}
 }
 void builtin__map_delete(map* m, voidptr key) {
-	multi_return_u32_u32 mr_19600 = builtin__map_key_to_index(m, key);
-	u32 index = mr_19600.arg0;
-	u32 meta = mr_19600.arg1;
-	multi_return_u32_u32 mr_19636 = builtin__map_meta_less(m, index, meta);
-	index = mr_19636.arg0;
-	meta = mr_19636.arg1;
+	multi_return_u32_u32 mr_20483 = builtin__map_key_to_index(m, key);
+	u32 index = mr_20483.arg0;
+	u32 meta = mr_20483.arg1;
+	multi_return_u32_u32 mr_20519 = builtin__map_meta_less(m, index, meta);
+	index = mr_20519.arg0;
+	meta = mr_20519.arg1;
 	for (;;) {
 		if (!(meta == m->metas[index])) break;
-		int kv_index = ((int)(m->metas[(u32)(index + 1)]));
+		int kv_index = ((int)(m->metas[index + 1]));
 		voidptr pkey = builtin__DenseArray_key(&m->key_values, kv_index);
 		if (m->key_eq_fn(key, pkey)) {
 			for (;;) {
-				if (!(((m->metas[(u32)(index + 2)] >> _const_hashbits)) > 1)) break;
+				if (!((v__rshift_u32(m->metas[index + 2], (u64)_const_hashbits)) > 1)) break;
 				{ // Unsafe block
-					m->metas[index] = (u32)(m->metas[(u32)(index + 2)] - _const_probe_inc);
-					m->metas[(u32)(index + 1)] = m->metas[(u32)(index + 3)];
+					m->metas[index] = m->metas[index + 2] - _const_probe_inc;
+					m->metas[index + 1] = m->metas[index + 3];
 				}
 				index += 2;
 			}
@@ -5472,7 +7823,7 @@ void builtin__map_delete(map* m, voidptr key) {
 			if (m->key_values.len <= 32) {
 				return;
 			}
-			if (_us32_ge(m->key_values.deletes,((m->key_values.len >> 1)))) {
+			if (_us32_ge(m->key_values.deletes,(v__rshift_int(m->key_values.len, (u64)1)))) {
 				builtin__DenseArray_zeros_to_end(&m->key_values);
 				builtin__map_rehash(m);
 			}
@@ -5511,7 +7862,7 @@ array builtin__map_values(map* m) {
 	array values = builtin____new_array(m->len, 0, m->value_bytes);
 	u8* item = ((u8*)(values.data));
 	if (m->key_values.deletes == 0) {
-		builtin__vmemcpy(item, m->key_values.values, (int)(m->value_bytes * m->key_values.len));
+		builtin__vmemcpy(item, m->key_values.values, m->value_bytes * m->key_values.len);
 		return values;
 	}
 	for (int i = 0; i < m->key_values.len; i++) {
@@ -5541,13 +7892,13 @@ VV_LOC DenseArray builtin__DenseArray_clone(DenseArray* d) {
 		if (d->deletes != 0) {
 			res.all_deleted = builtin__memdup(d->all_deleted, d->cap);
 		}
-		res.keys = builtin__memdup(d->keys, (int)(d->cap * d->key_bytes));
-		res.values = builtin__memdup(d->values, (int)(d->cap * d->value_bytes));
+		res.keys = builtin__memdup(d->keys, d->cap * d->key_bytes);
+		res.values = builtin__memdup(d->values, d->cap * d->value_bytes);
 	}
 	return res;
 }
 map builtin__map_clone(map* m) {
-	int metasize = ((int)((u32)(sizeof(u32) * ((u32)((u32)(m->even_index + 2) + m->extra_metas)))));
+	int metasize = ((int)(sizeof(u32) * (m->even_index + 2 + m->extra_metas)));
 	map res = ((map){
 		.key_bytes = m->key_bytes,
 		.value_bytes = m->value_bytes,
@@ -5558,10 +7909,10 @@ map builtin__map_clone(map* m) {
 		.metas = ((u32*)(builtin__malloc_noscan(metasize))),
 		.extra_metas = m->extra_metas,
 		.has_string_keys = m->has_string_keys,
-		.hash_fn = (voidptr)m->hash_fn,
-		.key_eq_fn = (voidptr)m->key_eq_fn,
-		.clone_fn = (voidptr)m->clone_fn,
-		.free_fn = (voidptr)m->free_fn,
+		.hash_fn = m->hash_fn,
+		.key_eq_fn = m->key_eq_fn,
+		.clone_fn = m->clone_fn,
+		.free_fn = m->free_fn,
 		.len = m->len,
 	});
 	builtin__vmemcpy(res.metas, m->metas, metasize);
@@ -5614,10 +7965,19 @@ void builtin__map_free(map* m) {
 			builtin___v_free(m->key_values.values);
 			m->key_values.values = ((void*)0);
 		}
-		m->hash_fn = (voidptr)((void*)0);
-		m->key_eq_fn = (voidptr)((void*)0);
-		m->clone_fn = (voidptr)((void*)0);
-		m->free_fn = (voidptr)((void*)0);
+		m->hash_fn = ((void*)0);
+		m->key_eq_fn = ((void*)0);
+		m->clone_fn = ((void*)0);
+		m->free_fn = ((void*)0);
+		m->key_values.cap = 0;
+		m->key_values.len = 0;
+		m->key_values.deletes = 0;
+		m->even_index = 0;
+		m->cached_hashbits = 0;
+		m->shift = 0;
+		m->extra_metas = 0;
+		m->has_string_keys = false;
+		m->len = 0;
 	}
 }
 void builtin__IError_free(IError* ie) {
@@ -5627,17 +7987,20 @@ void builtin__IError_free(IError* ie) {
 	}
 }
 VNORETURN void builtin__panic_option_not_set(string s) {
-	builtin___v_panic(builtin__string__plus(builtin__string__plus(_S("option not set ("), s), _S(")")));
+	builtin___v_panic(builtin__string_plus_many(3, _MOV((string[3]){_S("option not set ("), s, _S(")")})));
 	VUNREACHABLE();
 	while(1);
 }
 VNORETURN void builtin__panic_result_not_set(string s) {
-	builtin___v_panic(builtin__string__plus(builtin__string__plus(_S("result not set ("), s), _S(")")));
+	builtin___v_panic(builtin__string_plus_many(3, _MOV((string[3]){_S("result not set ("), s, _S(")")})));
 	VUNREACHABLE();
 	while(1);
 }
 VNORETURN void builtin___v_panic(string s) {
-	#if defined(_VFREESTANDING)
+	#if 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_v2_native_windows_pe_minimal)
 	{
 	}
 	#else
@@ -5647,7 +8010,7 @@ VNORETURN void builtin___v_panic(string s) {
 		builtin__eprintln(s);
 		builtin__eprint(_S(" v hash: "));
 		builtin__eprintln(builtin__vcurrent_hash());
-		#if !defined(__vinix__) && !defined(_VNATIVE)
+		#if 1
 		{
 			builtin__eprint(_S("    pid: "));
 			;
@@ -5658,47 +8021,27 @@ VNORETURN void builtin___v_panic(string s) {
 		}
 		#endif
 		builtin__flush_stdout();
-		#if defined(_VNATIVE)
-		{
-		}
-		#elif defined(CUSTOM_DEFINE_exit_after_panic_message)
+		#if defined(CUSTOM_DEFINE_exit_after_panic_message)
 		{
 		}
 		#elif defined(CUSTOM_DEFINE_no_backtrace)
 		{
+			exit(1);
+			VUNREACHABLE();
+		}
+		#elif 0
+		{
 		}
 		#else
 		{
-			#if defined(__TINYC__)
-			{
-				#if defined(CUSTOM_DEFINE_panics_break_into_debugger)
-				{
-				}
-				#else
-				{
-					tcc_backtrace("Backtrace");
-				}
-				#endif
-				exit(1);
-				VUNREACHABLE();
-			}
-			#endif
-			#if defined(CUSTOM_DEFINE_use_libbacktrace)
-			{
-			}
-			#else
-			{
-				builtin__print_backtrace_skipping_top_frames(1);
-			}
-			#endif
-			exit(1);
-			VUNREACHABLE();
 		}
 		#endif
 	}
 	#endif
 	exit(1);
 	VUNREACHABLE();
+	for (;;) {
+	}
 	while(1);
 }
 VNORETURN void builtin__panic_n(string s, i64 number1) {
@@ -5707,19 +8050,23 @@ VNORETURN void builtin__panic_n(string s, i64 number1) {
 	while(1);
 }
 VNORETURN void builtin__panic_n2(string s, i64 number1, i64 number2) {
-	builtin___v_panic(builtin__string__plus(builtin__string__plus(builtin__string__plus(s, builtin__impl_i64_to_string(number1)), _S(", ")), builtin__impl_i64_to_string(number2)));
+	builtin___v_panic(builtin__string_plus_many(4, _MOV((string[4]){s, builtin__impl_i64_to_string(number1), _S(", "), builtin__impl_i64_to_string(number2)})));
 	VUNREACHABLE();
 	while(1);
 }
+VNORETURN VV_LOC void builtin__panic_n3(string s, i64 number1, i64 number2, i64 number3) {
+	builtin___v_panic(builtin__string_plus_many(6, _MOV((string[6]){s, builtin__impl_i64_to_string(number1), _S(", "), builtin__impl_i64_to_string(number2), _S(", "), builtin__impl_i64_to_string(number3)})));
+	VUNREACHABLE();
+	while(1);
+}
+VV_LOC void builtin__set_stream_unbuffered(FILE* stream) {
+	setvbuf(stream, ((char*)(((void*)0))), _IONBF, ((usize)(0)));
+}
 void builtin__eprintln(string s) {
-	if (s.str == 0 || ((u64)(s.str)) <= 0xFFFF) {
-		builtin__eprintln(_S("eprintln(NIL)"));
-		return;
-	}
-	#if defined(_VFREESTANDING)
+	#if 0
 	{
 	}
-	#elif defined(__TARGET_IOS__)
+	#elif 0
 	{
 	}
 	#else
@@ -5732,14 +8079,10 @@ void builtin__eprintln(string s) {
 	#endif
 }
 void builtin__eprint(string s) {
-	if (s.str == 0 || ((u64)(s.str)) <= 0xFFFF) {
-		builtin__eprint(_S("eprint(NIL)"));
-		return;
-	}
-	#if defined(_VFREESTANDING)
+	#if 0
 	{
 	}
-	#elif defined(__TARGET_IOS__)
+	#elif 0
 	{
 	}
 	#else
@@ -5752,10 +8095,13 @@ void builtin__eprint(string s) {
 	#endif
 }
 void builtin__flush_stdout(void) {
-	#if defined(_VFREESTANDING)
+	#if defined(CUSTOM_DEFINE_v2_native_windows_pe_minimal)
 	{
 	}
-	#elif defined(_VNATIVE)
+	#elif 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_builtin_write_buf_to_fd_should_use_c_write)
 	{
 	}
 	#else
@@ -5765,10 +8111,13 @@ void builtin__flush_stdout(void) {
 	#endif
 }
 void builtin__flush_stderr(void) {
-	#if defined(_VFREESTANDING)
+	#if defined(CUSTOM_DEFINE_v2_native_windows_pe_minimal)
 	{
 	}
-	#elif defined(_VNATIVE)
+	#elif 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_builtin_write_buf_to_fd_should_use_c_write)
 	{
 	}
 	#else
@@ -5777,14 +8126,30 @@ void builtin__flush_stderr(void) {
 	}
 	#endif
 }
+void builtin__unbuffer_stdout(void) {
+	#if 0
+	{
+	}
+	#elif 0
+	{
+	}
+	#elif defined(CUSTOM_DEFINE_builtin_write_buf_to_fd_should_use_c_write)
+	{
+	}
+	#else
+	{
+		builtin__set_stream_unbuffered(stdout);
+	}
+	#endif
+}
 void builtin__print(string s) {
-	#if defined(__ANDROID__) && !defined(__TERMUX__)
+	#if 0
 	{
 	}
-	#elif defined(__TARGET_IOS__)
+	#elif 0
 	{
 	}
-	#elif defined(_VFREESTANDING)
+	#elif 0
 	{
 	}
 	#else
@@ -5794,17 +8159,13 @@ void builtin__print(string s) {
 	#endif
 }
 void builtin__println(string s) {
-	if (s.str == 0 || ((u64)(s.str)) <= 0xFFFF) {
-		builtin__println(_S("println(NIL)"));
-		return;
-	}
-	#if defined(__ANDROID__) && !defined(__TERMUX__)
+	#if 0
 	{
 	}
-	#elif defined(__TARGET_IOS__)
+	#elif 0
 	{
 	}
-	#elif defined(_VFREESTANDING)
+	#elif 0
 	{
 	}
 	#else
@@ -5829,26 +8190,36 @@ VV_LOC void builtin___write_buf_to_fd(int fd, u8* buf, int buf_len) {
 	if (buf_len <= 0) {
 		return;
 	}
-	u8* ptr = buf;
-	isize remaining_bytes = ((isize)(buf_len));
-	isize x = ((isize)(0));
-	#if defined(_VFREESTANDING) || defined(__vinix__) || defined(CUSTOM_DEFINE_builtin_write_buf_to_fd_should_use_c_write)
+	#if 0
 	{
 	}
 	#else
 	{
-		voidptr stream = ((voidptr)(stdout));
-		if (fd == 2) {
-			stream = ((voidptr)(stderr));
+		u8* ptr = buf;
+		isize remaining_bytes = ((isize)(buf_len));
+		isize x = ((isize)(0));
+		#if 0
+		{
 		}
-		{ // Unsafe block
-			for (;;) {
-				if (!(remaining_bytes > 0)) break;
-				x = ((isize)(fwrite(ptr, 1, remaining_bytes, stream)));
-				ptr += x;
-				remaining_bytes -= x;
+		#else
+		{
+			voidptr stream = ((voidptr)(stdout));
+			if (fd == 2) {
+				stream = ((voidptr)(stderr));
+			}
+			{ // Unsafe block
+				for (;;) {
+					if (!(remaining_bytes > 0)) break;
+					x = ((isize)(fwrite(ptr, 1, remaining_bytes, stream)));
+					if (x <= 0) {
+						break;
+					}
+					ptr += x;
+					remaining_bytes -= x;
+				}
 			}
 		}
+		#endif
 	}
 	#endif
 }
@@ -5862,10 +8233,16 @@ string Array_rune_string(Array_rune ra) {
 	strings__Builder_free(&sb);
 	return res;
 }
+Array_u8 builtin__rune_bytes(rune c) {
+	Array_u8 res = builtin____new_array_with_default(0, 5, sizeof(u8), 0);
+	u8* buf = ((u8*)(res.data));
+	res.len = builtin__utf32_decode_to_buffer(((u32)(c)), buf);
+	return res;
+}
 rune builtin__rune_to_upper(rune c) {
 	if (c < 0x80) {
 		if (c >= 'a' && c <= 'z') {
-			return (rune)(c - 32);
+			return c - 32;
 		}
 		return c;
 	}
@@ -5874,7 +8251,7 @@ rune builtin__rune_to_upper(rune c) {
 rune builtin__rune_to_lower(rune c) {
 	if (c < 0x80) {
 		if (c >= 'A' && c <= 'Z') {
-			return (rune)(c + 32);
+			return c + 32;
 		}
 		return c;
 	}
@@ -5882,34 +8259,34 @@ rune builtin__rune_to_lower(rune c) {
 }
 VV_LOC rune builtin__rune_map_to(rune c, MapMode mode) {
 	int start = 0;
-	int end = (int)(1264 / _const_rune_maps_columns_in_row);
+	int end = VSAFE_DIV_int(1264 , _const_rune_maps_columns_in_row);
 	for (;;) {
 		if (!(start < end)) break;
-		int middle = (int)(((int)(start + end)) / 2);
-		i32* cur_map = &_const_rune_maps[(int)(middle * _const_rune_maps_columns_in_row)];
+		int middle = VSAFE_DIV_int((start + end) , 2);
+		i32* cur_map = &_const_rune_maps[middle * _const_rune_maps_columns_in_row];
 		if (c >= ((u32)(*cur_map)) && c <= ((u32)(*(cur_map + 1)))) {
 			i32 offset = ((mode == MapMode__to_upper || mode == MapMode__to_title) ? (*(cur_map + 2)) : (*(cur_map + 3)));
 			if (offset == _const_rune_maps_ul) {
-				rune cnt = (rune)(((rune)(c - *cur_map)) % 2);
+				rune cnt = VSAFE_MOD_rune(((rune)(c - *cur_map)) , 2);
 				if (mode == MapMode__to_lower) {
-					return (rune)((rune)(c + 1) - cnt);
+					return c + 1 - cnt;
 				}
-				return (rune)(c - cnt);
+				return c - cnt;
 			} else if (offset == _const_rune_maps_utl) {
-				rune cnt = (rune)(((rune)(c - *cur_map)) % 3);
+				rune cnt = VSAFE_MOD_rune(((rune)(c - *cur_map)) , 3);
 				if (mode == MapMode__to_upper) {
-					return (rune)(c - cnt);
+					return c - cnt;
 				} else if (mode == MapMode__to_lower) {
-					return (rune)((rune)(c + 2) - cnt);
+					return c + 2 - cnt;
 				}
-				return (rune)((rune)(c + 1) - cnt);
+				return c + 1 - cnt;
 			}
 			return (rune)(c + offset);
 		}
 		if (c < ((u32)(*cur_map))) {
 			end = middle;
 		} else {
-			start = (int)(middle + 1);
+			start = middle + 1;
 		}
 	}
 	return c;
@@ -5917,23 +8294,23 @@ VV_LOC rune builtin__rune_map_to(rune c, MapMode mode) {
 Array_rune builtin__string_runes(string s) {
 	Array_rune runes = builtin____new_array_with_default(0, s.len, sizeof(rune), 0);
 	for (int i = 0; i < s.len; i++) {
-		int char_len = builtin__utf8_char_len(s.str[i]);
+		multi_return_rune_int mr_2797 = builtin__utf8_decode_rune(&s.str[i], s.len - i);
+		rune r = mr_2797.arg0;
+		int char_len = mr_2797.arg1;
+		builtin__array_push((array*)&runes, _MOV((rune[]){ r }));
 		if (char_len > 1) {
-			int end = ((int)(s.len - 1) >= (int)(i + char_len) ? ((int)(i + char_len)) : (s.len));
-			string r = builtin__string_substr(s, i, end);
-			builtin__array_push((array*)&runes, _MOV((rune[]){ builtin__string_utf32_code(r) }));
-			i += (int)(char_len - 1);
-		} else {
-			builtin__array_push((array*)&runes, _MOV((rune[]){ s.str[i] }));
+			i += char_len - 1;
 		}
 	}
 	return runes;
 }
 string builtin__cstring_to_vstring(const char* const_s) {
-	return builtin__string_clone(builtin__tos2(((u8*)(const_s))));
+	string s = builtin__tos2(((byteptr)(const_s)));
+	return builtin__string_clone(s);
 }
 string builtin__tos_clone(const u8* const_s) {
-	return builtin__string_clone(builtin__tos2(((u8*)(const_s))));
+	string s = builtin__tos2(((u8*)(const_s)));
+	return builtin__string_clone(s);
 }
 string builtin__tos(u8* s, int len) {
 	if (s == 0) {
@@ -5956,12 +8333,6 @@ string builtin__tos3(char* s) {
 	}
 	return ((string){.str = ((u8*)(s)), .len = builtin__vstrlen_char(s)});
 }
-string builtin__tos4(u8* s) {
-	if (s == 0) {
-		return _S("");
-	}
-	return ((string){.str = s, .len = builtin__vstrlen(s)});
-}
 string builtin__u8_vstring(u8* bp) {
 	return ((string){.str = bp, .len = builtin__vstrlen(bp)});
 }
@@ -5977,10 +8348,11 @@ bool builtin__string_is_pure_ascii(string s) {
 	return true;
 }
 string builtin__string_clone(string a) {
-	if (a.len <= 0 || ((u64)(a.str)) <= 0xFFFF) {
+	if (a.len <= 0) {
 		return _S("");
 	}
-	string b = ((string){.str = builtin__malloc_noscan((int)(a.len + 1)), .len = a.len});
+	string _t2 = ((string){.str = builtin__malloc_noscan(a.len + 1), .len = a.len});
+	string b = _t2;
 	{ // Unsafe block
 		builtin__vmemcpy(b.str, a.str, a.len);
 		b.str[a.len] = 0;
@@ -5995,11 +8367,11 @@ string builtin__string_replace(string s, string rep, string with) {
 		return builtin__string_clone(s);
 	}
 	int pidxs_len = 0;
-	int pidxs_cap = (int)(s.len / rep.len);
+	int pidxs_cap = VSAFE_DIV_int(s.len , rep.len);
 	Array_fixed_int_10 stack_idxs = {0};
 	int* pidxs = &stack_idxs[0];
 	if (pidxs_cap > _const_replace_stack_buffer_size) {
-		pidxs = ((int*)(builtin___v_malloc((int)(((int)(sizeof(int))) * pidxs_cap))));
+		pidxs = ((int*)(builtin___v_malloc(((int)(sizeof(int))) * pidxs_cap)));
 	}
 	int idx = 0;
 	for (;;) {
@@ -6022,21 +8394,21 @@ string builtin__string_replace(string s, string rep, string with) {
 			} // defer end
 		return _t3;
 	}
-	int new_len = (int)(s.len + (int)(pidxs_len * ((int)(with.len - rep.len))));
-	u8* b = builtin__malloc_noscan((int)(new_len + 1));
+	int new_len = s.len + pidxs_len * (with.len - rep.len);
+	u8* b = builtin__malloc_noscan(new_len + 1);
 	int b_i = 0;
 	int s_idx = 0;
 	for (int j = 0; j < pidxs_len; ++j) {
 		int rep_pos = pidxs[j];
-		int before_len = (int)(rep_pos - s_idx);
+		int before_len = rep_pos - s_idx;
 		builtin__vmemcpy(&b[b_i], &s.str[s_idx], before_len);
 		b_i += before_len;
-		s_idx = (int)(rep_pos + rep.len);
+		s_idx = rep_pos + rep.len;
 		builtin__vmemcpy(&b[b_i], &with.str[0], with.len);
 		b_i += with.len;
 	}
 	if (s_idx < s.len) {
-		builtin__vmemcpy(&b[b_i], &s.str[s_idx], (int)(s.len - s_idx));
+		builtin__vmemcpy(&b[b_i], &s.str[s_idx], s.len - s_idx);
 	}
 	{ // Unsafe block
 		b[new_len] = 0;
@@ -6076,16 +8448,39 @@ VV_LOC bool builtin__string__lt(string s, string a) {
 	return false;
 }
 VV_LOC string builtin__string__plus(string s, string a) {
-	int slen = (s.len > 0 && ((u64)(s.str)) > 0xFFFF ? (s.len) : (0));
-	int alen = (a.len > 0 && ((u64)(a.str)) > 0xFFFF ? (a.len) : (0));
-	int new_len = (int)(alen + slen);
-	string res = ((string){.str = builtin__malloc_noscan((int)(new_len + 1)), .len = new_len});
+	int slen = (s.len > 0 ? (s.len) : (0));
+	int alen = (a.len > 0 ? (a.len) : (0));
+	int new_len = alen + slen;
+	string _t1 = ((string){.str = builtin__malloc_noscan(new_len + 1), .len = new_len});
+	string res = _t1;
 	{ // Unsafe block
 		if (slen > 0) {
 			builtin__vmemcpy(res.str, s.str, slen);
 		}
 		if (alen > 0) {
 			builtin__vmemcpy(res.str + slen, a.str, alen);
+		}
+		res.str[new_len] = 0;
+	}
+	return res;
+}
+VV_LOC string builtin__string_plus_many(int data_len, string* input_base) {
+	int new_len = 0;
+	for (int i = 0; i < data_len; i++) {
+		string part = input_base[i];
+		new_len += (part.len > 0 ? (part.len) : (0));
+	}
+	string _t1 = ((string){.str = builtin__malloc_noscan(new_len + 1), .len = new_len});
+	string res = _t1;
+	int offset = 0;
+	{ // Unsafe block
+		for (int i = 0; i < data_len; i++) {
+			string part = input_base[i];
+			int part_len = (part.len > 0 ? (part.len) : (0));
+			if (part_len > 0) {
+				builtin__vmemcpy(res.str + offset, part.str, part_len);
+				offset += part_len;
+			}
 		}
 		res.str[new_len] = 0;
 	}
@@ -6101,7 +8496,7 @@ Array_string builtin__string_split_nth(string s, string delim, int nth) {
 		case 0: {
 			for (int i = 0; i < s.len; ++i) {
 				u8 ch = s.str[i];
-				if (nth > 0 && res.len == (int)(nth - 1)) {
+				if (nth > 0 && res.len == nth - 1) {
 					builtin__array_push((array*)&res, _MOV((string[]){ builtin__string_substr(s, i, 2147483647) }));
 					break;
 				}
@@ -6115,11 +8510,11 @@ Array_string builtin__string_split_nth(string s, string delim, int nth) {
 			for (int i = 0; i < s.len; ++i) {
 				u8 ch = s.str[i];
 				if (ch == delim_byte) {
-					if (nth > 0 && res.len == (int)(nth - 1)) {
+					if (nth > 0 && res.len == nth - 1) {
 						break;
 					}
 					builtin__array_push((array*)&res, _MOV((string[]){ builtin__string_substr(s, start, i) }));
-					start = (int)(i + 1);
+					start = i + 1;
 				}
 			}
 			if (nth < 1 || res.len < nth) {
@@ -6130,9 +8525,9 @@ Array_string builtin__string_split_nth(string s, string delim, int nth) {
 		default: {
 			{
 				int start = 0;
-				for (int i = 0; (int)(i + delim.len) <= s.len; ) {
-					if (builtin__string__eq(builtin__string_substr_unsafe(s, i, (int)(i + delim.len)), delim)) {
-						if (nth > 0 && res.len == (int)(nth - 1)) {
+				for (int i = 0; i + delim.len <= s.len; ) {
+					if (builtin__string__eq(builtin__string_substr_unsafe(s, i, i + delim.len), delim)) {
+						if (nth > 0 && res.len == nth - 1) {
 							break;
 						}
 						builtin__array_push((array*)&res, _MOV((string[]){ builtin__string_substr(s, start, i) }));
@@ -6169,13 +8564,13 @@ Array_string builtin__string_split_into_lines(string s) {
 		if (line_start <= i) {
 			if (s.str[ i] == lf) {
 				builtin__array_push((array*)&res, _MOV((string[]){ (line_start == i ? (_S("")) : (builtin__string_substr(s, line_start, i))) }));
-				line_start = (int)(i + 1);
+				line_start = i + 1;
 			} else if (s.str[ i] == cr) {
 				builtin__array_push((array*)&res, _MOV((string[]){ (line_start == i ? (_S("")) : (builtin__string_substr(s, line_start, i))) }));
-				if (((int)(i + 1)) < s.len && s.str[ (int)(i + 1)] == lf) {
-					line_start = (int)(i + 2);
+				if ((i + 1) < s.len && s.str[ i + 1] == lf) {
+					line_start = i + 2;
 				} else {
-					line_start = (int)(i + 1);
+					line_start = i + 1;
 				}
 			}
 		}
@@ -6191,19 +8586,20 @@ Array_string builtin__string_split_into_lines(string s) {
 }
 string builtin__string_substr(string s, int start, int _end) {
 	int end = (_end == _const_max_i64 || _end == _const_max_i32 ? (s.len) : (_end));
-	#if !defined(CUSTOM_DEFINE_no_bounds_checking)
+	#if 1
 	{
 		if (start > end || start > s.len || end > s.len || start < 0 || end < 0) {
-			builtin___v_panic(builtin__string__plus(builtin__string__plus(builtin__string__plus(builtin__string__plus(builtin__string__plus(builtin__string__plus(builtin__string__plus(_S("substr("), builtin__impl_i64_to_string(start)), _S(", ")), builtin__impl_i64_to_string(end)), _S(") out of bounds (len=")), builtin__impl_i64_to_string(s.len)), _S(") s=")), s));
+			builtin___v_panic(builtin__string_plus_many(8, _MOV((string[8]){_S("substr("), builtin__impl_i64_to_string(start), _S(", "), builtin__impl_i64_to_string(end), _S(") out of bounds (len="), builtin__impl_i64_to_string(s.len), _S(") s="), s})));
 			VUNREACHABLE();
 		}
 	}
 	#endif
-	int len = (int)(end - start);
+	int len = end - start;
 	if (len == s.len) {
 		return builtin__string_clone(s);
 	}
-	string res = ((string){.str = builtin__malloc_noscan((int)(len + 1)), .len = len});
+	string _t3 = ((string){.str = builtin__malloc_noscan(len + 1), .len = len});
+	string res = _t3;
 	{ // Unsafe block
 		builtin__vmemcpy(res.str, s.str + start, len);
 		res.str[len] = 0;
@@ -6212,7 +8608,7 @@ string builtin__string_substr(string s, int start, int _end) {
 }
 string builtin__string_substr_unsafe(string s, int start, int _end) {
 	int end = (_end == 2147483647 ? (s.len) : (_end));
-	int len = (int)(end - start);
+	int len = end - start;
 	if (len == s.len) {
 		return s;
 	}
@@ -6230,7 +8626,7 @@ int builtin__string_index_(string s, string p) {
 		if (!(i < s.len)) break;
 		int j = 0;
 		for (;;) {
-			if (!(j < p.len && s.str[(int)(i + j)] == p.str[j])) break;
+			if (!(j < p.len && s.str[i + j] == p.str[j])) break;
 			j++;
 		}
 		if (j == p.len) {
@@ -6240,6 +8636,16 @@ int builtin__string_index_(string s, string p) {
 	}
 	return -1;
 }
+inline _option_int builtin__string_last_index(string s, string needle) {
+	int idx = builtin__string_index_last_(s, needle);
+	if (idx == -1) {
+		return (_option_int){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+	}
+	_option_int _t2;
+	builtin___option_ok(&(int[]) { idx }, (_option*)(&_t2), sizeof(int));
+	 
+	return _t2;
+}
 VV_LOC int builtin__string_index_kmp(string s, string p) {
 	if (p.len > s.len) {
 		return -1;
@@ -6247,13 +8653,13 @@ VV_LOC int builtin__string_index_kmp(string s, string p) {
 	Array_fixed_int_20 stack_prefixes = {0};
 	int* p_prefixes = &stack_prefixes[0];
 	if (p.len > _const_kmp_stack_buffer_size) {
-		p_prefixes = ((int*)(builtin__vcalloc((int)(p.len * ((int)(sizeof(int)))))));
+		p_prefixes = ((int*)(builtin__vcalloc(p.len * ((int)(sizeof(int))))));
 	}
 	int j = 0;
 	for (int i = 1; i < p.len; i++) {
 		for (;;) {
 			if (!(p.str[j] != p.str[i] && j > 0)) break;
-			j = p_prefixes[(int)(j - 1)];
+			j = p_prefixes[j - 1];
 		}
 		if (p.str[j] == p.str[i]) {
 			j++;
@@ -6266,13 +8672,13 @@ VV_LOC int builtin__string_index_kmp(string s, string p) {
 	for (int i = 0; i < s.len; ++i) {
 		for (;;) {
 			if (!(p.str[j] != s.str[i] && j > 0)) break;
-			j = p_prefixes[(int)(j - 1)];
+			j = p_prefixes[j - 1];
 		}
 		if (p.str[j] == s.str[i]) {
 			j++;
 		}
 		if (j == p.len) {
-			int _t2 = (int)((int)(i - p.len) + 1);
+			int _t2 = (int)(i - p.len) + 1;
 				{ // defer begin
 					if (p.len > _const_kmp_stack_buffer_size) {
 						builtin___v_free(p_prefixes);
@@ -6293,12 +8699,12 @@ VV_LOC int builtin__string_index_last_(string s, string p) {
 	if (p.len > s.len || p.len == 0) {
 		return -1;
 	}
-	int i = (int)(s.len - p.len);
+	int i = s.len - p.len;
 	for (;;) {
 		if (!(i >= 0)) break;
 		int j = 0;
 		for (;;) {
-			if (!(j < p.len && s.str[(int)(i + j)] == p.str[j])) break;
+			if (!(j < p.len && s.str[i + j] == p.str[j])) break;
 			j++;
 		}
 		if (j == p.len) {
@@ -6372,7 +8778,7 @@ bool builtin__string_ends_with(string s, string p) {
 }
 string builtin__string_to_lower_ascii(string s) {
 	{ // Unsafe block
-		u8* b = builtin__malloc_noscan((int)(s.len + 1));
+		u8* b = builtin__malloc_noscan(s.len + 1);
 		for (int i = 0; i < s.len; ++i) {
 			if (s.str[i] >= 'A' && s.str[i] <= 'Z') {
 				b[i] = (u8)(s.str[i] + 32);
@@ -6397,7 +8803,7 @@ string builtin__string_to_lower(string s) {
 }
 string builtin__string_to_upper_ascii(string s) {
 	{ // Unsafe block
-		u8* b = builtin__malloc_noscan((int)(s.len + 1));
+		u8* b = builtin__malloc_noscan(s.len + 1);
 		for (int i = 0; i < s.len; ++i) {
 			if (s.str[i] >= 'a' && s.str[i] <= 'z') {
 				b[i] = (u8)(s.str[i] - 32);
@@ -6436,7 +8842,7 @@ string builtin__string_trim(string s, string cutset) {
 }
 VV_LOC string builtin__string_trim_chars(string s, string cutset, TrimMode mode) {
 	int pos_left = 0;
-	int pos_right = (int)(s.len - 1);
+	int pos_right = s.len - 1;
 	bool cs_match = true;
 	for (;;) {
 		if (!(pos_left <= s.len && pos_right >= -1 && cs_match)) break;
@@ -6465,13 +8871,13 @@ VV_LOC string builtin__string_trim_chars(string s, string cutset, TrimMode mode)
 			return _S("");
 		}
 	}
-	return builtin__string_substr(s, pos_left, (int)(pos_right + 1));
+	return builtin__string_substr(s, pos_left, pos_right + 1);
 }
 VV_LOC string builtin__string_trim_runes(string s, string cutset, TrimMode mode) {
 	Array_rune s_runes = builtin__string_runes(s);
 	Array_rune cs_runes = builtin__string_runes(cutset);
 	int pos_left = 0;
-	int pos_right = (int)(s_runes.len - 1);
+	int pos_right = s_runes.len - 1;
 	bool cs_match = true;
 	for (;;) {
 		if (!(pos_left <= s_runes.len && pos_right >= -1 && cs_match)) break;
@@ -6500,7 +8906,7 @@ VV_LOC string builtin__string_trim_runes(string s, string cutset, TrimMode mode)
 			return _S("");
 		}
 	}
-	return Array_rune_string(builtin__array_slice(s_runes, pos_left, (int)(pos_right + 1)));
+	return Array_rune_string(builtin__array_slice(s_runes, pos_left, pos_right + 1));
 }
 string builtin__string_trim_left(string s, string cutset) {
 	if ((s).len == 0 || (cutset).len == 0) {
@@ -6517,6 +8923,31 @@ string builtin__string_trim_right(string s, string cutset) {
 	if (s.len < 1 || cutset.len < 1) {
 		return builtin__string_clone(s);
 	}
+	if (cutset.len == 1) {
+		u8 cut = cutset.str[ 0];
+		int pos_right = s.len - 1;
+		for (;;) {
+			if (!(pos_right >= 0 && s.str[ pos_right] == cut)) break;
+			pos_right--;
+		}
+		if (pos_right < 0) {
+			return _S("");
+		}
+		return builtin__string_substr(s, 0, pos_right + 1);
+	}
+	if (cutset.len == 2 && builtin__string_is_pure_ascii(cutset)) {
+		u8 cut0 = cutset.str[ 0];
+		u8 cut1 = cutset.str[ 1];
+		int pos_right = s.len - 1;
+		for (;;) {
+			if (!(pos_right >= 0 && (s.str[ pos_right] == cut0 || s.str[ pos_right] == cut1))) break;
+			pos_right--;
+		}
+		if (pos_right < 0) {
+			return _S("");
+		}
+		return builtin__string_substr(s, 0, pos_right + 1);
+	}
 	if (builtin__string_is_pure_ascii(cutset)) {
 		return builtin__string_trim_chars(s, cutset, TrimMode__trim_right);
 	} else {
@@ -6526,7 +8957,7 @@ string builtin__string_trim_right(string s, string cutset) {
 }
 string builtin__string_trim_string_right(string s, string str) {
 	if (builtin__string_ends_with(s, str)) {
-		return builtin__string_substr(s, 0, (int)(s.len - str.len));
+		return builtin__string_substr(s, 0, s.len - str.len);
 	}
 	return builtin__string_clone(s);
 }
@@ -6534,7 +8965,7 @@ inline string builtin__string_str(string s) {
 	return builtin__string_clone(s);
 }
 VV_LOC u8 builtin__string_at(string s, int idx) {
-	#if !defined(CUSTOM_DEFINE_no_bounds_checking)
+	#if 1
 	{
 		if (idx < 0 || idx >= s.len) {
 			builtin__panic_n2(_S("string index out of range(idx,s.len):"), idx, s.len);
@@ -6544,14 +8975,75 @@ VV_LOC u8 builtin__string_at(string s, int idx) {
 	#endif
 	return s.str[idx];
 }
-inline bool builtin__u8_is_digit(u8 c) {
-	return c >= '0' && c <= '9';
+VV_LOC u8 builtin__string_at_i64(string s, i64 idx) {
+	#if 1
+	{
+		if (idx < 0 || idx >= ((i64)(s.len))) {
+			builtin__panic_n2(_S("string index out of range(idx,s.len):"), idx, s.len);
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	return s.str[((int)(idx))];
+}
+VV_LOC u8 builtin__string_at_u64(string s, u64 idx) {
+	#if 1
+	{
+		if (idx >= ((u64)(s.len))) {
+			builtin___v_panic(builtin__string_plus_many(4, _MOV((string[4]){_S("string index out of range(idx,s.len): "), builtin__u64_str(idx), _S(", "), builtin__impl_i64_to_string(s.len)})));
+			VUNREACHABLE();
+		}
+	}
+	#endif
+	return s.str[((int)(idx))];
+}
+VV_LOC u8 builtin__string_at_ni(string s, int idx) {
+	return builtin__string_at(s, builtin__v_ni_index(idx, s.len));
+}
+VV_LOC _option_u8 builtin__string_at_with_check(string s, int idx) {
+	if (idx < 0 || idx >= s.len) {
+		return (_option_u8){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+	}
+	{ // Unsafe block
+		_option_u8 _t2;
+		builtin___option_ok(&(u8[]) { s.str[idx] }, (_option*)(&_t2), sizeof(u8));
+		 
+		return _t2;
+	}
+	return (_option_u8){.state=2, .err=_const_none__, .data={E_STRUCT}};
+}
+VV_LOC _option_u8 builtin__string_at_with_check_i64(string s, i64 idx) {
+	if (idx < 0 || idx >= ((i64)(s.len))) {
+		return (_option_u8){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+	}
+	{ // Unsafe block
+		_option_u8 _t2;
+		builtin___option_ok(&(u8[]) { s.str[((int)(idx))] }, (_option*)(&_t2), sizeof(u8));
+		 
+		return _t2;
+	}
+	return (_option_u8){.state=2, .err=_const_none__, .data={E_STRUCT}};
+}
+VV_LOC _option_u8 builtin__string_at_with_check_u64(string s, u64 idx) {
+	if (idx >= ((u64)(s.len))) {
+		return (_option_u8){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+	}
+	{ // Unsafe block
+		_option_u8 _t2;
+		builtin___option_ok(&(u8[]) { s.str[((int)(idx))] }, (_option*)(&_t2), sizeof(u8));
+		 
+		return _t2;
+	}
+	return (_option_u8){.state=2, .err=_const_none__, .data={E_STRUCT}};
+}
+VV_LOC _option_u8 builtin__string_at_with_check_ni(string s, int idx) {
+	return builtin__string_at_with_check(s, builtin__v_ni_index(idx, s.len));
 }
 void builtin__string_free(string* s) {
 	if (s->is_lit == -98761234) {
 		u8* double_free_msg = ((u8*)("double string.free() detected\n"));
 		int double_free_msg_len = builtin__vstrlen(double_free_msg);
-		#if defined(_VFREESTANDING)
+		#if 0
 		{
 		}
 		#else
@@ -6568,10 +9060,18 @@ void builtin__string_free(string* s) {
 		builtin___v_free(s->str);
 		s->str = ((void*)0);
 	}
+	s->len = 0;
 	s->is_lit = -98761234;
 }
 string builtin__string_all_before(string s, string sub) {
 	int pos = builtin__string_index_(s, sub);
+	if (pos == -1) {
+		return builtin__string_clone(s);
+	}
+	return builtin__string_substr(s, 0, pos);
+}
+string builtin__string_all_before_last(string s, string sub) {
+	int pos = builtin__string_index_last_(s, sub);
 	if (pos == -1) {
 		return builtin__string_clone(s);
 	}
@@ -6582,14 +9082,14 @@ string builtin__string_all_after(string s, string sub) {
 	if (pos == -1) {
 		return builtin__string_clone(s);
 	}
-	return builtin__string_substr(s, (int)(pos + sub.len), 2147483647);
+	return builtin__string_substr(s, pos + sub.len, 2147483647);
 }
 string builtin__string_all_after_last(string s, string sub) {
 	int pos = builtin__string_index_last_(s, sub);
 	if (pos == -1) {
 		return builtin__string_clone(s);
 	}
-	return builtin__string_substr(s, (int)(pos + sub.len), 2147483647);
+	return builtin__string_substr(s, pos + sub.len, 2147483647);
 }
 string Array_string_join(Array_string a, string sep) {
 	if (a.len == 0) {
@@ -6598,10 +9098,11 @@ string Array_string_join(Array_string a, string sep) {
 	int len = 0;
 	for (int _t2 = 0; _t2 < a.len; ++_t2) {
 		string val = ((string*)a.data)[_t2];
-		len += (int)(val.len + sep.len);
+		len += val.len + sep.len;
 	}
 	len -= sep.len;
-	string res = ((string){.str = builtin__malloc_noscan((int)(len + 1)), .len = len});
+	string _t3 = ((string){.str = builtin__malloc_noscan(len + 1), .len = len});
+	string res = _t3;
 	int idx = 0;
 	for (int i = 0; i < a.len; ++i) {
 		string val = ((string*)a.data)[i];
@@ -6609,7 +9110,7 @@ string Array_string_join(Array_string a, string sep) {
 			builtin__vmemcpy(((voidptr)(res.str + idx)), val.str, val.len);
 			idx += val.len;
 		}
-		if (i != (int)(a.len - 1)) {
+		if (i != a.len - 1) {
 			{ // Unsafe block
 				builtin__vmemcpy(((voidptr)(res.str + idx)), sep.str, sep.len);
 				idx += sep.len;
@@ -6640,7 +9141,7 @@ Array_string builtin__string_fields(string s) {
 			continue;
 		}
 		if (is_space && is_in_word) {
-			builtin__array_push((array*)&res, _MOV((string[]){ builtin__string_substr(s, word_start, (int)(word_start + word_len)) }));
+			builtin__array_push((array*)&res, _MOV((string[]){ builtin__string_substr(s, word_start, word_start + word_len) }));
 			is_in_word = false;
 			word_len = 0;
 			word_start = 0;
@@ -6655,9 +9156,6 @@ Array_string builtin__string_fields(string s) {
 			builtin__ArrayFlags_clear(&res.flags, ArrayFlags__noslices);
 		} // defer end
 	return _t3;
-}
-string builtin__charptr_vstring_literal(charptr cp) {
-	return ((string){.str = ((byteptr)(cp)), .len = builtin__vstrlen_char(cp), .is_lit = 1});
 }
 string builtin__StrIntpType_str(StrIntpType x) {
 	string _t2 = (string){.str=(byteptr)"", .is_lit=1};
@@ -6757,26 +9255,40 @@ inline VV_LOC u64 builtin__abs64(i64 x) {
 VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, strings__Builder* sb) {
 	u32 x = data->fmt;
 	StrIntpType typ = ((StrIntpType)((x & 0x1F)));
-	int align = ((int)((((x >> 5)) & 0x01)));
-	bool upper_case = ((((x >> 7)) & 0x01)) > 0;
-	int sign = ((int)((((x >> 8)) & 0x01)));
-	int precision = ((int)((((x >> 9)) & 0x7F)));
-	bool tail_zeros = ((((x >> 16)) & 0x01)) > 0;
-	int width = ((int)(((i16)((((x >> 17)) & 0x3FF)))));
-	int base = (((int)((x >> 27))) & 0xF);
-	u8 fmt_pad_ch = ((u8)((((x >> 31)) & 0xFF)));
+	int align = ((int)(((v__rshift_u32(x, (u64)5)) & 0x01)));
+	bool upper_case = (((v__rshift_u32(x, (u64)7)) & 0x01)) > 0;
+	int sign = ((int)(((v__rshift_u32(x, (u64)8)) & 0x01)));
+	int precision = ((int)(((v__rshift_u32(x, (u64)9)) & 0x7F)));
+	bool tail_zeros = (((v__rshift_u32(x, (u64)16)) & 0x01)) > 0;
+	int width = ((int)(((i16)(((v__rshift_u32(x, (u64)17)) & 0x3FF)))));
+	int base = (((int)(v__rshift_u32(x, (u64)27))) & 0xF);
+	u8 fmt_pad_ch = ((u8)(((v__rshift_u32(x, (u64)31)) & 0xFF)));
+	bool has_dynamic_width = ((data->dyn_flags & _const_str_intp_has_dynamic_width)) != 0;
+	bool has_dynamic_precision = ((data->dyn_flags & _const_str_intp_has_dynamic_precision)) != 0;
 	if (typ == StrIntpType__si_no_str) {
 		return;
 	}
 	if (base > 0) {
 		base += 2;
 	}
+	if (has_dynamic_width) {
+		width = data->dyn_width;
+		if (width < 0) {
+			width = -width;
+			align = 0;
+		} else if (width > 0) {
+			align = 1;
+		}
+	}
+	if (has_dynamic_precision) {
+		precision = data->dyn_precision;
+	}
 	u8 pad_ch = ((u8)(' '));
 	if (fmt_pad_ch > 0) {
 		pad_ch = '0';
 	}
 	int len0_set = (width > 0 ? (width) : (-1));
-	int len1_set = (precision == 0x7F ? (-1) : (precision));
+	int len1_set = (has_dynamic_precision ? ((precision >= 0 ? (precision) : (-1))) : precision == 0x7F ? (-1) : (precision));
 	bool sign_set = sign == 1;
 	strconv__BF_param bf = ((strconv__BF_param){
 		.pad_ch = pad_ch,
@@ -6831,12 +9343,12 @@ VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, string
 			if (width > 0) {
 				if (upper_case) {
 					string s = builtin__string_to_upper(data->d.d_s);
-					for (int _t1 = 1; _t1 < ((int)(1 + ((width > 0 ? (width) : (0))))); ++_t1) {
+					for (int _t1 = 1; _t1 < (1 + ((width > 0 ? (width) : (0)))); ++_t1) {
 						strings__Builder_write_string(sb, s);
 					}
 					builtin__string_free(&s);
 				} else {
-					for (int _t2 = 1; _t2 < ((int)(1 + ((width > 0 ? (width) : (0))))); ++_t2) {
+					for (int _t2 = 1; _t2 < (1 + ((width > 0 ? (width) : (0)))); ++_t2) {
 						strings__Builder_write_string(sb, data->d.d_s);
 					}
 				}
@@ -6853,12 +9365,6 @@ VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, string
 				d = ((i64)(data->d.d_i32));
 			}
 			if (base == 0) {
-				if (width == 0) {
-					string d_str = builtin__i64_str(d);
-					strings__Builder_write_string(sb, d_str);
-					builtin__string_free(&d_str);
-					return;
-				}
 				if (d < 0) {
 					bf.positive = false;
 				}
@@ -6902,12 +9408,6 @@ VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, string
 				d = ((u64)(data->d.d_u32));
 			}
 			if (base == 0) {
-				if (width == 0) {
-					string d_str = builtin__u64_str(d);
-					strings__Builder_write_string(sb, d_str);
-					builtin__string_free(&d_str);
-					return;
-				}
 				strconv__format_dec_sb(d, bf, sb);
 			} else {
 				if (base == 3) {
@@ -6929,7 +9429,7 @@ VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, string
 			return;
 		}
 		if (typ == StrIntpType__si_p) {
-			u64 d = data->d.d_u64;
+			u64 d = ((u64)(data->d.d_p));
 			base = 16;
 			if (base == 0) {
 				if (width == 0) {
@@ -7009,7 +9509,8 @@ VV_LOC void builtin__StrIntpData_process_str_intp_data(StrIntpData* data, string
 						if (data->d.d_f64 < 0) {
 							bf.positive = false;
 						}
-						strconv__Float64u f_union = ((strconv__Float64u){.f = data->d.d_f64,});
+						strconv__Float64u _t5 = ((strconv__Float64u){.f = data->d.d_f64,});
+						strconv__Float64u f_union = _t5;
 						if (f_union.u == _const_strconv__double_minus_zero) {
 							bf.positive = false;
 						}
@@ -7273,9 +9774,6 @@ string builtin__str_intp(int data_len, StrIntpData* input_base) {
 	strings__Builder_free(&res);
 	return ret;
 }
-int builtin__utf8_char_len(u8 b) {
-	return (int_literal)(((((0xe5000000U >> ((((b >> 3)) & 0x1e)))) & 3)) + 1);
-}
 string builtin__utf32_to_str(u32 code) {
 	{ // Unsafe block
 		u8* buffer = builtin__malloc_noscan(5);
@@ -7306,103 +9804,97 @@ int builtin__utf32_decode_to_buffer(u32 code, u8* buf) {
 			buffer[0] = ((u8)(icode));
 			return 1;
 		} else if (icode <= 2047) {
-			buffer[0] = (192 | ((u8)((icode >> 6))));
+			buffer[0] = (192 | ((u8)(v__rshift_int(icode, (u64)6))));
 			buffer[1] = (128 | ((u8)((icode & 63))));
 			return 2;
 		} else if (icode <= 65535) {
-			buffer[0] = (224 | ((u8)((icode >> 12))));
-			buffer[1] = (128 | ((((u8)((icode >> 6))) & 63)));
+			buffer[0] = (224 | ((u8)(v__rshift_int(icode, (u64)12))));
+			buffer[1] = (128 | ((((u8)(v__rshift_int(icode, (u64)6))) & 63)));
 			buffer[2] = (128 | ((u8)((icode & 63))));
 			return 3;
 		} else if (icode <= 1114111) {
-			buffer[0] = (240 | ((u8)((icode >> 18))));
-			buffer[1] = (128 | ((((u8)((icode >> 12))) & 63)));
-			buffer[2] = (128 | ((((u8)((icode >> 6))) & 63)));
+			buffer[0] = (240 | ((u8)(v__rshift_int(icode, (u64)18))));
+			buffer[1] = (128 | ((((u8)(v__rshift_int(icode, (u64)12))) & 63)));
+			buffer[2] = (128 | ((((u8)(v__rshift_int(icode, (u64)6))) & 63)));
 			buffer[3] = (128 | ((u8)((icode & 63))));
 			return 4;
 		}
 	}
 	return 0;
 }
-int builtin__string_utf32_code(string _rune) {
-	if (_rune.len > 4) {
-		return 0;
-	}
-	return ((int)(builtin__impl_utf8_to_utf32(((u8*)(_rune.str)), _rune.len)));
+inline VV_LOC bool builtin__utf8_is_continuation(u8 b) {
+	return ((b & 0xc0)) == 0x80;
 }
-VV_LOC rune builtin__impl_utf8_to_utf32(u8* _bytes, int _bytes_len) {
-	if (_bytes_len == 0 || _bytes_len > 4) {
-		return 0;
+VV_LOC multi_return_rune_int builtin__utf8_decode_rune(u8* _bytes, int available_len) {
+	if (available_len <= 0) {
+		return (multi_return_rune_int){.arg0=0, .arg1=0};
 	}
-	if (_bytes_len == 1) {
-		return ((rune)(_bytes[0]));
+	u8 b0 = _bytes[0];
+	if (b0 < 0x80) {
+		return (multi_return_rune_int){.arg0=((rune)(b0)), .arg1=1};
 	}
-	switch (_bytes_len) {
-		case 2: {
-			rune b0 = ((rune)(_bytes[0]));
-			rune b1 = ((rune)(_bytes[1]));
-			return (((((b0 & 0x1F)) << 6)) | ((b1 & 0x3F)));
-		}
-		case 3: {
-			rune b0 = ((rune)(_bytes[0]));
-			rune b1 = ((rune)(_bytes[1]));
-			rune b2 = ((rune)(_bytes[2]));
-			return ((((((b0 & 0x0F)) << 12)) | ((((b1 & 0x3F)) << 6))) | ((b2 & 0x3F)));
-		}
-		case 4: {
-			rune b0 = ((rune)(_bytes[0]));
-			rune b1 = ((rune)(_bytes[1]));
-			rune b2 = ((rune)(_bytes[2]));
-			rune b3 = ((rune)(_bytes[3]));
-			return (((((((b0 & 0x07)) << 18)) | ((((b1 & 0x3F)) << 12))) | ((((b2 & 0x3F)) << 6))) | ((b3 & 0x3F)));
-		}
-		default: {
-			{
-				return 0;
-			}
-		}
+	if (b0 < 0xc2) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
 	}
-	
-	return 0;
+	int _t4; /* if prepend */
+	if (b0 < 0xe0) {
+		_t4 = 2;
+		goto _t5;
+	};
+	{
+	if (b0 < 0xf0) {
+		_t4 = 3;
+		goto _t5;
+	};
+	{
+	if (b0 < 0xf5) {
+		_t4 = 4;
+		goto _t5;
+	};
+	{
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	}
+	}
+	_t5: {};
+		int char_len = _t4;
+	if (available_len < char_len) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	u8 b1 = _bytes[1];
+	if (!builtin__utf8_is_continuation(b1)) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	if (char_len == 2) {
+		return (multi_return_rune_int){.arg0=((v__lshift_rune(((((rune)(b0)) & 0x1f)), (u64)6)) | ((((rune)(b1)) & 0x3f))), .arg1=2};
+	}
+	if (b0 == 0xe0 && b1 < 0xa0) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	if (b0 == 0xed && b1 >= 0xa0) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	u8 b2 = _bytes[2];
+	if (!builtin__utf8_is_continuation(b2)) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	if (char_len == 3) {
+		return (multi_return_rune_int){.arg0=(((v__lshift_rune(((((rune)(b0)) & 0x0f)), (u64)12)) | (v__lshift_rune(((((rune)(b1)) & 0x3f)), (u64)6))) | ((((rune)(b2)) & 0x3f))), .arg1=3};
+	}
+	if (b0 == 0xf0 && b1 < 0x90) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	if (b0 == 0xf4 && b1 > 0x8f) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	u8 b3 = _bytes[3];
+	if (!builtin__utf8_is_continuation(b3)) {
+		return (multi_return_rune_int){.arg0=_const_utf8_replacement_rune, .arg1=1};
+	}
+	return (multi_return_rune_int){.arg0=((((v__lshift_rune(((((rune)(b0)) & 0x07)), (u64)18)) | (v__lshift_rune(((((rune)(b1)) & 0x3f)), (u64)12))) | (v__lshift_rune(((((rune)(b2)) & 0x3f)), (u64)6))) | ((((rune)(b3)) & 0x3f))), .arg1=4};
 }
 int builtin__utf8_str_visible_length(string s) {
-	int l = 0;
-	int ul = 1;
-	for (int i = 0; i < s.len; i += ul) {
-		u8 c = s.str[i];
-		ul = (int_literal)(((((0xe5000000U >> ((((s.str[i] >> 3)) & 0x1e)))) & 3)) + 1);
-		if ((int)(i + ul) > s.len) {
-			return l;
-		}
-		l++;
-		if (ul == 1) {
-			continue;
-		}
-
-		if (ul == (2)) {
-			u64 r = ((u64)((((((u16)(c)) << 8)) | s.str[(int)(i + 1)])));
-			if (r >= 0xcc80 && r < 0xcdb0) {
-				l--;
-			}
-		}
-		else if (ul == (3)) {
-			u64 r = ((u64)((((((u32)(c)) << 16)) | (((((u32)(s.str[(int)(i + 1)])) << 8)) | s.str[(int)(i + 2)]))));
-			if ((r >= 0xe1aab0 && r <= 0xe1ac7f) || (r >= 0xe1b780 && r <= 0xe1b87f) || (r >= 0xe28390 && r <= 0xe2847f) || (r >= 0xefb8a0 && r <= 0xefb8af)) {
-				l--;
-			} else if ((r >= 0xe18480 && r <= 0xe1859f) || (r >= 0xe2ba80 && r <= 0xe2bf95) || (r >= 0xe38080 && r <= 0xe4b77f) || (r >= 0xe4b880 && r <= 0xea807f) || (r >= 0xeaa5a0 && r <= 0xeaa79f) || (r >= 0xeab080 && r <= 0xed9eaf) || (r >= 0xefa480 && r <= 0xefac7f) || (r >= 0xefb8b8 && r <= 0xefb9af)) {
-				l++;
-			}
-		}
-		else if (ul == (4)) {
-			u64 r = ((u64)((((((u32)(c)) << 24)) | ((((((u32)(s.str[(int)(i + 1)])) << 16)) | ((((u32)(s.str[(int)(i + 2)])) << 8))) | s.str[(int)(i + 3)]))));
-			if ((r >= 0xf09f8880U && r <= 0xf09f8a8fU) || (r >= 0xf09f8c80U && r <= 0xf09f9c90U) || (r >= 0xf09fa490U && r <= 0xf09fa7afU) || (r >= 0xf0a08080U && r <= 0xf180807fU)) {
-				l++;
-			}
-		}
-		else {
-		}
-	}
-	return l;
+	return builtin__utf8_grapheme_visible_length(s);
 }
 inline bool builtin__ArrayFlags_has(ArrayFlags* e, ArrayFlags flag_) {
 	return ((((int)(*e)) & (((int)(flag_))))) != 0;
@@ -7427,7 +9919,7 @@ string os__getenv(string key) {
 }
 _option_string os__getenv_opt(string key) {
 	{ // Unsafe block
-		#if defined(_WIN32)
+		#if 0
 		{
 		}
 		#else
@@ -7445,13 +9937,100 @@ _option_string os__getenv_opt(string key) {
 	}
 	return (_option_string){.state=2, .err=_const_none__, .data={E_STRUCT}};
 }
-#if !defined(_WIN32)
+VV_LOC voidptr os__v_os_execute_mutex_ptr(void) {
+	return ((voidptr)(&g_v_os_execute_mutex_storage[0]));
+}
+VV_LOC void os__init(void) {
+	pthread_mutex_init(os__v_os_execute_mutex_ptr(), ((void*)0));
+}
+VV_LOC void os__v_os_execute_lock(void) {
+	pthread_mutex_lock(os__v_os_execute_mutex_ptr());
+}
+VV_LOC void os__v_os_execute_unlock(void) {
+	pthread_mutex_unlock(os__v_os_execute_mutex_ptr());
+}
+#if 1
 #endif
+#if 1
+#endif
+int os__fd_close(int fd) {
+	if (fd == -1) {
+		return 0;
+	}
+	return close(fd);
+}
+Array_string os__fd_slurp(int fd) {
+	Array_string res = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	if (fd == -1) {
+		return res;
+	}
+	for (;;) {
+		multi_return_string_int mr_929 = os__fd_read(fd, 4096);
+		string s = mr_929.arg0;
+		int b = mr_929.arg1;
+		if (b <= 0) {
+			break;
+		}
+		builtin__array_push((array*)&res, _MOV((string[]){ builtin__string_clone(s) }));
+	}
+	return res;
+}
+multi_return_string_int os__fd_read(int fd, int maxbytes) {
+	if (fd == -1) {
+		return (multi_return_string_int){.arg0=_S(""), .arg1=0};
+	}
+	{ // Unsafe block
+		u8* buf = builtin__malloc_noscan(maxbytes + 1);
+		int nbytes = 0;
+		for (;;) {
+			#if 1
+			{
+				errno = 0;
+			}
+			#endif
+			nbytes = ((int)(read(fd, buf, maxbytes)));
+			if (nbytes >= 0) {
+				break;
+			}
+			#if 1
+			{
+				if (errno == EINTR) {
+					continue;
+				}
+			}
+			#endif
+			break;
+		}
+		if (nbytes < 0) {
+			builtin___v_free(buf);
+			return (multi_return_string_int){.arg0=_S(""), .arg1=nbytes};
+		}
+		buf[nbytes] = 0;
+		return (multi_return_string_int){.arg0=builtin__tos(buf, nbytes), .arg1=nbytes};
+	}
+	return (multi_return_string_int){0};
+}
 VV_LOC string os__NotExpected_msg(os__NotExpected err) {
 	return err.cause;
 }
 VV_LOC int os__NotExpected_code(os__NotExpected err) {
 	return err.code;
+}
+_result_os__File os__open(string path) {
+	_result_FILE_ptr _t1 = os__vfopen(path, _S("rb"));
+	if (_t1.is_error) {
+		_result_os__File _t2 = {0};
+		_t2.is_error = true;
+		_t2.err = _t1.err;
+		return _t2;
+	}
+	
+ 	FILE* cfile = (*(FILE**)_t1.data);
+	int fd = os__fileno(cfile);
+	_result_os__File _t3;
+	builtin___result_ok(&(os__File[]) { ((os__File){.cfile = (voidptr)cfile,.fd = fd,.is_opened = true,}) }, (_result*)(&_t3), sizeof(os__File));
+	 
+	return _t3;
 }
 __NOINLINE _result_os__File os__create(string path) {
 	_result_FILE_ptr _t1 = os__vfopen(path, _S("wb"));
@@ -7468,6 +10047,27 @@ __NOINLINE _result_os__File os__create(string path) {
 	builtin___result_ok(&(os__File[]) { ((os__File){.cfile = (voidptr)cfile,.fd = fd,.is_opened = true,}) }, (_result*)(&_t3), sizeof(os__File));
 	 
 	return _t3;
+}
+_result_int os__File_read(os__File* f, Array_u8* buf) {
+	if (!f->is_opened || builtin__isnil(f->cfile)) {
+		return (_result_int){ .is_error=true, .err=os__error_file_not_opened(), .data={E_STRUCT} };
+	}
+	if (buf->len == 0) {
+		return (_result_int){ .is_error=true, .err=I_os__Eof_to_Interface_IError((HEAP(os__Eof, ((os__Eof){.Error = ((Error){E_STRUCT}),})))), .data={E_STRUCT} };
+	}
+	int nbytes = ((int)(fread(buf->data, 1, buf->len, ((FILE*)(f->cfile)))));
+	if (nbytes <= 0) {
+		if (feof(((FILE*)(f->cfile))) != 0) {
+			return (_result_int){ .is_error=true, .err=I_os__Eof_to_Interface_IError((HEAP(os__Eof, ((os__Eof){.Error = ((Error){E_STRUCT}),})))), .data={E_STRUCT} };
+		}
+		if (ferror(((FILE*)(f->cfile))) != 0) {
+			return (_result_int){ .is_error=true, .err=I_os__NotExpected_to_Interface_IError((HEAP(os__NotExpected, ((os__NotExpected){.cause = _S("unexpected error from fread"),.code = -1,})))), .data={E_STRUCT} };
+		}
+	}
+	_result_int _t5;
+	builtin___result_ok(&(int[]) { nbytes }, (_result*)(&_t5), sizeof(int));
+	 
+	return _t5;
 }
 _result_void os__File_write_full_buffer(os__File* f, voidptr buffer, usize buffer_len) {
 	if (buffer_len <= ((usize)(0))) {
@@ -7505,7 +10105,7 @@ VV_LOC _result_int os__fread(voidptr ptr, int item_size, int items, FILE* stream
 	int nbytes = ((int)(fread(ptr, item_size, items, stream)));
 	if (nbytes <= 0) {
 		if (feof(stream) != 0) {
-			return (_result_int){ .is_error=true, .err=I_os__Eof_to_Interface_IError(((os__Eof*)builtin__memdup(&(os__Eof){.Error = ((Error){E_STRUCT}),}, sizeof(os__Eof)))), .data={E_STRUCT} };
+			return (_result_int){ .is_error=true, .err=I_os__Eof_to_Interface_IError((HEAP(os__Eof, ((os__Eof){.Error = ((Error){E_STRUCT}),})))), .data={E_STRUCT} };
 		}
 		if (ferror(stream) != 0) {
 			return (_result_int){ .is_error=true, .err=builtin___v_error(_S("file read error")), .data={E_STRUCT} };
@@ -7523,7 +10123,52 @@ string os__SizeOfTypeIs0Error_msg(os__SizeOfTypeIs0Error err) {
 	return _S("os: size of type is 0");
 }
 VV_LOC IError os__error_file_not_opened(void) {
-	return I_os__FileNotOpenedError_to_Interface_IError(((os__FileNotOpenedError*)builtin__memdup(&(os__FileNotOpenedError){.Error = ((Error){E_STRUCT}),}, sizeof(os__FileNotOpenedError))));
+	return I_os__FileNotOpenedError_to_Interface_IError((HEAP(os__FileNotOpenedError, ((os__FileNotOpenedError){.Error = ((Error){E_STRUCT}),}))));
+}
+VV_LOC IError os__error_size_of_type_0(void) {
+	return I_os__SizeOfTypeIs0Error_to_Interface_IError((HEAP(os__SizeOfTypeIs0Error, ((os__SizeOfTypeIs0Error){.Error = ((Error){E_STRUCT}),}))));
+}
+inline VV_LOC u16 os__swap_bytes_u16(u16 x) {
+	return ((((v__rshift_u16(x, (u64)8)) & 0x00FF)) | (((v__lshift_u16(x, (u64)8)) & 0xFF00)));
+}
+inline VV_LOC u32 os__swap_bytes_u32(u32 x) {
+	return ((((((v__rshift_u32(x, (u64)24)) & 0x000000FF)) | (((v__rshift_u32(x, (u64)8)) & 0x0000FF00))) | (((v__lshift_u32(x, (u64)8)) & 0x00FF0000))) | (((v__lshift_u32(x, (u64)24)) & 0xFF000000U)));
+}
+inline VV_LOC u64 os__swap_bytes_u64(u64 x) {
+	return ((((((((((v__rshift_u64(x, (u64)56)) & 0x00000000000000FF)) | (((v__rshift_u64(x, (u64)40)) & 0x000000000000FF00))) | (((v__rshift_u64(x, (u64)24)) & 0x0000000000FF0000))) | (((v__rshift_u64(x, (u64)8)) & 0x00000000FF000000U))) | (((v__lshift_u64(x, (u64)8)) & 0x000000FF00000000LL))) | (((v__lshift_u64(x, (u64)24)) & 0x0000FF0000000000LL))) | (((v__lshift_u64(x, (u64)40)) & 0x00FF000000000000LL))) | (((v__lshift_u64(x, (u64)56)) & 0xFF00000000000000ULL)));
+}
+VV_LOC _result_void os__check_cf(usize x, string label) {
+	if (errno != 0) {
+		return (_result_void){ .is_error=true, .err=builtin___v_error(os__posix_get_error_msg(errno)), .data={E_STRUCT} };
+	}
+	if (x == 0) {
+		return (_result_void){ .is_error=true, .err=builtin___v_error(label), .data={E_STRUCT} };
+	}
+	return (_result_void){0};
+}
+VV_LOC _result_void os__check_fwrite(usize x) {
+	_result_void _t1 = os__check_cf(x, _S("fwrite"));
+	if (_t1.is_error) {
+		_result_void _t2 = {0};
+		_t2.is_error = true;
+		_t2.err = _t1.err;
+		return _t2;
+	}
+	
+ ;
+	return (_result_void){0};
+}
+VV_LOC _result_void os__check_fread(usize x) {
+	_result_void _t1 = os__check_cf(x, _S("fread"));
+	if (_t1.is_error) {
+		_result_void _t2 = {0};
+		_t2.is_error = true;
+		_t2.err = _t1.err;
+		return _t2;
+	}
+	
+ ;
+	return (_result_void){0};
 }
 VV_LOC _result_int os__find_cfile_size(FILE* fp) {
 	i32 cseek = fseek(fp, 0, SEEK_END);
@@ -7531,18 +10176,25 @@ VV_LOC _result_int os__find_cfile_size(FILE* fp) {
 	if (raw_fsize != 0 && cseek != 0) {
 		return (_result_int){ .is_error=true, .err=builtin___v_error(_S("fseek failed")), .data={E_STRUCT} };
 	}
-	if (cseek != 0 && raw_fsize < 0) {
-		return (_result_int){ .is_error=true, .err=builtin___v_error(_S("ftell failed")), .data={E_STRUCT} };
+	if (raw_fsize < 0) {
+		if (cseek != 0) {
+			return (_result_int){ .is_error=true, .err=builtin___v_error(_S("ftell failed")), .data={E_STRUCT} };
+		}
+		rewind(fp);
+		_result_int _t3;
+		builtin___result_ok(&(int[]) { 0 }, (_result*)(&_t3), sizeof(int));
+		 
+		return _t3;
 	}
 	int len = ((int)(raw_fsize));
 	if (((i64)(len)) < raw_fsize) {
-		return (_result_int){ .is_error=true, .err=builtin___v_error(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("int("), 0xfe09, {.d_i64 = raw_fsize}}, {_S(") cast results in "), 0xfe07, {.d_i32 = len}}, {_SLIT0, 0, { .d_c = 0 }}}))), .data={E_STRUCT} };
+		return (_result_int){ .is_error=true, .err=builtin___v_error(builtin__string_plus_many(4, _MOV((string[4]){_S("int("), builtin__isize_str(raw_fsize), _S(") cast results in "), builtin__int_str(len)}))), .data={E_STRUCT} };
 	}
 	rewind(fp);
-	_result_int _t4;
-	builtin___result_ok(&(int[]) { len }, (_result*)(&_t4), sizeof(int));
+	_result_int _t5;
+	builtin___result_ok(&(int[]) { len }, (_result*)(&_t5), sizeof(int));
 	 
-	return _t4;
+	return _t5;
 }
 VV_LOC _result_strings__Builder os__slurp_file_in_builder(FILE* fp) {
 	Array_fixed_u8_4096 buf = {0};
@@ -7550,7 +10202,8 @@ VV_LOC _result_strings__Builder os__slurp_file_in_builder(FILE* fp) {
 	for (;;) {
 		_result_int _t1 = os__fread(&buf[0], 1, _const_os__buf_size, fp);
 		if (_t1.is_error) {
-			IError err = _t1.err;
+			IError _t2 = _t1.err;
+			IError err = _t2;
 			if ((err)._typ == _IError_os__Eof_index) {
 				break;
 			}
@@ -7558,13 +10211,13 @@ VV_LOC _result_strings__Builder os__slurp_file_in_builder(FILE* fp) {
 			return (_result_strings__Builder){ .is_error=true, .err=err, .data={E_STRUCT} };
 		}
 		
- 		int read_bytes = (*(int*)_t1.data);
-		strings__Builder_write_ptr(&sb, &buf[0], read_bytes);
+ 		int nbytes = (*(int*)_t1.data);
+		strings__Builder_write_ptr(&sb, &buf[0], nbytes);
 	}
-	_result_strings__Builder _t3;
-	builtin___result_ok(&(strings__Builder[]) { sb }, (_result*)(&_t3), sizeof(strings__Builder));
+	_result_strings__Builder _t4;
+	builtin___result_ok(&(strings__Builder[]) { sb }, (_result*)(&_t4), sizeof(strings__Builder));
 	 
-	return _t3;
+	return _t4;
 }
 _result_string os__read_file(string path) {
 	string mode = _S("rb");
@@ -7613,7 +10266,7 @@ _result_string os__read_file(string path) {
 		return _t7;
 	}
 	{ // Unsafe block
-		u8* str = builtin__malloc_noscan((int)(allocate + 1));
+		u8* str = builtin__malloc_noscan(allocate + 1);
 		int nelements = ((int)(fread(str, 1, allocate, fp)));
 		int is_eof = ((int)(feof(fp)));
 		int is_error = ((int)(ferror(fp)));
@@ -7656,7 +10309,7 @@ u64 os__file_size(string path) {
 	return attr.size;
 }
 _result_void os__cp(string src, string dst, os__CopyParams config) {
-	#if defined(_WIN32)
+	#if 0
 	{
 	}
 	#else
@@ -7667,7 +10320,7 @@ _result_void os__cp(string src, string dst, os__CopyParams config) {
 		}
 		i32 fp_from = open(((char*)(src.str)), O_RDONLY, 0);
 		if (fp_from < 0) {
-			return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("cp: failed to open "), 0xfe10, {.d_s = src}}, {_S(" for reading"), 0, { .d_c = 0 }}})), ((int)(fp_from))), .data={E_STRUCT} };
+			return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__string_plus_many(3, _MOV((string[3]){_S("cp: failed to open "), src, _S(" for reading")})), ((int)(fp_from))), .data={E_STRUCT} };
 		}
 		int mode_flags = (S_IWUSR | S_IRUSR);
 		int open_flags = ((O_WRONLY | O_CREAT) | O_TRUNC);
@@ -7677,7 +10330,7 @@ _result_void os__cp(string src, string dst, os__CopyParams config) {
 		i32 fp_to = open(((char*)(w_dst.str)), open_flags, mode_flags);
 		if (fp_to < 0) {
 			close(fp_from);
-			return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("cp: failed to open "), 0xfe10, {.d_s = w_dst}}, {_S(" for writing"), 0, { .d_c = 0 }}})), ((int)(fp_to))), .data={E_STRUCT} };
+			return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__string_plus_many(3, _MOV((string[3]){_S("cp: failed to open "), w_dst, _S(" for writing")})), ((int)(fp_to))), .data={E_STRUCT} };
 		}
 		Array_fixed_u8_1024 buf = {0};
 		int count = ((int)(0));
@@ -7689,7 +10342,7 @@ _result_void os__cp(string src, string dst, os__CopyParams config) {
 			if (write(fp_to, &buf[0], count) < 0) {
 				close(fp_to);
 				close(fp_from);
-				return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("cp: failed to write to "), 0xfe10, {.d_s = w_dst}}, {_SLIT0, 0, { .d_c = 0 }}})), ((int)(-1))), .data={E_STRUCT} };
+				return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__string_plus_many(2, _MOV((string[2]){_S("cp: failed to write to "), w_dst})), ((int)(-1))), .data={E_STRUCT} };
 			}
 		}
 		_result_os__Stat _t5 = os__stat(src);
@@ -7704,7 +10357,7 @@ _result_void os__cp(string src, string dst, os__CopyParams config) {
 		if (chmod(((char*)(w_dst.str)), from_attr.mode) < 0) {
 			close(fp_to);
 			close(fp_from);
-			return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("failed to set permissions for "), 0xfe10, {.d_s = w_dst}}, {_SLIT0, 0, { .d_c = 0 }}})), ((int)(-1))), .data={E_STRUCT} };
+			return (_result_void){ .is_error=true, .err=builtin__error_with_code(builtin__string_plus_many(2, _MOV((string[2]){_S("failed to set permissions for "), w_dst})), ((int)(-1))), .data={E_STRUCT} };
 		}
 		close(fp_to);
 		close(fp_from);
@@ -7716,8 +10369,8 @@ _result_FILE_ptr os__vfopen(string path, string mode) {
 	if ((path).len == 0) {
 		return (_result_FILE_ptr){ .is_error=true, .err=builtin___v_error(_S("vfopen called with \"\"")), .data={E_STRUCT} };
 	}
-	voidptr fp = ((void*)0);
-	#if defined(_WIN32)
+	FILE* fp = ((FILE*)(((void*)0)));
+	#if 0
 	{
 	}
 	#else
@@ -7726,53 +10379,50 @@ _result_FILE_ptr os__vfopen(string path, string mode) {
 	}
 	#endif
 	if (builtin__isnil(((voidptr)(fp)))) {
-		return (_result_FILE_ptr){ .is_error=true, .err=os__error_posix(((os__SystemError){.msg = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("failed to open file \""), 0xfe10, {.d_s = path}}, {_S("\""), 0, { .d_c = 0 }}})),.code = _const_os__error_code_not_set,})), .data={E_STRUCT} };
-	} else {
-		_result_FILE_ptr _t4;
-		builtin___result_ok(&(FILE*[]) { fp }, (_result*)(&_t4), sizeof(FILE*));
-		 
-		return _t4;
+		return (_result_FILE_ptr){ .is_error=true, .err=os__error_posix(((os__SystemError){.msg = builtin__string_plus_many(3, _MOV((string[3]){_S("failed to open file \""), path, _S("\"")})),.code = _const_os__error_code_not_set,})), .data={E_STRUCT} };
 	}
-	return (_result_FILE_ptr){0};
+	_result_FILE_ptr _t4;
+	builtin___result_ok(&(FILE*[]) { fp }, (_result*)(&_t4), sizeof(FILE*));
+	 
+	return _t4;
 }
 int os__fileno(voidptr cfile) {
-	#if defined(_WIN32)
+	#if 0
 	{
 	}
 	#else
 	{
-		FILE* cfile_casted = ((FILE*)(((void*)0)));
-		cfile_casted = cfile;
-		return fileno(cfile_casted);
+		return fileno(((FILE*)(cfile)));
 	}
 	#endif
 	return 0;
 }
-VV_LOC voidptr os__vpopen(string path) {
-	#if defined(_WIN32)
-	{
-	}
-	#else
-	{
-		u8* cpath = path.str;
-		return popen(((char*)(cpath)), "r");
-	}
-	#endif
-	return 0;
+VV_LOC bool os__posix_wait_status_exited(int status) {
+	return ((status & 0x7f)) == 0;
+}
+VV_LOC int os__posix_wait_status_exit_code(int status) {
+	return ((v__rshift_int(status, (u64)8)) & 0xff);
+}
+VV_LOC bool os__posix_wait_status_signaled(int status) {
+	int signal = (status & 0x7f);
+	return signal != 0 && signal != 0x7f;
+}
+VV_LOC int os__posix_wait_status_signal(int status) {
+	return (status & 0x7f);
 }
 VV_LOC multi_return_int_bool os__posix_wait4_to_exit_status(int waitret) {
-	#if defined(_WIN32)
+	#if 0
 	{
 	}
 	#else
 	{
 		int ret = 0;
 		bool is_signaled = true;
-		if (WIFEXITED(waitret)) {
-			ret = WEXITSTATUS(waitret);
+		if (os__posix_wait_status_exited(waitret)) {
+			ret = os__posix_wait_status_exit_code(waitret);
 			is_signaled = false;
-		} else if (WIFSIGNALED(waitret)) {
-			ret = WTERMSIG(waitret);
+		} else if (os__posix_wait_status_signaled(waitret)) {
+			ret = os__posix_wait_status_signal(waitret);
 			is_signaled = true;
 		}
 		return (multi_return_int_bool){.arg0=ret, .arg1=is_signaled};
@@ -7787,21 +10437,8 @@ string os__posix_get_error_msg(int code) {
 	}
 	return builtin__tos3(ptr_text);
 }
-VV_LOC int os__vpclose(voidptr f) {
-	#if defined(_WIN32)
-	{
-	}
-	#else
-	{
-		multi_return_int_bool mr_10526 = os__posix_wait4_to_exit_status(pclose(f));
-		int ret = mr_10526.arg0;
-		return ret;
-	}
-	#endif
-	return 0;
-}
 bool os__exists(string path) {
-	#if defined(_WIN32)
+	#if 0
 	{
 	}
 	#else
@@ -7813,7 +10450,7 @@ bool os__exists(string path) {
 }
 _result_void os__rm(string path) {
 	int rc = 0;
-	#if defined(_WIN32)
+	#if 0
 	{
 	}
 	#else
@@ -7822,12 +10459,12 @@ _result_void os__rm(string path) {
 	}
 	#endif
 	if (rc == -1) {
-		return (_result_void){ .is_error=true, .err=os__error_posix(((os__SystemError){.msg = builtin__string__plus(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("Failed to remove \""), 0xfe10, {.d_s = path}}, {_S("\": "), 0, { .d_c = 0 }}})), os__posix_get_error_msg(errno)),.code = _const_os__error_code_not_set,})), .data={E_STRUCT} };
+		return (_result_void){ .is_error=true, .err=os__error_posix(((os__SystemError){.msg = builtin__string__plus(builtin__string_plus_many(3, _MOV((string[3]){_S("Failed to remove \""), path, _S("\": ")})), os__posix_get_error_msg(errno)),.code = _const_os__error_code_not_set,})), .data={E_STRUCT} };
 	}
 	return (_result_void){0};
 }
 _result_void os__rmdir(string path) {
-	#if defined(_WIN32)
+	#if 0
 	{
 	}
 	#else
@@ -7843,7 +10480,7 @@ _result_void os__rmdir(string path) {
 string os__real_path(string fpath) {
 	Array_fixed_u8_4096 fullpath = {0};
 	string res = _S("");
-	#if defined(_WIN32)
+	#if 0
 	{
 	}
 	#else
@@ -7861,15 +10498,15 @@ string os__real_path(string fpath) {
 	return res;
 }
 VV_LOC void os__normalize_drive_letter(string path) {
-	#if !defined(_WIN32)
+	#if 1
 	{
 		return;
 	}
 	#endif
 	if (path.len > 2 && path.str[ 0] >= 'a' && path.str[ 0] <= 'z' && path.str[ 1] == ':' && path.str[ 2] == _const_os__path_separator.str[ 0]) {
 		{ // Unsafe block
-			u8* x = &path.str[0];
-			*x = (u8)(*x - 32);
+			u8* x = ((u8*)(path.str));
+			x[0] = (u8)(x[0] - 32);
 		}
 	}
 }
@@ -7888,7 +10525,7 @@ void os__Result_free(os__Result* result) {
 	builtin__string_free(&result->output);
 }
 _result_Array_string os__read_lines(string path) {
-	_result_string _t1 = os__read_file(path);
+	_result_os__File _t1 = os__open(path);
 	if (_t1.is_error) {
 		_result_Array_string _t2 = {0};
 		_t2.is_error = true;
@@ -7896,13 +10533,135 @@ _result_Array_string os__read_lines(string path) {
 		return _t2;
 	}
 	
- 	string buf = (*(string*)_t1.data);
-	Array_string res = builtin__string_split_into_lines(buf);
-	builtin__string_free(&buf);
-	_result_Array_string _t3;
-	builtin___result_ok(&(Array_string[]) { res }, (_result*)(&_t3), sizeof(Array_string));
-	 
+ 	os__File file = (*(os__File*)_t1.data);
+	_result_Array_string _t3 = os__read_lines_from_open_file((voidptr)&file);
+		{ // defer begin
+			os__File_close(&file);
+		} // defer end
 	return _t3;
+}
+VV_LOC _result_Array_string os__read_lines_from_open_file(os__File* file) {
+	Array_u8 buf = builtin____new_array_with_default(_const_os__read_lines_chunk_size, 0, sizeof(u8), 0);
+	Array_string lines = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	strings__Builder line = strings__new_builder(_const_os__read_lines_chunk_size);
+	bool pending_cr = false;
+	for (;;) {
+		_result_int _t1 = os__File_read(file, &buf);
+		if (_t1.is_error) {
+			IError _t2 = _t1.err;
+			IError err = _t2;
+			if ((err)._typ == _IError_os__Eof_index) {
+				break;
+			}
+			{ // Unsafe block
+				strings__Builder_free(&line);
+				Array_string_free(&lines);
+			}
+			return (_result_Array_string){ .is_error=true, .err=err, .data={E_STRUCT} };
+		}
+		
+ 		int nread = (*(int*)_t1.data);
+		if (nread <= 0) {
+			break;
+		}
+		int segment_start = 0;
+		for (int i = 0; i < nread; i++) {
+			u8 c = (*(u8*)builtin__array_get(buf, i));
+			if (pending_cr) {
+				pending_cr = false;
+				if (c == '\n') {
+					segment_start = i + 1;
+					continue;
+				}
+			}
+			if (c == '\n' || c == '\r') {
+				if (i > segment_start) {
+					_PUSH_MANY(&line, (builtin__array_slice(buf, segment_start, i)), _t4, strings__Builder);
+				}
+				builtin__array_push((array*)&lines, _MOV((string[]){ strings__Builder_str(&line) }));
+				segment_start = i + 1;
+				pending_cr = c == '\r';
+			}
+		}
+		if (segment_start < nread) {
+			_PUSH_MANY(&line, (builtin__array_slice(buf, segment_start, nread)), _t6, strings__Builder);
+		}
+	}
+	if (line.len > 0) {
+		builtin__array_push((array*)&lines, _MOV((string[]){ strings__Builder_str(&line) }));
+	}
+	strings__Builder_free(&line);
+	_result_Array_string _t8;
+	builtin___result_ok(&(Array_string[]) { lines }, (_result*)(&_t8), sizeof(Array_string));
+	 
+	return _t8;
+}
+_result_void os__rmdir_all(string path) {
+	string err_msg = _S("");
+	int err_code = -1;
+	_result_Array_string _t1 = os__ls(path);
+	if (_t1.is_error) {
+		_result_void _t2 = {0};
+		_t2.is_error = true;
+		_t2.err = _t1.err;
+		return _t2;
+	}
+	
+ 	Array_string items = (*(Array_string*)_t1.data);
+	for (int _t3 = 0; _t3 < items.len; ++_t3) {
+		string item = ((string*)items.data)[_t3];
+		string fullpath = os__join_path_single(path, item);
+		if (os__is_dir(fullpath) && !os__is_link(fullpath)) {
+			_result_void _t4 = os__rmdir_all(fullpath);
+			if (_t4.is_error) {
+				IError _t5 = _t4.err;
+				IError err = _t5;
+				err_msg = ((struct _IError_interface_methods*)(err._methods))->_method_msg(err._object);
+				err_code = ((struct _IError_interface_methods*)(err._methods))->_method_code(err._object);
+			}
+			
+ ;
+		} else {
+			_result_void _t6 = os__rm(fullpath);
+			if (_t6.is_error) {
+				IError _t7 = _t6.err;
+				IError err = _t7;
+				err_msg = ((struct _IError_interface_methods*)(err._methods))->_method_msg(err._object);
+				err_code = ((struct _IError_interface_methods*)(err._methods))->_method_code(err._object);
+			}
+			
+ ;
+		}
+	}
+	_result_void _t8 = os__rmdir(path);
+	if (_t8.is_error) {
+		IError _t9 = _t8.err;
+		IError err = _t9;
+		err_msg = ((struct _IError_interface_methods*)(err._methods))->_method_msg(err._object);
+		err_code = ((struct _IError_interface_methods*)(err._methods))->_method_code(err._object);
+	}
+	
+ ;
+	if ((err_msg).len != 0) {
+		return (_result_void){ .is_error=true, .err=builtin__error_with_code(err_msg, err_code), .data={E_STRUCT} };
+	}
+	return (_result_void){0};
+}
+string os__dir(string path) {
+	if ((path).len == 0) {
+		return _S(".");
+	}
+	string detected_path_separator = (builtin__string_contains(path, _S("/")) ? (_S("/")) : (_S("\\")));
+	_option_int _t2 = builtin__string_last_index(path, detected_path_separator);
+	if (_t2.state != 0) {
+		return _S(".");
+	}
+	
+ 	int pos = (*(int*)_t2.data);
+	if (pos == 0) {
+		return detected_path_separator;
+	}
+	return builtin__string_substr(path, 0, pos);
 }
 string os__file_name(string path) {
 	string detected_path_separator = (builtin__string_contains(path, _S("/")) ? (_S("/")) : (_S("\\")));
@@ -7920,6 +10679,9 @@ _result_void os__write_file(string path, string text) {
  	os__File f = (*(os__File*)_t1.data);
 		_result_void _t3 = os__File_write_full_buffer(&f, text.str, ((usize)(text.len)));
 	if (_t3.is_error) {
+		{ // defer begin
+			os__File_close(&f);
+		} // defer end
 		_result_void _t4 = {0};
 		_t4.is_error = true;
 		_t4.err = _t3.err;
@@ -7927,7 +10689,9 @@ _result_void os__write_file(string path, string text) {
 	}
 	
  ;
-	os__File_close(&f);
+		{ // defer begin
+			os__File_close(&f);
+		} // defer end
 	return (_result_void){0};
 }
 string os__ExecutableNotFoundError_msg(os__ExecutableNotFoundError err) {
@@ -7937,7 +10701,7 @@ bool os__is_file(string path) {
 	return os__exists(path) && !os__is_dir(path);
 }
 string os__join_path_single(string base, string elem) {
-	strings__Builder sb = strings__new_builder((int)((int)(base.len + elem.len) + 1));
+	strings__Builder sb = strings__new_builder(base.len + elem.len + 1);
 	string sbase = builtin__string_trim_right(base, _S("\\/"));
 	strings__Builder_write_string(&sb, sbase);
 	if ((elem).len != 0) {
@@ -7968,18 +10732,18 @@ VV_LOC void os__normalize_path_in_builder(strings__Builder* sb) {
 			}
 		}
 	}
-	for (int idx = 0; idx < (int)(sb->len - 3); ++idx) {
-		if (((u8*)sb->data)[idx] == rs && ((u8*)sb->data)[(int_literal)(idx + 1)] == '.' && ((u8*)sb->data)[(int_literal)(idx + 2)] == rs) {
+	for (int idx = 0; idx < sb->len - 3; ++idx) {
+		if (((u8*)sb->data)[idx] == rs && ((u8*)sb->data)[idx + 1] == '.' && ((u8*)sb->data)[idx + 2] == rs) {
 			{ // Unsafe block
-				for (int j = (int_literal)(idx + 1); j < (int)(sb->len - 2); j++) {
+				for (int_literal j = idx + 1; j < sb->len - 2; j++) {
 					((u8*)sb->data)[j] = ((u8*)sb->data)[(int)(j + 2)];
 				}
 				sb->len -= 2;
 			}
 		}
-		if (((u8*)sb->data)[idx] == rs && ((u8*)sb->data)[(int_literal)(idx + 1)] == rs) {
+		if (((u8*)sb->data)[idx] == rs && ((u8*)sb->data)[idx + 1] == rs) {
 			{ // Unsafe block
-				for (int j = (int_literal)(idx + 1); j < (int)(sb->len - 1); j++) {
+				for (int_literal j = idx + 1; j < sb->len - 1; j++) {
 					((u8*)sb->data)[j] = ((u8*)sb->data)[(int)(j + 1)];
 				}
 				sb->len -= 1;
@@ -7992,10 +10756,10 @@ _result_void os__mkdir_all(string opath, os__MkdirParams params) {
 		if (os__is_dir(opath)) {
 			return (_result_void){0};
 		}
-		return (_result_void){ .is_error=true, .err=builtin___v_error(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("path `"), 0xfe10, {.d_s = opath}}, {_S("` already exists, and is not a folder"), 0, { .d_c = 0 }}}))), .data={E_STRUCT} };
+		return (_result_void){ .is_error=true, .err=builtin___v_error(builtin__string_plus_many(3, _MOV((string[3]){_S("path `"), opath, _S("` already exists, and is not a folder")}))), .data={E_STRUCT} };
 	}
 	string _t2;
-	#if defined(_WIN32)
+	#if 0
 	#else
 		_t2 = _S("\\");
 		;
@@ -8012,8 +10776,9 @@ _result_void os__mkdir_all(string opath, os__MkdirParams params) {
 		}
 		_result_void _t4 = os__mkdir(p, params);
 		if (_t4.is_error) {
-			IError err = _t4.err;
-			return (_result_void){ .is_error=true, .err=builtin___v_error(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("folder: "), 0xfe10, {.d_s = p}}, {_S(", error: "), 0xfe10, {.d_s = builtin__IError_str(err)}}, {_SLIT0, 0, { .d_c = 0 }}}))), .data={E_STRUCT} };
+			IError _t5 = _t4.err;
+			IError err = _t5;
+			return (_result_void){ .is_error=true, .err=builtin___v_error(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("folder: "), 0xfe10, {.d_s = p}, 0, 0, 0}, {_S(", error: "), 0xfe10, {.d_s = builtin__IError_str(err)}, 0, 0, 0}, {_SLIT0, 0, { .d_c = 0 }, 0, 0, 0}}))), .data={E_STRUCT} };
 		}
 		
  ;
@@ -8025,13 +10790,13 @@ _result_Array_string os__ls(string path) {
 		return (_result_Array_string){ .is_error=true, .err=builtin___v_error(_S("ls() expects a folder, not an empty string")), .data={E_STRUCT} };
 	}
 	Array_string res = builtin____new_array_with_default(0, 50, sizeof(string), 0);
-	DIR* dir = opendir(((char*)(path.str)));
-	if (builtin__isnil(dir)) {
-		return (_result_Array_string){ .is_error=true, .err=os__error_posix(((os__SystemError){.msg = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("ls() couldnt open dir \""), 0xfe10, {.d_s = path}}, {_S("\""), 0, { .d_c = 0 }}})),.code = _const_os__error_code_not_set,})), .data={E_STRUCT} };
+	DIR* dir_ptr = opendir(((char*)(path.str)));
+	if (builtin__isnil(dir_ptr)) {
+		return (_result_Array_string){ .is_error=true, .err=os__error_posix(((os__SystemError){.msg = builtin__string_plus_many(3, _MOV((string[3]){_S("ls() couldnt open dir \""), path, _S("\"")})),.code = _const_os__error_code_not_set,})), .data={E_STRUCT} };
 	}
 	struct dirent* ent = ((struct dirent*)(((void*)0)));
 	for (;;) {
-		ent = readdir(dir);
+		ent = readdir(dir_ptr);
 		if (builtin__isnil(ent)) {
 			break;
 		}
@@ -8043,7 +10808,7 @@ _result_Array_string os__ls(string path) {
 			builtin__array_push((array*)&res, _MOV((string[]){ builtin__tos_clone(bptr) }));
 		}
 	}
-	closedir(dir);
+	closedir(dir_ptr);
 	_result_Array_string _t4;
 	builtin___result_ok(&(Array_string[]) { res }, (_result*)(&_t4), sizeof(Array_string));
 	 
@@ -8061,38 +10826,30 @@ _result_void os__mkdir(string path, os__MkdirParams params) {
 	return (_result_void){0};
 }
 os__Result os__execute(string cmd) {
-	string pcmd = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("exec 2>&1;"), 0xfe10, {.d_s = cmd}}, {_SLIT0, 0, { .d_c = 0 }}}));
-	voidptr f = os__vpopen(pcmd);
-	if (builtin__isnil(f)) {
-		os__Result _t1 = ((os__Result){.exit_code = -1,.output = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("exec(\""), 0xfe10, {.d_s = cmd}}, {_S("\") failed"), 0, { .d_c = 0 }}})),});
-			{ // defer begin
-				builtin__string_free(&pcmd);
-			} // defer end
-		return _t1;
+	int pid = 0;
+	int read_fd = -1;
+	os__v_os_execute_lock();
+	int rc = v_os_execute_capture_start(((char*)(cmd.str)), &pid, &read_fd);
+	os__v_os_execute_unlock();
+	if (rc != 0) {
+		return ((os__Result){.exit_code = -1,.output = builtin__string_plus_many(3, _MOV((string[3]){_S("exec(\""), cmd, _S("\") failed")})),});
 	}
-	int fd = os__fileno(f);
-	strings__Builder res = strings__new_builder(1024);
-	Array_fixed_u8_4096 buf = {0};
-	{ // Unsafe block
-		u8* pbuf = &buf[0];
-		for (;;) {
-			int len = ((int)(read(fd, pbuf, 4096)));
-			if (len == 0) {
-				break;
-			}
-			strings__Builder_write_ptr(&res, pbuf, len);
+	string soutput = Array_string_join(os__fd_slurp(read_fd), _S(""));
+	os__fd_close(read_fd);
+	int status = 0;
+	for (;;) {
+		errno = 0;
+		if (waitpid(pid, &status, 0) != -1) {
+			break;
 		}
+		if (errno == EINTR) {
+			continue;
+		}
+		return ((os__Result){.exit_code = -1,.output = soutput,});
 	}
-	string soutput = strings__Builder_str(&res);
-	int exit_code = os__vpclose(f);
-	os__Result _t2 = ((os__Result){.exit_code = exit_code,.output = soutput,});
-		{ // defer begin
-			strings__Builder_free(&res);
-		} // defer end
-		{ // defer begin
-			builtin__string_free(&pcmd);
-		} // defer end
-	return _t2;
+	multi_return_int_bool mr_9462 = os__posix_wait4_to_exit_status(status);
+	int exit_code = mr_9462.arg0;
+	return ((os__Result){.exit_code = exit_code,.output = soutput,});
 }
 _result_void os__symlink(string target, string link_name) {
 	i32 res = symlink(((char*)(target.str)), ((char*)(link_name.str)));
@@ -8106,8 +10863,10 @@ void os__File_close(os__File* f) {
 		return;
 	}
 	f->is_opened = false;
-	fflush(f->cfile);
-	fclose(f->cfile);
+	voidptr cfile = f->cfile;
+	f->cfile = ((void*)0);
+	fflush(cfile);
+	fclose(cfile);
 }
 _result_os__Stat os__stat(string path) {
 	struct stat s;
@@ -8118,14 +10877,14 @@ _result_os__Stat os__stat(string path) {
 		}
 		_result_os__Stat _t2;
 		builtin___result_ok(&(os__Stat[]) { ((os__Stat){
-			.dev = s.st_dev,
+			.dev = ((u64)(s.st_dev)),
 			.inode = s.st_ino,
 			.mode = s.st_mode,
 			.nlink = s.st_nlink,
 			.uid = s.st_uid,
 			.gid = s.st_gid,
-			.rdev = s.st_rdev,
-			.size = s.st_size,
+			.rdev = ((u64)(s.st_rdev)),
+			.size = ((u64)(s.st_size)),
 			.atime = s.st_atime,
 			.mtime = s.st_mtime,
 			.ctime = s.st_ctime,
@@ -8144,14 +10903,14 @@ _result_os__Stat os__lstat(string path) {
 		}
 		_result_os__Stat _t2;
 		builtin___result_ok(&(os__Stat[]) { ((os__Stat){
-			.dev = s.st_dev,
+			.dev = ((u64)(s.st_dev)),
 			.inode = s.st_ino,
 			.mode = s.st_mode,
 			.nlink = s.st_nlink,
 			.uid = s.st_uid,
 			.gid = s.st_gid,
-			.rdev = s.st_rdev,
-			.size = s.st_size,
+			.rdev = ((u64)(s.st_rdev)),
+			.size = ((u64)(s.st_size)),
 			.atime = s.st_atime,
 			.mtime = s.st_mtime,
 			.ctime = s.st_ctime,
@@ -8212,20 +10971,46 @@ VV_LOC string main__pad_right(string s, int width) {
 	if (s.len >= width) {
 		return s;
 	}
-	return builtin__string__plus(s, strings__repeat(' ', (int)(width - s.len)));
+	return builtin__string__plus(s, strings__repeat(' ', width - s.len));
 }
 VV_LOC string main__format_bytes(u64 bytes) {
 	if (bytes >= 1048576) {
-		f64 mb = (f64)(((f64)(bytes)) / ((f64)(1.048576e+06)));
-		return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0x20d, {.d_f64 = mb}}, {_S("MB"), 0, { .d_c = 0 }}}));
+		f64 mb = ((f64)(bytes)) / ((f64)(1.048576e+06));
+		return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0x20d, {.d_f64 = mb}, 0, 0, 0}, {_S("MB"), 0, { .d_c = 0 }, 0, 0, 0}}));
 	} else if (bytes >= 1024) {
-		f64 kb = (f64)(((f64)(bytes)) / ((f64)(1024.0)));
-		return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xd, {.d_f64 = kb}}, {_S("KB"), 0, { .d_c = 0 }}}));
+		f64 kb = ((f64)(bytes)) / ((f64)(1024.0));
+		return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xd, {.d_f64 = kb}, 0, 0, 0}, {_S("KB"), 0, { .d_c = 0 }, 0, 0, 0}}));
 	}
-	return builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe08, {.d_u64 = bytes}}, {_S("B"), 0, { .d_c = 0 }}}));
+	return builtin__string_plus_many(2, _MOV((string[2]){builtin__u64_str(bytes), _S("B")}));
+}
+VV_LOC string main__json_escape(string s) {
+	strings__Builder res = strings__new_builder(s.len + 8);
+	for (int i = 0; i < s.len; i++) {
+		u8 ch = builtin__string_at(s, i);
+
+		if (ch == ('"')) {
+			strings__Builder_write_string(&res, _S("\\\""));
+		}
+		else if (ch == ('\\')) {
+			strings__Builder_write_string(&res, _S("\\\\"));
+		}
+		else if (ch == ('\n')) {
+			strings__Builder_write_string(&res, _S("\\n"));
+		}
+		else if (ch == ('\r')) {
+			strings__Builder_write_string(&res, _S("\\r"));
+		}
+		else if (ch == ('\t')) {
+			strings__Builder_write_string(&res, _S("\\t"));
+		}
+		else {
+			strings__Builder_write_u8(&res, ch);
+		}
+	}
+	return strings__Builder_str(&res);
 }
 VV_LOC string main__parse_json_value(string json_str, string key) {
-	string search_key = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("\""), 0xfe10, {.d_s = key}}, {_S("\""), 0, { .d_c = 0 }}}));
+	string search_key = builtin__string_plus_many(3, _MOV((string[3]){_S("\""), key, _S("\"")}));
 	if (!builtin__string_contains(json_str, search_key)) {
 		return _S("");
 	}
@@ -8237,19 +11022,117 @@ VV_LOC string main__parse_json_value(string json_str, string key) {
 	if (builtin__string_starts_with(val_part, _S("\""))) {
 		return builtin__string_all_before(builtin__string_all_after(val_part, _S("\"")), _S("\""));
 	}
-	return builtin__string_trim_space(builtin__string_all_before(builtin__string_all_before(builtin__string_all_before(val_part, _S(",")), _S("}")), _S("\n")));
+	string val = builtin__string_trim_space(builtin__string_all_before(builtin__string_all_before(builtin__string_all_before(builtin__string_all_before(val_part, _S(",")), _S("}")), _S("\n")), _S("]")));
+	return val;
 }
 VV_LOC void main__print_banner(void) {
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\255\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("OpenNGFW Package Manager"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = _const_main__c_green}}, {_S("ngpkg v"), 0xfe10, {.d_s = _const_main__version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(")                 "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Prefix: /mnt/usb/opt  \342\200\242  Binaries: ~/.ngpkg-bin"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("             "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("\342\225\255\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(16, _MOV((string[16]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_bold, _S("OpenNGFW Serverless Package Manager"), _const_main__c_reset, _S(" ("), _const_main__c_green, _S("ngpkg v"), _const_main__version, _const_main__c_reset, _S(")      "), _const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Serverless Git Architecture \342\200\242 Prefix: /mnt/usb/opt"), _const_main__c_reset, _S("          "), _const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257"), _const_main__c_reset})));
+}
+VV_LOC string main__normalize_repo_url(string url) {
+	string u = builtin__string_trim_right(builtin__string_trim_space(url), _S("/"));
+	if (builtin__string_ends_with(u, _S(".git"))) {
+		u = builtin__string_all_before_last(u, _S(".git"));
+	}
+	if (builtin__string_starts_with(u, _S("https://github.com/")) || builtin__string_starts_with(u, _S("http://github.com/"))) {
+		string after_gh = (builtin__string_starts_with(u, _S("https://github.com/")) ? (builtin__string_all_after(u, _S("https://github.com/"))) : (builtin__string_all_after(u, _S("http://github.com/"))));
+		Array_string parts = builtin__string_split(after_gh, _S("/"));
+		if (parts.len >= 2) {
+			string user = (*(string*)builtin__array_get(parts, 0));
+			string repo = (*(string*)builtin__array_get(parts, 1));
+			string branch = _S("main");
+			if (parts.len >= 4 && builtin__string__eq((*(string*)builtin__array_get(parts, 2)), _S("tree"))) {
+				branch = (*(string*)builtin__array_get(parts, 3));
+			}
+			return builtin__string_plus_many(6, _MOV((string[6]){_S("https://raw.githubusercontent.com/"), user, _S("/"), repo, _S("/"), branch}));
+		}
+	} else if (builtin__string_starts_with(u, _S("https://gitlab.com/")) || builtin__string_starts_with(u, _S("http://gitlab.com/"))) {
+		string after_gl = (builtin__string_starts_with(u, _S("https://gitlab.com/")) ? (builtin__string_all_after(u, _S("https://gitlab.com/"))) : (builtin__string_all_after(u, _S("http://gitlab.com/"))));
+		Array_string parts = builtin__string_split(after_gl, _S("/"));
+		if (parts.len >= 2) {
+			string user = (*(string*)builtin__array_get(parts, 0));
+			string repo = (*(string*)builtin__array_get(parts, 1));
+			return builtin__string_plus_many(5, _MOV((string[5]){_S("https://gitlab.com/"), user, _S("/"), repo, _S("/-/raw/main")}));
+		}
+	} else if (builtin__string_starts_with(u, _S("https://codeberg.org/")) || builtin__string_starts_with(u, _S("http://codeberg.org/"))) {
+		string after_cb = (builtin__string_starts_with(u, _S("https://codeberg.org/")) ? (builtin__string_all_after(u, _S("https://codeberg.org/"))) : (builtin__string_all_after(u, _S("http://codeberg.org/"))));
+		Array_string parts = builtin__string_split(after_cb, _S("/"));
+		if (parts.len >= 2) {
+			string user = (*(string*)builtin__array_get(parts, 0));
+			string repo = (*(string*)builtin__array_get(parts, 1));
+			return builtin__string_plus_many(5, _MOV((string[5]){_S("https://codeberg.org/"), user, _S("/"), repo, _S("/raw/branch/main")}));
+		}
+	}
+	return u;
+}
+VV_LOC Array_string main__get_repo_file_urls(main__Repo repo, string rel_path) {
+	Array_string urls = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	string clean_rel = builtin__string_trim_left(rel_path, _S("/"));
+	if (builtin__string_contains(repo.url, _S("code.weexnes.dev"))) {
+		string base = builtin__string_trim_right(repo.url, _S("/"));
+		if (builtin__string_ends_with(base, _S(".git"))) {
+			base = builtin__string_all_before_last(base, _S(".git"));
+		}
+		builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(3, _MOV((string[3]){base, _S("/~raw?revision=main&file="), clean_rel})) }));
+		builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(3, _MOV((string[3]){base, _S("/~raw?revision=master&file="), clean_rel})) }));
+		return urls;
+	}
+	if (builtin__string_starts_with(repo.url, _S("https://github.com/")) || builtin__string_starts_with(repo.url, _S("http://github.com/"))) {
+		string after = (builtin__string_starts_with(repo.url, _S("https://github.com/")) ? (builtin__string_all_after(repo.url, _S("https://github.com/"))) : (builtin__string_all_after(repo.url, _S("http://github.com/"))));
+		string clean = builtin__string_trim_right(after, _S("/"));
+		if (builtin__string_ends_with(clean, _S(".git"))) {
+			clean = builtin__string_all_before_last(clean, _S(".git"));
+		}
+		Array_string parts = builtin__string_split(clean, _S("/"));
+		if (parts.len >= 2) {
+			string user = (*(string*)builtin__array_get(parts, 0));
+			string rname = (*(string*)builtin__array_get(parts, 1));
+			builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(6, _MOV((string[6]){_S("https://raw.githubusercontent.com/"), user, _S("/"), rname, _S("/main/"), clean_rel})) }));
+			builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(6, _MOV((string[6]){_S("https://raw.githubusercontent.com/"), user, _S("/"), rname, _S("/master/"), clean_rel})) }));
+			return urls;
+		}
+	}
+	if (builtin__string_starts_with(repo.url, _S("https://gitlab.com/")) || builtin__string_starts_with(repo.url, _S("http://gitlab.com/"))) {
+		string clean = builtin__string_trim_right(repo.url, _S("/"));
+		if (builtin__string_ends_with(clean, _S(".git"))) {
+			clean = builtin__string_all_before_last(clean, _S(".git"));
+		}
+		builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(3, _MOV((string[3]){clean, _S("/-/raw/main/"), clean_rel})) }));
+		builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(3, _MOV((string[3]){clean, _S("/-/raw/master/"), clean_rel})) }));
+		return urls;
+	}
+	if (builtin__string_starts_with(repo.url, _S("https://codeberg.org/")) || builtin__string_starts_with(repo.url, _S("http://codeberg.org/"))) {
+		string clean = builtin__string_trim_right(repo.url, _S("/"));
+		if (builtin__string_ends_with(clean, _S(".git"))) {
+			clean = builtin__string_all_before_last(clean, _S(".git"));
+		}
+		builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(3, _MOV((string[3]){clean, _S("/raw/branch/main/"), clean_rel})) }));
+		builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(3, _MOV((string[3]){clean, _S("/raw/branch/master/"), clean_rel})) }));
+		return urls;
+	}
+	string base_raw = builtin__string_trim_right(repo.raw_url, _S("/"));
+	builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string_plus_many(3, _MOV((string[3]){base_raw, _S("/"), clean_rel})) }));
+	if (builtin__string_contains(base_raw, _S("/main"))) {
+		builtin__array_push((array*)&urls, _MOV((string[]){ builtin__string__plus(builtin__string_replace(base_raw, _S("/main"), _S("/master")), builtin__string_plus_many(2, _MOV((string[2]){_S("/"), clean_rel}))) }));
+	}
+	return urls;
+}
+VV_LOC Array_string main__get_repos_conf_paths(string prefix) {
+	return builtin__new_array_from_c_array(6, 6, sizeof(string), _MOV((string[6]){builtin__string_plus_many(2, _MOV((string[2]){prefix, _S("/etc/ngpkg/repos.conf")})), _S("/etc/ngpkg/repos.conf"), _S("/etc/ngpkg.repos"), builtin__string_plus_many(2, _MOV((string[2]){prefix, _S("/etc/ngpkg.conf")})), _S("/etc/ngpkg.conf"), _S("/etc/pkg.conf")}));
 }
 VV_LOC main__Config main__load_config(void) {
-	string repo_url = os__getenv(_S("REPO_URL"));
 	string prefix = os__getenv(_S("INSTALL_PREFIX"));
 	string db_dir = os__getenv(_S("PKG_DB"));
-	Array_string conf_paths = builtin__new_array_from_c_array(4, 4, sizeof(string), _MOV((string[4]){os__getenv(_S("PKG_CONF")), _S("/etc/ngpkg.conf"), _S("/etc/pkg.conf"), _S("/mnt/usb/opt/etc/ngpkg.conf")}));
+	if ((prefix).len == 0) {
+		prefix = _const_main__default_install_prefix;
+	}
+	if ((db_dir).len == 0) {
+		db_dir = _const_main__default_db_dir;
+	}
+	Array_main__Repo repos = builtin____new_array_with_default(0, 0, sizeof(main__Repo), 0);
+	Array_string conf_paths = main__get_repos_conf_paths(prefix);
 	for (int _t1 = 0; _t1 < conf_paths.len; ++_t1) {
 		string p = ((string*)conf_paths.data)[_t1];
 		if ((p).len != 0 && os__exists(p)) {
@@ -8265,30 +11148,93 @@ VV_LOC main__Config main__load_config(void) {
 				if (builtin__string_starts_with(trimmed, _S("#")) || (trimmed).len == 0) {
 					continue;
 				}
-				if (builtin__string_starts_with(trimmed, _S("REPO_URL=")) && (repo_url).len == 0) {
-					repo_url = builtin__string_trim(builtin__string_all_after(trimmed, _S("REPO_URL=")), _S(" \"'"));
-				} else if (builtin__string_starts_with(trimmed, _S("INSTALL_PREFIX=")) && (prefix).len == 0) {
-					prefix = builtin__string_trim(builtin__string_all_after(trimmed, _S("INSTALL_PREFIX=")), _S(" \"'"));
-				} else if (builtin__string_starts_with(trimmed, _S("PKG_DB=")) && (db_dir).len == 0) {
-					db_dir = builtin__string_trim(builtin__string_all_after(trimmed, _S("PKG_DB=")), _S(" \"'"));
+				if (builtin__string_starts_with(trimmed, _S("REPO_URL="))) {
+					string u = builtin__string_trim(builtin__string_all_after(trimmed, _S("REPO_URL=")), _S(" \"'"));
+					if ((u).len != 0) {
+						string raw = main__normalize_repo_url(u);
+						builtin__array_push((array*)&repos, _MOV((main__Repo[]){ ((main__Repo){.name = _S("default"),.url = u,.raw_url = raw,.package_count = 0,}) }));
+					}
+				} else if (builtin__string_contains(trimmed, _S(" ")) || builtin__string_contains(trimmed, _S("\t"))) {
+					Array_string parts = builtin__string_fields(trimmed);
+					if (parts.len >= 2) {
+						string r_name = builtin__string_trim_space((*(string*)builtin__array_get(parts, 0)));
+						string r_url = builtin__string_trim_space((*(string*)builtin__array_get(parts, 1)));
+						string raw = main__normalize_repo_url(r_url);
+						bool exists = false;
+						for (int _t5 = 0; _t5 < repos.len; ++_t5) {
+							main__Repo r = ((main__Repo*)repos.data)[_t5];
+							if (builtin__string__eq(r.name, r_name)) {
+								exists = true;
+								break;
+							}
+						}
+						if (!exists) {
+							builtin__array_push((array*)&repos, _MOV((main__Repo[]){ ((main__Repo){.name = r_name,.url = r_url,.raw_url = raw,.package_count = 0,}) }));
+						}
+					}
 				}
 			}
-			break;
+			if (repos.len > 0) {
+				break;
+			}
 		}
 	}
-	if ((repo_url).len == 0) {
-		repo_url = _const_main__default_repo_url;
+	string env_repo = os__getenv(_S("REPO_URL"));
+	if ((env_repo).len != 0) {
+		string raw = main__normalize_repo_url(env_repo);
+		repos = builtin__new_array_from_c_array(1, 1, sizeof(main__Repo), _MOV((main__Repo[1]){((main__Repo){.name = _S("env"),.url = env_repo,.raw_url = raw,.package_count = 0,})}));
 	}
-	if ((prefix).len == 0) {
-		prefix = _const_main__default_install_prefix;
+	if (repos.len == 0) {
+		builtin__array_push((array*)&repos, _MOV((main__Repo[]){ ((main__Repo){.name = _const_main__default_repo_name,.url = _const_main__default_repo_url,.raw_url = _const_main__default_repo_url,.package_count = 0,}) }));
 	}
-	if ((db_dir).len == 0) {
-		db_dir = _const_main__default_db_dir;
+	return ((main__Config){.repos = repos,.prefix = builtin__string_trim_right(prefix, _S("/")),.db_dir = builtin__string_trim_right(db_dir, _S("/")),});
+}
+VV_LOC bool main__save_repos_config(main__Config cfg) {
+	strings__Builder content = strings__new_builder(256);
+	strings__Builder_write_string(&content, _S("# OpenNGFW Serverless Package Repositories\n"));
+	strings__Builder_write_string(&content, _S("# Format: <name> <git-url-or-raw-url>\n\n"));
+	for (int _t1 = 0; _t1 < cfg.repos.len; ++_t1) {
+		main__Repo r = ((main__Repo*)cfg.repos.data)[_t1];
+		{
+			strings__Builder_write_string(&content, r.name);
+			strings__Builder_write_string(&content, _S(" "));
+			strings__Builder_write_string(&content, r.url);
+			strings__Builder_write_string(&content, _S("\n"));
+		}
 	}
-	return ((main__Config){.repo_url = builtin__string_trim_right(repo_url, _S("/")),.prefix = builtin__string_trim_right(prefix, _S("/")),.db_dir = builtin__string_trim_right(db_dir, _S("/")),});
+	Array_string target_paths = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/etc/ngpkg/repos.conf")})), _S("/etc/ngpkg/repos.conf")}));
+	bool ok = false;
+	for (int _t2 = 0; _t2 < target_paths.len; ++_t2) {
+		string p = ((string*)target_paths.data)[_t2];
+		string dir = os__dir(p);
+		_result_void _t3 = os__mkdir_all(dir, ((os__MkdirParams){.mode = 0777,}));
+		(void)_t3;
+ ;
+		_result_void _t4 = os__write_file(p, strings__Builder_str(&content));
+		if (_t4.is_error) {
+			continue;
+		}
+		
+ ;
+		ok = true;
+	}
+	return ok;
 }
 VV_LOC Array_string main__get_installed_db_dirs(main__Config cfg) {
-	return builtin__new_array_from_c_array(5, 5, sizeof(string), _MOV((string[5]){builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg/installed"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/pkg/installed"), 0, { .d_c = 0 }}})), _S("/var/lib/ngpkg/installed"), _S("/var/lib/pkg/installed")}));
+	return builtin__new_array_from_c_array(3, 3, sizeof(string), _MOV((string[3]){builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/var/lib/ngpkg/installed")})), builtin__string_plus_many(2, _MOV((string[2]){cfg.db_dir, _S("/installed")})), _S("/var/lib/ngpkg/installed")}));
+}
+VV_LOC bool main__is_installed(main__Config cfg, string pkg_name) {
+	Array_string _t1 = main__get_installed_db_dirs(cfg);
+	for (int _t2 = 0; _t2 < _t1.len; ++_t2) {
+		string d = ((string*)_t1.data)[_t2];
+		if (os__exists(builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".json")}))) || os__exists(builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".list")}))) || os__exists(builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".meta")})))) {
+			return true;
+		}
+	}
+	if (os__exists(builtin__string_plus_many(3, _MOV((string[3]){cfg.prefix, _S("/bin/"), pkg_name}))) || os__exists(builtin__string_plus_many(3, _MOV((string[3]){cfg.prefix, _S("/sbin/"), pkg_name})))) {
+		return true;
+	}
+	return false;
 }
 VV_LOC Array_string main__get_installed_packages(main__Config cfg) {
 	Array_string pkgs = builtin____new_array_with_default(0, 0, sizeof(string), 0);
@@ -8304,7 +11250,12 @@ VV_LOC Array_string main__get_installed_packages(main__Config cfg) {
  			Array_string files = (*(Array_string*)_t2.data);
 			for (int _t3 = 0; _t3 < files.len; ++_t3) {
 				string f = ((string*)files.data)[_t3];
-				if (builtin__string_ends_with(f, _S(".list"))) {
+				if (builtin__string_ends_with(f, _S(".json"))) {
+					string name = builtin__string_trim_string_right(f, _S(".json"));
+					if (!Array_string_contains(pkgs, name)) {
+						builtin__array_push((array*)&pkgs, _MOV((string[]){ builtin__string_clone(name) }));
+					}
+				} else if (builtin__string_ends_with(f, _S(".list"))) {
 					string name = builtin__string_trim_string_right(f, _S(".list"));
 					if (!Array_string_contains(pkgs, name)) {
 						builtin__array_push((array*)&pkgs, _MOV((string[]){ builtin__string_clone(name) }));
@@ -8315,34 +11266,60 @@ VV_LOC Array_string main__get_installed_packages(main__Config cfg) {
 	}
 	return pkgs;
 }
-VV_LOC bool main__is_installed(main__Config cfg, string pkg_name) {
+VV_LOC _option_main__Package main__get_installed_meta(main__Config cfg, string pkg_name) {
 	Array_string _t1 = main__get_installed_db_dirs(cfg);
 	for (int _t2 = 0; _t2 < _t1.len; ++_t2) {
 		string d = ((string*)_t1.data)[_t2];
-		if (os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = d}}, {_S("/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = d}}, {_S("/"), 0xfe10, {.d_s = pkg_name}}, {_S(".meta"), 0, { .d_c = 0 }}})))) {
-			return true;
-		}
-	}
-	return false;
-}
-VV_LOC _option_main__PackageMeta main__get_installed_meta(main__Config cfg, string pkg_name) {
-	Array_string _t1 = main__get_installed_db_dirs(cfg);
-	for (int _t2 = 0; _t2 < _t1.len; ++_t2) {
-		string d = ((string*)_t1.data)[_t2];
-		string meta_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = d}}, {_S("/"), 0xfe10, {.d_s = pkg_name}}, {_S(".meta"), 0, { .d_c = 0 }}}));
-		if (os__exists(meta_file)) {
-			_result_Array_string _t3 = os__read_lines(meta_file);
+		string json_file = builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".json")}));
+		if (os__exists(json_file)) {
+			_result_string _t3 = os__read_file(json_file);
 			if (_t3.is_error) {
-				*(Array_string*) _t3.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+				*(string*) _t3.data = _S("");
 			}
 			
- 			Array_string lines = (*(Array_string*)_t3.data);
+ 			string content = (*(string*)_t3.data);
+			if ((content).len != 0) {
+				string name = main__parse_json_value(content, _S("name"));
+				string ver = main__parse_json_value(content, _S("version"));
+				string desc = main__parse_json_value(content, _S("description"));
+				string cat = main__parse_json_value(content, _S("category"));
+				string repo = main__parse_json_value(content, _S("repo"));
+				_option_main__Package _t4;
+				builtin___option_ok(&(main__Package[]) { ((main__Package){
+					.name = ((name).len != 0 ? (name) : (pkg_name)),
+					.version = ((ver).len != 0 ? (ver) : (_S("installed"))),
+					.arch = _S("armv7l"),
+					.size = _S("installed"),
+					.size_bytes = 0,
+					.description = ((desc).len != 0 ? (desc) : (_S("Installed application"))),
+					.category = ((cat).len != 0 ? (cat) : (_S("utilities"))),
+					.bin = (string){.str=(byteptr)"", .is_lit=1},
+					.src = (string){.str=(byteptr)"", .is_lit=1},
+					.pkg_type = _S("installed"),
+					.repo_name = ((repo).len != 0 ? (repo) : (_S("local"))),
+				}) }, (_option*)(&_t4), sizeof(main__Package));
+				 
+				return _t4;
+			}
+		}
+	}
+	Array_string _t5 = main__get_installed_db_dirs(cfg);
+	for (int _t6 = 0; _t6 < _t5.len; ++_t6) {
+		string d = ((string*)_t5.data)[_t6];
+		string meta_file = builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".meta")}));
+		if (os__exists(meta_file)) {
+			_result_Array_string _t7 = os__read_lines(meta_file);
+			if (_t7.is_error) {
+				*(Array_string*) _t7.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+			}
+			
+ 			Array_string lines = (*(Array_string*)_t7.data);
 			string name = pkg_name;
 			string ver = _S("unknown");
-			string desc = _S("Custom installed package");
+			string desc = _S("Installed package");
 			string cat = _S("custom");
-			for (int _t4 = 0; _t4 < lines.len; ++_t4) {
-				string line = ((string*)lines.data)[_t4];
+			for (int _t8 = 0; _t8 < lines.len; ++_t8) {
+				string line = ((string*)lines.data)[_t8];
 				string trimmed = builtin__string_trim_space(line);
 				if (builtin__string_starts_with(trimmed, _S("NAME="))) {
 					name = builtin__string_trim_space(builtin__string_all_after(trimmed, _S("NAME=")));
@@ -8354,242 +11331,378 @@ VV_LOC _option_main__PackageMeta main__get_installed_meta(main__Config cfg, stri
 					cat = builtin__string_trim_space(builtin__string_all_after(trimmed, _S("CATEGORY=")));
 				}
 			}
-			_option_main__PackageMeta _t5;
-			builtin___option_ok(&(main__PackageMeta[]) { ((main__PackageMeta){.name = name,.version = ver,.size = _S("installed"),.description = desc,.category = cat,}) }, (_option*)(&_t5), sizeof(main__PackageMeta));
+			_option_main__Package _t9;
+			builtin___option_ok(&(main__Package[]) { ((main__Package){
+				.name = name,
+				.version = ver,
+				.arch = _S("armv7l"),
+				.size = _S("installed"),
+				.size_bytes = 0,
+				.description = desc,
+				.category = cat,
+				.bin = (string){.str=(byteptr)"", .is_lit=1},
+				.src = (string){.str=(byteptr)"", .is_lit=1},
+				.pkg_type = _S("installed"),
+				.repo_name = _S("local"),
+			}) }, (_option*)(&_t9), sizeof(main__Package));
 			 
-			return _t5;
+			return _t9;
 		}
 	}
-	string manifest_path = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = pkg_name}}, {_S("/manifest.json"), 0, { .d_c = 0 }}}));
-	if (os__exists(manifest_path)) {
-		_result_string _t6 = os__read_file(manifest_path);
-		if (_t6.is_error) {
-			*(string*) _t6.data = _S("");
-		}
-		
- 		string content = (*(string*)_t6.data);
-		if ((content).len != 0) {
-			string name = main__parse_json_value(content, _S("name"));
-			string ver = main__parse_json_value(content, _S("version"));
-			string desc = main__parse_json_value(content, _S("description"));
-			string cat = main__parse_json_value(content, _S("category"));
-			_option_main__PackageMeta _t7;
-			builtin___option_ok(&(main__PackageMeta[]) { ((main__PackageMeta){.name = ((name).len != 0 ? (name) : (pkg_name)),.version = ((ver).len != 0 ? (ver) : (_S("unknown"))),.size = _S("installed"),.description = ((desc).len != 0 ? (desc) : (_S("Custom installed package"))),.category = ((cat).len != 0 ? (cat) : (_S("custom"))),}) }, (_option*)(&_t7), sizeof(main__PackageMeta));
-			 
-			return _t7;
-		}
-	}
-	return (_option_main__PackageMeta){ .state=2, .err=_const_none__, .data={E_STRUCT} };
+	return (_option_main__Package){ .state=2, .err=_const_none__, .data={E_STRUCT} };
 }
-VV_LOC Array_main__PackageMeta main__fetch_index(main__Config cfg) {
-	string index_file = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/cache/index.txt"), 0, { .d_c = 0 }}}));
-	if (!os__exists(index_file)) {
-		return builtin____new_array_with_default(0, 0, sizeof(main__PackageMeta), 0);
+VV_LOC Array_main__Package main__parse_index_json(string content, string repo_name) {
+	Array_main__Package pkgs = builtin____new_array_with_default(0, 0, sizeof(main__Package), 0);
+	if (!builtin__string_contains(content, _S("\"packages\""))) {
+		return pkgs;
 	}
-	_result_string _t2 = os__read_file(index_file);
-	if (_t2.is_error) {
-		return builtin____new_array_with_default(0, 0, sizeof(main__PackageMeta), 0);
+	string after_pkgs = builtin__string_trim_space(builtin__string_all_after(content, _S("\"packages\"")));
+	if (!builtin__string_starts_with(after_pkgs, _S(":"))) {
+		return pkgs;
 	}
-	
- 	string content = (*(string*)_t2.data);
-	Array_main__PackageMeta pkgs = builtin____new_array_with_default(0, 0, sizeof(main__PackageMeta), 0);
-	Array_string _t4 = builtin__string_split_into_lines(content);
-	for (int _t5 = 0; _t5 < _t4.len; ++_t5) {
-		string line = ((string*)_t4.data)[_t5];
-		string trimmed = builtin__string_trim_space(line);
-		if ((trimmed).len == 0 || builtin__string_starts_with(trimmed, _S("#"))) {
-			continue;
-		}
-		Array_string parts = builtin__string_split(trimmed, _S("|"));
-		if (parts.len >= 4) {
-			builtin__array_push((array*)&pkgs, _MOV((main__PackageMeta[]){ ((main__PackageMeta){.name = builtin__string_trim_space((*(string*)builtin__array_get(parts, 0))),.version = builtin__string_trim_space((*(string*)builtin__array_get(parts, 1))),.size = builtin__string_trim_space((*(string*)builtin__array_get(parts, 2))),.description = builtin__string_trim_space((*(string*)builtin__array_get(parts, 3))),.category = (parts.len >= 5 ? (builtin__string_trim_space((*(string*)builtin__array_get(parts, 4)))) : (_S("utilities"))),}) }));
+	string array_part = builtin__string_trim_space(builtin__string_all_after(after_pkgs, _S(":")));
+	if (!builtin__string_starts_with(array_part, _S("["))) {
+		return pkgs;
+	}
+	string raw_array = builtin__string_all_before_last(builtin__string_all_after(array_part, _S("[")), _S("]"));
+	bool in_obj = false;
+	int brace_depth = 0;
+	int start_idx = 0;
+	for (int i = 0; i < raw_array.len; i++) {
+		u8 ch = builtin__string_at(raw_array, i);
+		if (ch == '{') {
+			if (brace_depth == 0) {
+				start_idx = i;
+				in_obj = true;
+			}
+			brace_depth++;
+		} else if (ch == '}') {
+			brace_depth--;
+			if (brace_depth == 0 && in_obj) {
+				in_obj = false;
+				string obj_str = builtin__string_substr(raw_array, start_idx, i + 1);
+				string name = main__parse_json_value(obj_str, _S("name"));
+				if ((name).len != 0) {
+					string ver = main__parse_json_value(obj_str, _S("version"));
+					string arch = main__parse_json_value(obj_str, _S("arch"));
+					string desc = main__parse_json_value(obj_str, _S("description"));
+					string cat = main__parse_json_value(obj_str, _S("category"));
+					string sz = main__parse_json_value(obj_str, _S("size"));
+					string bin = main__parse_json_value(obj_str, _S("bin"));
+					string src = main__parse_json_value(obj_str, _S("src"));
+					string ptype = main__parse_json_value(obj_str, _S("type"));
+					string final_type = ptype;
+					if ((final_type).len == 0) {
+						if (builtin__string_ends_with(bin, _S(".tar.gz")) || builtin__string_ends_with(bin, _S(".tgz")) || builtin__string_ends_with(bin, _S(".ngpkg")) || builtin__string_ends_with(bin, _S(".tar")) || builtin__string_ends_with(bin, _S(".tar.xz"))) {
+							final_type = _S("archive");
+						} else {
+							final_type = _S("binary");
+						}
+					}
+					builtin__array_push((array*)&pkgs, _MOV((main__Package[]){ ((main__Package){
+						.name = name,
+						.version = ((ver).len != 0 ? (ver) : (_S("1.0.0"))),
+						.arch = ((arch).len != 0 ? (arch) : (_S("armv7l"))),
+						.size = ((sz).len != 0 ? (sz) : (_S("unknown"))),
+						.size_bytes = 0,
+						.description = ((desc).len != 0 ? (desc) : (builtin__string_plus_many(2, _MOV((string[2]){_S("Package "), name})))),
+						.category = ((cat).len != 0 ? (cat) : (_S("utilities"))),
+						.bin = bin,
+						.src = src,
+						.pkg_type = final_type,
+						.repo_name = repo_name,
+					}) }));
+				}
+			}
 		}
 	}
 	return pkgs;
 }
-VV_LOC main__PackageMeta main__inspect_archive_meta(string archive_path) {
-	u64 sz_bytes = os__file_size(archive_path);
-	string sz_str = main__format_bytes(((u64)(sz_bytes)));
-	string dump_cmd = builtin__str_intp(9, _MOV((StrIntpData[]){{_S("(gzip -dc \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = archive_path}}, {_S("\") | tar -xOf - $( (gzip -dc \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = archive_path}}, {_S("\") | tar -tf - 2>/dev/null | grep \"manifest.json\" | head -n 1) 2>/dev/null || tar -xOf \""), 0xfe10, {.d_s = archive_path}}, {_S("\" $(tar -tf \""), 0xfe10, {.d_s = archive_path}}, {_S("\" 2>/dev/null | grep \"manifest.json\" | head -n 1) 2>/dev/null"), 0, { .d_c = 0 }}}));
-	os__Result res = os__execute(dump_cmd);
-	if (res.exit_code == 0 && (builtin__string_trim_space(res.output)).len != 0) {
-		string manifest_content = res.output;
-		string name = main__parse_json_value(manifest_content, _S("name"));
-		string ver = main__parse_json_value(manifest_content, _S("version"));
-		string description = main__parse_json_value(manifest_content, _S("description"));
-		string category = main__parse_json_value(manifest_content, _S("category"));
-		if ((name).len != 0) {
-			return ((main__PackageMeta){.name = name,.version = ((ver).len != 0 ? (ver) : (_S("1.0.0"))),.size = sz_str,.description = ((description).len != 0 ? (description) : (_S("Custom standalone package"))),.category = ((category).len != 0 ? (category) : (_S("custom"))),});
+VV_LOC Array_main__Package main__fetch_all_repo_packages(main__Config cfg) {
+	Array_main__Package all_pkgs = builtin____new_array_with_default(0, 0, sizeof(main__Package), 0);
+	Map_string_bool seen = builtin__new_map(sizeof(string), sizeof(bool), &builtin__map_hash_string, &builtin__map_eq_string, &builtin__map_clone_string, &builtin__map_free_string)
+	;
+	for (int _t1 = 0; _t1 < cfg.repos.len; ++_t1) {
+		main__Repo repo = ((main__Repo*)cfg.repos.data)[_t1];
+		Array_string repo_cache_candidates = builtin__new_array_from_c_array(3, 3, sizeof(string), _MOV((string[3]){builtin__string_plus_many(4, _MOV((string[4]){cfg.prefix, _S("/var/lib/ngpkg/repos/"), repo.name, _S("/index.json")})), builtin__string_plus_many(4, _MOV((string[4]){cfg.db_dir, _S("/repos/"), repo.name, _S("/index.json")})), builtin__string_plus_many(3, _MOV((string[3]){_S("/var/lib/ngpkg/repos/"), repo.name, _S("/index.json")}))}));
+		for (int _t2 = 0; _t2 < repo_cache_candidates.len; ++_t2) {
+			string cand = ((string*)repo_cache_candidates.data)[_t2];
+			if (os__exists(cand)) {
+				_result_string _t3 = os__read_file(cand);
+				if (_t3.is_error) {
+					*(string*) _t3.data = _S("");
+				}
+				
+ 				string content = (*(string*)_t3.data);
+				if ((content).len != 0) {
+					Array_main__Package pkgs = main__parse_index_json(content, repo.name);
+					for (int _t4 = 0; _t4 < pkgs.len; ++_t4) {
+						main__Package p = ((main__Package*)pkgs.data)[_t4];
+						if (!(*(bool*)builtin__map_get(ADDR(map, seen), &(string[]){p.name}, &(bool[]){ 0 }))) {
+							builtin__map_set(&seen, &(string[]){p.name}, &(bool[]) { true });
+							builtin__array_push((array*)&all_pkgs, _MOV((main__Package[]){ p }));
+						}
+					}
+					break;
+				}
+			}
 		}
 	}
-	string base = os__file_name(archive_path);
-	string clean = builtin__string_trim_string_right(builtin__string_trim_string_right(builtin__string_trim_string_right(builtin__string_trim_string_right(base, _S(".ngpkg")), _S(".apkg")), _S(".tar.gz")), _S(".tgz"));
-	string pkg_name = clean;
-	string pkg_version = _S("1.0.0");
-	if (builtin__string_contains(clean, _S("-"))) {
-		Array_string parts = builtin__string_split(clean, _S("-"));
-		string last = (*(string*)builtin__array_get(parts, (int)(parts.len - 1)));
-		if (last.len > 0 && (builtin__u8_is_digit(builtin__string_at(last, 0)) || builtin__string_starts_with(last, _S("v")))) {
-			pkg_version = last;
-			pkg_name = Array_string_join(builtin__array_slice(parts, 0, (int)(parts.len - 1)), _S("-"));
+	Array_string consolidated_candidates = builtin__new_array_from_c_array(3, 3, sizeof(string), _MOV((string[3]){builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/var/lib/ngpkg/cache/index.json")})), builtin__string_plus_many(2, _MOV((string[2]){cfg.db_dir, _S("/cache/index.json")})), _S("/var/lib/ngpkg/cache/index.json")}));
+	for (int _t6 = 0; _t6 < consolidated_candidates.len; ++_t6) {
+		string cand = ((string*)consolidated_candidates.data)[_t6];
+		if (os__exists(cand)) {
+			_result_string _t7 = os__read_file(cand);
+			if (_t7.is_error) {
+				*(string*) _t7.data = _S("");
+			}
+			
+ 			string content = (*(string*)_t7.data);
+			if ((content).len != 0) {
+				Array_main__Package pkgs = main__parse_index_json(content, _S("core"));
+				for (int _t8 = 0; _t8 < pkgs.len; ++_t8) {
+					main__Package p = ((main__Package*)pkgs.data)[_t8];
+					if (!(*(bool*)builtin__map_get(ADDR(map, seen), &(string[]){p.name}, &(bool[]){ 0 }))) {
+						builtin__map_set(&seen, &(string[]){p.name}, &(bool[]) { true });
+						builtin__array_push((array*)&all_pkgs, _MOV((main__Package[]){ p }));
+					}
+				}
+				break;
+			}
 		}
 	}
-	return ((main__PackageMeta){.name = pkg_name,.version = pkg_version,.size = sz_str,.description = _S("Custom standalone package"),.category = _S("custom"),});
+	return all_pkgs;
 }
-VV_LOC int main__cmd_update(main__Config cfg) {
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Updating repository package index..."), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Source:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_blue}}, {_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	_result_void _t1 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/cache"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
+VV_LOC bool main__download_url(string url, string dest) {
+	string dir = os__dir(dest);
+	_result_void _t1 = os__mkdir_all(dir, ((os__MkdirParams){.mode = 0777,}));
 	(void)_t1;
  ;
-	string target_file = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/cache/index.txt"), 0, { .d_c = 0 }}}));
-	string base_url = builtin__string_trim_right(builtin__string_trim_string_right(cfg.repo_url, _S("/packages")), _S("/"));
-	Array_string urls_to_try = builtin__new_array_from_c_array(3, 3, sizeof(string), _MOV((string[3]){builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/index.txt"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/packages/index.txt"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/index.txt"), 0, { .d_c = 0 }}}))}));
-	bool success = false;
-	for (int _t2 = 0; _t2 < urls_to_try.len; ++_t2) {
-		string url = ((string*)urls_to_try.data)[_t2];
-		string cmd = builtin__str_intp(5, _MOV((StrIntpData[]){{_S("wget -q -T 15 -O \""), 0xfe10, {.d_s = target_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null || curl -fsSL --connect-timeout 10 -o \""), 0xfe10, {.d_s = target_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null"), 0, { .d_c = 0 }}}));
-		os__Result res = os__execute(cmd);
-		if (res.exit_code == 0 && os__exists(target_file) && os__file_size(target_file) > 0) {
-			success = true;
-			break;
+	string cmd = builtin__string_plus_many(13, _MOV((string[13]){_S("curl -fsSL --connect-timeout 10 -m 60 --cacert /etc/ssl/certs/ca-certificates.crt -o \""), dest, _S("\" \""), url, _S("\" 2>/dev/null || curl -fsSL -k --connect-timeout 10 -m 60 -o \""), dest, _S("\" \""), url, _S("\" 2>/dev/null || wget -q -T 15 -O \""), dest, _S("\" \""), url, _S("\" 2>/dev/null")}));
+	os__Result res = os__execute(cmd);
+	return res.exit_code == 0 && os__exists(dest) && os__file_size(dest) > 0;
+}
+VV_LOC int main__cmd_update(main__Config cfg) {
+	builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_cyan, _S("\342\227\210"), _const_main__c_reset, _S(" Synchronizing serverless package repositories...\n")})));
+	int total_available = 0;
+	int success_count = 0;
+	for (int _t1 = 0; _t1 < cfg.repos.len; ++_t1) {
+		main__Repo repo = ((main__Repo*)cfg.repos.data)[_t1];
+		builtin__print(builtin__string_plus_many(13, _MOV((string[13]){_S("  "), _const_main__c_blue, _S("\342\200\242"), _const_main__c_reset, _S(" Fetching "), _const_main__c_bold, repo.name, _const_main__c_reset, _S(" ("), _const_main__c_gray, repo.url, _const_main__c_reset, _S(")... ")})));
+		string target_file = builtin__string_plus_many(4, _MOV((string[4]){cfg.db_dir, _S("/repos/"), repo.name, _S("/index.json")}));
+		_result_void _t2 = os__mkdir_all(os__dir(target_file), ((os__MkdirParams){.mode = 0777,}));
+		(void)_t2;
+ ;
+		Array_string urls_to_try = main__get_repo_file_urls(repo, _S("index.json"));
+		bool fetched = false;
+		for (int _t3 = 0; _t3 < urls_to_try.len; ++_t3) {
+			string u = ((string*)urls_to_try.data)[_t3];
+			if (main__download_url(u, target_file)) {
+				fetched = true;
+				break;
+			}
+		}
+		if (fetched) {
+			_result_string _t4 = os__read_file(target_file);
+			if (_t4.is_error) {
+				*(string*) _t4.data = _S("");
+			}
+			
+ 			string content = (*(string*)_t4.data);
+			Array_main__Package pkgs = main__parse_index_json(content, repo.name);
+			builtin__println(builtin__string_plus_many(8, _MOV((string[8]){_const_main__c_green, _S("\342\234\223 OK"), _const_main__c_reset, _S(" ("), _const_main__c_bold, builtin__int_str(pkgs.len), _const_main__c_reset, _S(" packages)")})));
+			total_available += pkgs.len;
+			success_count++;
+			if (os__is_dir(cfg.prefix)) {
+				string usb_dest = builtin__string_plus_many(4, _MOV((string[4]){cfg.prefix, _S("/var/lib/ngpkg/repos/"), repo.name, _S("/index.json")}));
+				_result_void _t5 = os__mkdir_all(os__dir(usb_dest), ((os__MkdirParams){.mode = 0777,}));
+				(void)_t5;
+ ;
+				_result_void _t6 = os__cp(target_file, usb_dest, ((os__CopyParams){.fail_if_exists = 0,}));
+				(void)_t6;
+ ;
+			}
+		} else {
+			builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("\342\234\227 Failed"), _const_main__c_reset})));
+			builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_S("    "), _const_main__c_yellow, _S("Could not fetch index.json from "), repo.raw_url, _const_main__c_reset})));
 		}
 	}
-	if (!success) {
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Failed to download package index from repository."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("Tip:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Ensure package server is running or configure REPO_URL in /etc/ngpkg.conf"), 0, { .d_c = 0 }}})));
-		return 1;
+	Array_main__Package all_pkgs = main__fetch_all_repo_packages(cfg);
+	_result_void _t7 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.db_dir, _S("/cache")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t7;
+ ;
+	strings__Builder consolidated_json = strings__new_builder(2048);
+	strings__Builder_write_string(&consolidated_json, _S("{\n  \"version\": \"2.0\",\n  \"packages\": [\n"));
+	for (int idx = 0; idx < all_pkgs.len; ++idx) {
+		main__Package p = ((main__Package*)all_pkgs.data)[idx];
+		string comma = (idx < all_pkgs.len - 1 ? (_S(",")) : (_S("")));
+		{
+			strings__Builder_write_string(&consolidated_json, _S("    {\"name\":\""));
+			strings__Builder_write_string(&consolidated_json, p.name);
+			strings__Builder_write_string(&consolidated_json, _S("\",\"version\":\""));
+			strings__Builder_write_string(&consolidated_json, p.version);
+			strings__Builder_write_string(&consolidated_json, _S("\",\"size\":\""));
+			strings__Builder_write_string(&consolidated_json, p.size);
+			strings__Builder_write_string(&consolidated_json, _S("\",\"description\":\""));
+			strings__Builder_write_string(&consolidated_json, main__json_escape(p.description));
+			strings__Builder_write_string(&consolidated_json, _S("\",\"category\":\""));
+			strings__Builder_write_string(&consolidated_json, p.category);
+			strings__Builder_write_string(&consolidated_json, _S("\",\"bin\":\""));
+			strings__Builder_write_string(&consolidated_json, p.bin);
+			strings__Builder_write_string(&consolidated_json, _S("\",\"src\":\""));
+			strings__Builder_write_string(&consolidated_json, p.src);
+			strings__Builder_write_string(&consolidated_json, _S("\",\"type\":\""));
+			strings__Builder_write_string(&consolidated_json, p.pkg_type);
+			strings__Builder_write_string(&consolidated_json, _S("\",\"repo\":\""));
+			strings__Builder_write_string(&consolidated_json, p.repo_name);
+			strings__Builder_write_string(&consolidated_json, _S("\"}"));
+			strings__Builder_write_string(&consolidated_json, comma);
+			strings__Builder_write_string(&consolidated_json, _S("\n"));
+		}
 	}
+	strings__Builder_write_string(&consolidated_json, _S("  ]\n}\n"));
+	_result_void _t8 = os__write_file(builtin__string_plus_many(2, _MOV((string[2]){cfg.db_dir, _S("/cache/index.json")})), strings__Builder_str(&consolidated_json));
+	(void)_t8;
+ ;
 	if (os__is_dir(cfg.prefix)) {
-		_result_void _t4 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-		(void)_t4;
+		_result_void _t9 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/var/lib/ngpkg/cache")})), ((os__MkdirParams){.mode = 0777,}));
+		(void)_t9;
  ;
-		_result_void _t5 = os__cp(target_file, builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg/index.txt"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
-		(void)_t5;
+		_result_void _t10 = os__write_file(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/var/lib/ngpkg/cache/index.json")})), strings__Builder_str(&consolidated_json));
+		(void)_t10;
  ;
 	}
-	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\234\223 Repository updated successfully!"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe07, {.d_i32 = pkgs.len}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" packages available)\n"), 0, { .d_c = 0 }}})));
-	return 0;
+	builtin__println(builtin__string_plus_many(15, _MOV((string[15]){_S("\n"), _const_main__c_green, _S("\342\234\223 Update complete:"), _const_main__c_reset, _S(" "), _const_main__c_bold, builtin__int_str(total_available), _const_main__c_reset, _S(" packages across "), _const_main__c_bold, builtin__int_str(success_count), _S("/"), builtin__int_str(cfg.repos.len), _const_main__c_reset, _S(" repositories.\n")})));
+	return (success_count > 0 ? (0) : (1));
 }
-VV_LOC int main__cmd_list(main__Config cfg) {
-	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
-	if (pkgs.len == 0) {
-		builtin__println(builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[! Hot Tip]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" No local index found. Running "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg update"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" first...\n"), 0, { .d_c = 0 }}})));
+VV_LOC int main__cmd_list(main__Config cfg, bool json_mode) {
+	Array_main__Package pkgs = main__fetch_all_repo_packages(cfg);
+	if (pkgs.len == 0 && !json_mode) {
+		builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_yellow, _S("[! No index found]"), _const_main__c_reset, _S(" Updating repository index first...\n")})));
 		main__cmd_update(cfg);
 	}
-	Array_main__PackageMeta fresh_pkgs = main__fetch_index(cfg);
+	Array_main__Package fresh_pkgs = main__fetch_all_repo_packages(cfg);
 	Array_string installed = main__get_installed_packages(cfg);
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_S("OpenNGFW Package Repository:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	string header_name = main__pad_right(_S("NAME"), 16);
-	string header_ver = main__pad_right(_S("VERSION"), 10);
-	string header_size = main__pad_right(_S("SIZE"), 9);
-	string header_status = main__pad_right(_S("STATUS"), 14);
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = header_name}}, {_S(" "), 0xfe10, {.d_s = header_ver}}, {_S(" "), 0xfe10, {.d_s = header_size}}, {_S(" "), 0xfe10, {.d_s = header_status}}, {_S(" DESCRIPTION"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	if (json_mode) {
+		Array_string items = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+		for (int _t1 = 0; _t1 < fresh_pkgs.len; ++_t1) {
+			main__Package p = ((main__Package*)fresh_pkgs.data)[_t1];
+			bool is_inst = main__is_installed(cfg, p.name);
+			builtin__array_push((array*)&items, _MOV((string[]){ builtin__string_plus_many(19, _MOV((string[19]){_S("{\"name\":\""), p.name, _S("\",\"version\":\""), p.version, _S("\",\"size\":\""), p.size, _S("\",\"description\":\""), main__json_escape(p.description), _S("\",\"category\":\""), p.category, _S("\",\"repo\":\""), p.repo_name, _S("\",\"installed\":"), (is_inst ? _S("true") : _S("false")), _S(",\"bin\":\""), p.bin, _S("\",\"src\":\""), p.src, _S("\"}")})) }));
+		}
+		for (int _t3 = 0; _t3 < installed.len; ++_t3) {
+			string inst_name = ((string*)installed.data)[_t3];
+			bool in_repo = false;
+			for (int _t4 = 0; _t4 < fresh_pkgs.len; ++_t4) {
+				main__Package p = ((main__Package*)fresh_pkgs.data)[_t4];
+				if (builtin__string__eq(p.name, inst_name)) {
+					in_repo = true;
+					;
+					break;
+				}
+			}
+			if (!in_repo) {
+				_option_main__Package _t5 = main__get_installed_meta(cfg, inst_name);
+				if (_t5.state != 0) {
+					*(main__Package*) _t5.data = ((main__Package){.name = inst_name,.version = _S("custom"),.arch = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.size_bytes = 0,.description = _S("Local package"),.category = _S("custom"),.bin = (string){.str=(byteptr)"", .is_lit=1},.src = (string){.str=(byteptr)"", .is_lit=1},.pkg_type = (string){.str=(byteptr)"", .is_lit=1},.repo_name = (string){.str=(byteptr)"", .is_lit=1},});
+				}
+				
+ 				main__Package m = (*(main__Package*)_t5.data);
+				builtin__array_push((array*)&items, _MOV((string[]){ builtin__string_plus_many(11, _MOV((string[11]){_S("{\"name\":\""), m.name, _S("\",\"version\":\""), m.version, _S("\",\"size\":\""), m.size, _S("\",\"description\":\""), main__json_escape(m.description), _S("\",\"category\":\""), m.category, _S("\",\"repo\":\"local\",\"installed\":true,\"bin\":\"\",\"src\":\"\"}")})) }));
+			}
+		}
+		builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_S("["), Array_string_join(items, _S(",")), _S("]")})));
+		return 0;
+	}
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_bold, _S("OpenNGFW Serverless Package Repositories:"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset})));
+	string h_name = main__pad_right(_S("NAME"), 14);
+	string h_ver = main__pad_right(_S("VERSION"), 9);
+	string h_repo = main__pad_right(_S("REPO"), 10);
+	string h_size = main__pad_right(_S("SIZE"), 8);
+	string h_status = main__pad_right(_S("STATUS"), 14);
+	builtin__println(builtin__string_plus_many(13, _MOV((string[13]){_S("  "), _const_main__c_bold, h_name, _S(" "), h_ver, _S(" "), h_repo, _S(" "), h_size, _S(" "), h_status, _S(" DESCRIPTION"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset})));
 	int inst_count = 0;
 	Array_string listed_installed = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-	for (int _t1 = 0; _t1 < fresh_pkgs.len; ++_t1) {
-		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t1];
-		bool is_inst = Array_string_contains(installed, p.name);
+	for (int _t8 = 0; _t8 < fresh_pkgs.len; ++_t8) {
+		main__Package p = ((main__Package*)fresh_pkgs.data)[_t8];
+		bool is_inst = main__is_installed(cfg, p.name);
 		if (is_inst) {
 			inst_count++;
 			builtin__array_push((array*)&listed_installed, _MOV((string[]){ builtin__string_clone(p.name) }));
 		}
-		string status_badge = (is_inst ? (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\227\217 installed"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\213 available"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))));
-		string name_fmt = (is_inst ? (builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(p.name, 16)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(p.name, 16)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))));
-		string ver_fmt = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(p.version, 10)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
-		string size_fmt = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(p.size, 9)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
+		string status_badge = (is_inst ? (builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_green, _S("\342\227\217 installed"), _const_main__c_reset}))) : (builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("\342\227\213 available"), _const_main__c_reset}))));
+		string name_fmt = (is_inst ? (builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_green, _const_main__c_bold, main__pad_right(p.name, 14), _const_main__c_reset}))) : (builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_bold, main__pad_right(p.name, 14), _const_main__c_reset}))));
+		string ver_fmt = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_yellow, main__pad_right(p.version, 9), _const_main__c_reset}));
+		string repo_fmt = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_purple, main__pad_right(p.repo_name, 10), _const_main__c_reset}));
+		string size_fmt = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, main__pad_right(p.size, 8), _const_main__c_reset}));
 		string status_fmt = main__pad_right(status_badge, 23);
-		builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = name_fmt}}, {_S(" "), 0xfe10, {.d_s = ver_fmt}}, {_S(" "), 0xfe10, {.d_s = size_fmt}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = p.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__println(builtin__string_plus_many(12, _MOV((string[12]){_S("  "), name_fmt, _S(" "), ver_fmt, _S(" "), repo_fmt, _S(" "), size_fmt, _S(" "), status_fmt, _S(" "), p.description})));
 	}
-	for (int _t3 = 0; _t3 < installed.len; ++_t3) {
-		string inst_name = ((string*)installed.data)[_t3];
+	for (int _t10 = 0; _t10 < installed.len; ++_t10) {
+		string inst_name = ((string*)installed.data)[_t10];
 		if (!Array_string_contains(listed_installed, inst_name)) {
 			inst_count++;
-			_option_main__PackageMeta _t4 = main__get_installed_meta(cfg, inst_name);
-			if (_t4.state != 0) {
-				*(main__PackageMeta*) _t4.data = ((main__PackageMeta){.name = inst_name,.version = _S("local"),.size = _S("installed"),.description = _S("Custom standalone package"),.category = _S("custom"),});
+			_option_main__Package _t11 = main__get_installed_meta(cfg, inst_name);
+			if (_t11.state != 0) {
+				*(main__Package*) _t11.data = ((main__Package){.name = inst_name,.version = _S("custom"),.arch = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.size_bytes = 0,.description = _S("Local package"),.category = _S("custom"),.bin = (string){.str=(byteptr)"", .is_lit=1},.src = (string){.str=(byteptr)"", .is_lit=1},.pkg_type = (string){.str=(byteptr)"", .is_lit=1},.repo_name = (string){.str=(byteptr)"", .is_lit=1},});
 			}
 			
- 			main__PackageMeta meta = (*(main__PackageMeta*)_t4.data);
-			string status_badge = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\227\217 installed (local)"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
-			string name_fmt = builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(meta.name, 16)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
-			string ver_fmt = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(meta.version, 10)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
-			string size_fmt = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_SLIT0, 0xfe10, {.d_s = main__pad_right(meta.size, 9)}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
+ 			main__Package m = (*(main__Package*)_t11.data);
+			string status_badge = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_green, _S("\342\227\217 installed (local)"), _const_main__c_reset}));
+			string name_fmt = builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_green, _const_main__c_bold, main__pad_right(m.name, 14), _const_main__c_reset}));
+			string ver_fmt = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_yellow, main__pad_right(m.version, 9), _const_main__c_reset}));
+			string repo_fmt = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, main__pad_right(_S("local"), 10), _const_main__c_reset}));
+			string size_fmt = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, main__pad_right(_S("installed"), 8), _const_main__c_reset}));
 			string status_fmt = main__pad_right(status_badge, 31);
-			builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = name_fmt}}, {_S(" "), 0xfe10, {.d_s = ver_fmt}}, {_S(" "), 0xfe10, {.d_s = size_fmt}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = meta.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			builtin__println(builtin__string_plus_many(12, _MOV((string[12]){_S("  "), name_fmt, _S(" "), ver_fmt, _S(" "), repo_fmt, _S(" "), size_fmt, _S(" "), status_fmt, _S(" "), m.description})));
 		}
 	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Total:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe07, {.d_i32 = fresh_pkgs.len}}, {_S(" repository packages  ("), 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe07, {.d_i32 = inst_count}}, {_S(" installed"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(", "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_SLIT0, 0xfe07, {.d_i32 = (int)(fresh_pkgs.len - listed_installed.len)}}, {_S(" available repo packages"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(")\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(17, _MOV((string[17]){_S("  "), _const_main__c_gray, _S("Total:"), _const_main__c_reset, _S(" "), builtin__int_str(fresh_pkgs.len), _S(" repository packages ("), _const_main__c_green, builtin__int_str(inst_count), _S(" installed"), _const_main__c_reset, _S(", "), _const_main__c_cyan, builtin__int_str(fresh_pkgs.len - listed_installed.len), _S(" available"), _const_main__c_reset, _S(")\n")})));
 	return 0;
 }
 VV_LOC int main__cmd_search(main__Config cfg, string query) {
-	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
+	Array_main__Package pkgs = main__fetch_all_repo_packages(cfg);
 	if (pkgs.len == 0) {
 		main__cmd_update(cfg);
 	}
-	Array_main__PackageMeta fresh_pkgs = main__fetch_index(cfg);
-	Array_string installed = main__get_installed_packages(cfg);
+	Array_main__Package fresh_pkgs = main__fetch_all_repo_packages(cfg);
 	string q = builtin__string_to_lower(query);
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Search results for \""), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = query}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S("\":"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(8, _MOV((string[8]){_const_main__c_cyan, _S("\342\227\210"), _const_main__c_reset, _S(" Search results for \""), _const_main__c_bold, query, _const_main__c_reset, _S("\":")})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset})));
 	int matches = 0;
-	Array_string found_installed = builtin____new_array_with_default(0, 0, sizeof(string), 0);
 	for (int _t1 = 0; _t1 < fresh_pkgs.len; ++_t1) {
-		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t1];
-		if (builtin__string_contains(builtin__string_to_lower(p.name), q) || builtin__string_contains(builtin__string_to_lower(p.description), q) || builtin__string_contains(builtin__string_to_lower(p.category), q)) {
+		main__Package p = ((main__Package*)fresh_pkgs.data)[_t1];
+		if (builtin__string_contains(builtin__string_to_lower(p.name), q) || builtin__string_contains(builtin__string_to_lower(p.description), q) || builtin__string_contains(builtin__string_to_lower(p.category), q) || builtin__string_contains(builtin__string_to_lower(p.repo_name), q)) {
 			matches++;
-			bool is_inst = Array_string_contains(installed, p.name);
-			if (is_inst) {
-				builtin__array_push((array*)&found_installed, _MOV((string[]){ builtin__string_clone(p.name) }));
-			}
-			string status_badge = (is_inst ? (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("[installed]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("[available]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))));
+			bool is_inst = main__is_installed(cfg, p.name);
+			string status_badge = (is_inst ? (builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_green, _S("[installed]"), _const_main__c_reset}))) : (builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("[available]"), _const_main__c_reset}))));
 			string name_fmt = main__pad_right(p.name, 14);
 			string ver_fmt = main__pad_right(p.version, 8);
-			string size_fmt = main__pad_right(p.size, 8);
+			string repo_fmt = main__pad_right(p.repo_name, 10);
 			string status_fmt = main__pad_right(status_badge, 21);
-			builtin__println(builtin__str_intp(12, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = name_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = ver_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_gray}}, {_SLIT0, 0xfe10, {.d_s = size_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = p.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		}
-	}
-	for (int _t3 = 0; _t3 < installed.len; ++_t3) {
-		string inst_name = ((string*)installed.data)[_t3];
-		if (!Array_string_contains(found_installed, inst_name)) {
-			_option_main__PackageMeta _t4 = main__get_installed_meta(cfg, inst_name);
-			if (_t4.state != 0) {
-				*(main__PackageMeta*) _t4.data = ((main__PackageMeta){.name = inst_name,.version = _S("local"),.size = _S("installed"),.description = _S("Custom standalone package"),.category = _S("custom"),});
-			}
-			
- 			main__PackageMeta meta = (*(main__PackageMeta*)_t4.data);
-			if (builtin__string_contains(builtin__string_to_lower(meta.name), q) || builtin__string_contains(builtin__string_to_lower(meta.description), q) || builtin__string_contains(builtin__string_to_lower(meta.category), q)) {
-				matches++;
-				string status_badge = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("[installed]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				string name_fmt = main__pad_right(meta.name, 14);
-				string ver_fmt = main__pad_right(meta.version, 8);
-				string size_fmt = main__pad_right(meta.size, 8);
-				string status_fmt = main__pad_right(status_badge, 21);
-				builtin__println(builtin__str_intp(12, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = name_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = ver_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_gray}}, {_SLIT0, 0xfe10, {.d_s = size_fmt}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = status_fmt}}, {_S(" "), 0xfe10, {.d_s = meta.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			}
+			builtin__println(builtin__string_plus_many(16, _MOV((string[16]){_S("  "), _const_main__c_bold, name_fmt, _const_main__c_reset, _S(" "), _const_main__c_yellow, ver_fmt, _const_main__c_reset, _S(" "), _const_main__c_purple, repo_fmt, _const_main__c_reset, _S(" "), status_fmt, _S(" "), p.description})));
 		}
 	}
 	if (matches == 0) {
-		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("No matching packages found."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_S("  "), _const_main__c_gray, _S("No matching packages found."), _const_main__c_reset})));
 	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset, _S("\n")})));
 	return 0;
 }
 VV_LOC int main__cmd_info(main__Config cfg, string pkg_name) {
-	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
+	Array_main__Package pkgs = main__fetch_all_repo_packages(cfg);
 	if (pkgs.len == 0) {
 		main__cmd_update(cfg);
 	}
-	Array_main__PackageMeta fresh_pkgs = main__fetch_index(cfg);
-	main__PackageMeta target = ((main__PackageMeta){.name = (string){.str=(byteptr)"", .is_lit=1},.version = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.description = (string){.str=(byteptr)"", .is_lit=1},.category = (string){.str=(byteptr)"", .is_lit=1},});
+	Array_main__Package fresh_pkgs = main__fetch_all_repo_packages(cfg);
+	main__Package _t1 = ((main__Package){.name = (string){.str=(byteptr)"", .is_lit=1},.version = (string){.str=(byteptr)"", .is_lit=1},.arch = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.size_bytes = 0,.description = (string){.str=(byteptr)"", .is_lit=1},.category = (string){.str=(byteptr)"", .is_lit=1},.bin = (string){.str=(byteptr)"", .is_lit=1},.src = (string){.str=(byteptr)"", .is_lit=1},.pkg_type = (string){.str=(byteptr)"", .is_lit=1},.repo_name = (string){.str=(byteptr)"", .is_lit=1},});
+	main__Package target = _t1;
 	bool found = false;
-	for (int _t1 = 0; _t1 < fresh_pkgs.len; ++_t1) {
-		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t1];
+	for (int _t2 = 0; _t2 < fresh_pkgs.len; ++_t2) {
+		main__Package p = ((main__Package*)fresh_pkgs.data)[_t2];
 		if (builtin__string__eq(p.name, pkg_name)) {
 			target = p;
 			found = true;
@@ -8597,351 +11710,84 @@ VV_LOC int main__cmd_info(main__Config cfg, string pkg_name) {
 		}
 	}
 	if (!found && main__is_installed(cfg, pkg_name)) {
-		_option_main__PackageMeta meta_opt = main__get_installed_meta(cfg, pkg_name);
-		_option_main__PackageMeta _t2;
-		if (_t2 = meta_opt, _t2.state == 0) {
-			main__PackageMeta m = *(main__PackageMeta*)_t2.data;
+		_option_main__Package meta_opt = main__get_installed_meta(cfg, pkg_name);
+		_option_main__Package _t3 = {0};
+		if (_t3 = meta_opt, _t3.state == 0) {
+			main__Package m = *(main__Package*)_t3.data;
 			target = m;
 			found = true;
 		}
 	}
 	if (!found) {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" not found in repository index or installed database."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("\342\234\227 Package \""), pkg_name, _S("\" not found in repository index or installed database."), _const_main__c_reset})));
 		return 1;
 	}
-	bool is_inst = main__is_installed(cfg, target.name);
-	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
-	string ngpkg_bin = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = homedir}}, {_S("/.ngpkg-bin"), 0, { .d_c = 0 }}}));
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\255\342\224\200 Package Information: "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = target.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Name:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("         "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = target.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Version:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("      "), 0xfe10, {.d_s = _const_main__c_yellow}}, {_SLIT0, 0xfe10, {.d_s = target.version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Category:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("     "), 0xfe10, {.d_s = _const_main__c_purple}}, {_SLIT0, 0xfe10, {.d_s = target.category}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Payload Size:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = target.size}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__string__plus(builtin__str_intp(5, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Status:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("       "), 0, { .d_c = 0 }}})), (is_inst ? (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\227\217 Installed"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))) : (builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\213 Available for installation"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}}))))));
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Prefix:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("       "), 0xfe10, {.d_s = cfg.prefix}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Binary Path:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = target.name}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Description:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = target.description}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	if (is_inst) {
-		string list_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = target.name}}, {_S(".list"), 0, { .d_c = 0 }}}));
-		if (os__exists(list_file)) {
-			_result_Array_string _t4 = os__read_lines(list_file);
-			if (_t4.is_error) {
-				*(Array_string*) _t4.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-			}
-			
- 			Array_string lines = (*(Array_string*)_t4.data);
-			builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("Installed Files:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe07, {.d_i32 = lines.len}}, {_S(" files)"), 0, { .d_c = 0 }}})));
-			int count = 0;
-			for (int _t5 = 0; _t5 < lines.len; ++_t5) {
-				string l = ((string*)lines.data)[_t5];
-				if ((builtin__string_trim_space(l)).len != 0 && count < 8) {
-					builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("    "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("\342\200\242"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = builtin__string_trim_space(l)}}, {_SLIT0, 0, { .d_c = 0 }}})));
-					count++;
-				}
-			}
-			if (lines.len > 8) {
-				builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("    "), 0xfe10, {.d_s = _const_main__c_dim}}, {_S("... and "), 0xfe07, {.d_i32 = (int)(lines.len - 8)}}, {_S(" more files"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			}
-		}
-	}
-	builtin__println(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257\n"), 0, { .d_c = 0 }}})));
-	return 0;
-}
-VV_LOC int main__cmd_status(main__Config cfg) {
-	Array_string installed = main__get_installed_packages(cfg);
-	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\255\342\224\200 System & Storage Status \342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Package Manager:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("ngpkg v"), 0xfe10, {.d_s = _const_main__version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Repository URL:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Install Root:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("    "), 0xfe10, {.d_s = cfg.prefix}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("User Binaries:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("   "), 0xfe10, {.d_s = homedir}}, {_S("/.ngpkg-bin"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(8, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Installed:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("       "), 0xfe10, {.d_s = _const_main__c_green}}, {_SLIT0, 0xfe07, {.d_i32 = installed.len}}, {_S(" packages"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	os__Result df_res = os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("df -h \""), 0xfe10, {.d_s = cfg.prefix}}, {_S("\" 2>/dev/null | tail -n 1"), 0, { .d_c = 0 }}})));
-	if (df_res.exit_code == 0 && (builtin__string_trim_space(df_res.output)).len != 0) {
-		Array_string fields = builtin__string_fields(df_res.output);
-		if (fields.len >= 5) {
-			string total = (*(string*)builtin__array_get(fields, 1));
-			string used = (*(string*)builtin__array_get(fields, 2));
-			string avail = (*(string*)builtin__array_get(fields, 3));
-			string percent = (*(string*)builtin__array_get(fields, 4));
-			builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("  "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("USB Storage ("), 0xfe10, {.d_s = cfg.prefix}}, {_S("):"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\224\202"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("    Total: "), 0xfe10, {.d_s = total}}, {_S("  \342\200\242  Used: "), 0xfe10, {.d_s = used}}, {_S(" ("), 0xfe10, {.d_s = percent}}, {_S(")  \342\200\242  Free: "), 0xfe10, {.d_s = avail}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		}
-	}
-	builtin__println(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257\n"), 0, { .d_c = 0 }}})));
-	return 0;
-}
-VV_LOC int main__install_payload(main__Config cfg, string archive_file, main__PackageMeta target_pkg, bool is_local_file) {
-	if (main__is_installed(cfg, target_pkg.name)) {
-		builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[!] Package \""), 0xfe10, {.d_s = target_pkg.name}}, {_S("\" is already installed."), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Reinstalling/Upgrading..."), 0, { .d_c = 0 }}})));
-	}
-	builtin__println(builtin__str_intp(10, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Installing "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = target_pkg.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("v"), 0xfe10, {.d_s = target_pkg.version}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(", "), 0xfe10, {.d_s = target_pkg.size}}, {_S(")..."), 0, { .d_c = 0 }}})));
-	builtin__print(builtin__str_intp(6, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[1/2]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \360\237\223\246 Unpacking to "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S("..."), 0, { .d_c = 0 }}})));
-	_result_void _t1 = os__mkdir_all(cfg.prefix, ((os__MkdirParams){.mode = 0777,}));
-	(void)_t1;
- ;
-	_result_void _t2 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/bin"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t2;
- ;
-	_result_void _t3 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/sbin"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t3;
- ;
-	_result_void _t4 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/lib"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t4;
- ;
-	_result_void _t5 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/libexec"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t5;
- ;
-	_result_void _t6 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/etc"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t6;
- ;
-	_result_void _t7 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t7;
- ;
-	_result_void _t8 = os__mkdir_all(builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed"), 0, { .d_c = 0 }}})), ((os__MkdirParams){.mode = 0777,}));
-	(void)_t8;
- ;
-	string unpack_cmd = builtin__str_intp(3, _MOV((StrIntpData[]){{_S("gzip -dc \""), 0xfe10, {.d_s = archive_file}}, {_S("\" 2>/dev/null | tar -xf - -C \""), 0xfe10, {.d_s = cfg.prefix}}, {_S("\""), 0, { .d_c = 0 }}}));
-	os__Result unpack_res = os__execute(unpack_cmd);
-	if (unpack_res.exit_code != 0) {
-		unpack_cmd = builtin__str_intp(3, _MOV((StrIntpData[]){{_S("gunzip -c \""), 0xfe10, {.d_s = archive_file}}, {_S("\" 2>/dev/null | tar -xf - -C \""), 0xfe10, {.d_s = cfg.prefix}}, {_S("\""), 0, { .d_c = 0 }}}));
-		unpack_res = os__execute(unpack_cmd);
-	}
-	if (unpack_res.exit_code != 0) {
-		unpack_cmd = builtin__str_intp(3, _MOV((StrIntpData[]){{_S("tar -xzf \""), 0xfe10, {.d_s = archive_file}}, {_S("\" -C \""), 0xfe10, {.d_s = cfg.prefix}}, {_S("\" 2>/dev/null"), 0, { .d_c = 0 }}}));
-		unpack_res = os__execute(unpack_cmd);
-	}
-	if (unpack_res.exit_code != 0) {
-		unpack_cmd = builtin__str_intp(3, _MOV((StrIntpData[]){{_S("tar -xf \""), 0xfe10, {.d_s = archive_file}}, {_S("\" -C \""), 0xfe10, {.d_s = cfg.prefix}}, {_S("\" 2>/dev/null"), 0, { .d_c = 0 }}}));
-		unpack_res = os__execute(unpack_cmd);
-	}
-	if (unpack_res.exit_code != 0) {
-		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_red}}, {_S("FAILED"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Failed to extract package payload."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		return 1;
-	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_green}}, {_S("DONE"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	string list_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".list"), 0, { .d_c = 0 }}}));
-	string list_cmd = builtin__str_intp(7, _MOV((StrIntpData[]){{_S("(gzip -dc \""), 0xfe10, {.d_s = archive_file}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = archive_file}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = archive_file}}, {_S("\") | tar -tf - > \""), 0xfe10, {.d_s = list_file}}, {_S("\" 2>/dev/null || tar -tf \""), 0xfe10, {.d_s = archive_file}}, {_S("\" > \""), 0xfe10, {.d_s = list_file}}, {_S("\" 2>/dev/null || true"), 0, { .d_c = 0 }}}));
-	os__execute(list_cmd);
-	main__PackageMeta final_meta = target_pkg;
-	string manifest_path = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("/manifest.json"), 0, { .d_c = 0 }}}));
-	if (os__exists(manifest_path)) {
-		_result_string _t10 = os__read_file(manifest_path);
-		if (_t10.is_error) {
-			*(string*) _t10.data = _S("");
-		}
-		
- 		string m_content = (*(string*)_t10.data);
-		if ((m_content).len != 0) {
-			string m_name = main__parse_json_value(m_content, _S("name"));
-			string m_ver = main__parse_json_value(m_content, _S("version"));
-			string m_desc = main__parse_json_value(m_content, _S("description"));
-			string m_cat = main__parse_json_value(m_content, _S("category"));
-			if ((m_name).len != 0) {
-				final_meta.name = m_name;
-			}
-			if ((m_ver).len != 0) {
-				final_meta.version = m_ver;
-			}
-			if ((m_desc).len != 0) {
-				final_meta.description = m_desc;
-			}
-			if ((m_cat).len != 0) {
-				final_meta.category = m_cat;
-			}
-		}
-	}
-	string meta_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.db_dir}}, {_S("/installed/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".meta"), 0, { .d_c = 0 }}}));
-	_result_void _t11 = os__write_file(meta_file, builtin__str_intp(5, _MOV((StrIntpData[]){{_S("NAME="), 0xfe10, {.d_s = final_meta.name}}, {_S("\nVERSION="), 0xfe10, {.d_s = final_meta.version}}, {_S("\nDESCRIPTION="), 0xfe10, {.d_s = final_meta.description}}, {_S("\nCATEGORY="), 0xfe10, {.d_s = final_meta.category}}, {_S("\n"), 0, { .d_c = 0 }}})));
-	(void)_t11;
- ;
-	if (os__is_dir(cfg.prefix)) {
-		string usb_db = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/var/lib/ngpkg/installed"), 0, { .d_c = 0 }}}));
-		_result_void _t12 = os__mkdir_all(usb_db, ((os__MkdirParams){.mode = 0777,}));
-		(void)_t12;
- ;
-		_result_void _t13 = os__cp(list_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".list"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
-		(void)_t13;
- ;
-		_result_void _t14 = os__cp(meta_file, builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = usb_db}}, {_S("/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".meta"), 0, { .d_c = 0 }}})), ((os__CopyParams){.fail_if_exists = 0,}));
-		(void)_t14;
- ;
-	}
-	if (!is_local_file) {
-		_result_void _t15 = os__rm(archive_file);
-		(void)_t15;
- ;
-	}
-	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
-	string ngpkg_bin = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = homedir}}, {_S("/.ngpkg-bin"), 0, { .d_c = 0 }}}));
-	builtin__print(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[2/2]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \360\237\224\227 Linking package binaries, systemd units & running hooks..."), 0, { .d_c = 0 }}})));
-	_result_void _t16 = os__mkdir_all(ngpkg_bin, ((os__MkdirParams){.mode = 0777,}));
-	(void)_t16;
- ;
-	if (_SLIT_NE(homedir.str, homedir.len, "/root")) {
-		_result_void _t17 = os__mkdir_all(_S("/root/.ngpkg-bin"), ((os__MkdirParams){.mode = 0777,}));
-		(void)_t17;
- ;
-	}
-	Array_string service_units = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-	if (os__exists(list_file)) {
-		_result_Array_string _t18 = os__read_lines(list_file);
-		if (_t18.is_error) {
-			*(Array_string*) _t18.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-		}
-		
- 		Array_string installed_files = (*(Array_string*)_t18.data);
-		for (int _t19 = 0; _t19 < installed_files.len; ++_t19) {
-			string rel = ((string*)installed_files.data)[_t19];
-			string trimmed = builtin__string_trim_space(rel);
-			if ((trimmed).len == 0) {
-				continue;
-			}
-			if (builtin__string_starts_with(trimmed, _S("bin/"))) {
-				string bin_name = builtin__string_all_after(trimmed, _S("bin/"));
-				if (builtin__string_contains(bin_name, _S("/"))) {
-					continue;
-				}
-				string target = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				_result_void _t20 = os__chmod(target, 0755);
-				(void)_t20;
- ;
-				string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				if (!os__exists(symlink) && !os__is_link(symlink)) {
-					_result_void _t21 = os__symlink(target, symlink);
-					(void)_t21;
- ;
-				}
-				if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}}))) && !os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-					_result_void _t22 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
-					(void)_t22;
- ;
-				}
-			} else if (builtin__string_starts_with(trimmed, _S("sbin/"))) {
-				string sbin_name = builtin__string_all_after(trimmed, _S("sbin/"));
-				if (builtin__string_contains(sbin_name, _S("/"))) {
-					continue;
-				}
-				string target = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				_result_void _t23 = os__chmod(target, 0755);
-				(void)_t23;
- ;
-				string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				if (!os__exists(symlink) && !os__is_link(symlink)) {
-					_result_void _t24 = os__symlink(target, symlink);
-					(void)_t24;
- ;
-				}
-				if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}}))) && !os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-					_result_void _t25 = os__symlink(target, builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
-					(void)_t25;
- ;
-				}
-			} else if (builtin__string_starts_with(trimmed, _S("etc/systemd/system/")) && builtin__string_ends_with(trimmed, _S(".service"))) {
-				string svc_file = builtin__string_all_after(trimmed, _S("etc/systemd/system/"));
-				if (!builtin__string_contains(svc_file, _S("/"))) {
-					_result_void _t26 = os__mkdir_all(_S("/etc/systemd/system"), ((os__MkdirParams){.mode = 0777,}));
-					(void)_t26;
- ;
-					string src = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
-					string dst = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = svc_file}}, {_SLIT0, 0, { .d_c = 0 }}}));
-					if (!os__exists(dst) && !os__is_link(dst)) {
-						_result_void _t27 = os__symlink(src, dst);
-						(void)_t27;
- ;
-					}
-					string unit_name = builtin__string_trim_string_right(svc_file, _S(".service"));
-					if (!Array_string_contains(service_units, unit_name)) {
-						builtin__array_push((array*)&service_units, _MOV((string[]){ builtin__string_clone(unit_name) }));
-					}
-				}
-			} else if (builtin__string_starts_with(trimmed, _S("etc/init.d/"))) {
-				string svc_name = builtin__string_all_after(trimmed, _S("etc/init.d/"));
-				if (builtin__string_contains(svc_name, _S("/"))) {
-					continue;
-				}
-				_result_void _t29 = os__mkdir_all(_S("/etc/init.d"), ((os__MkdirParams){.mode = 0777,}));
-				(void)_t29;
- ;
-				string src = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = trimmed}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				string dst = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/init.d/"), 0xfe10, {.d_s = svc_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				_result_void _t30 = os__chmod(src, 0755);
-				(void)_t30;
- ;
-				if (!os__exists(dst) && !os__is_link(dst)) {
-					_result_void _t31 = os__symlink(src, dst);
-					(void)_t31;
- ;
-				}
-			}
-		}
-	}
-	Array_string post_install_hooks = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = final_meta.name}}, {_S("/install.sh"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/install.sh"), 0, { .d_c = 0 }}}))}));
-	for (int _t32 = 0; _t32 < post_install_hooks.len; ++_t32) {
-		string hook = ((string*)post_install_hooks.data)[_t32];
-		if (os__exists(hook)) {
-			_result_void _t33 = os__chmod(hook, 0755);
-			(void)_t33;
- ;
-			os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/bin/sh \""), 0xfe10, {.d_s = hook}}, {_S("\" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+	string repo_url = _S("");
+	for (int _t5 = 0; _t5 < cfg.repos.len; ++_t5) {
+		main__Repo r = ((main__Repo*)cfg.repos.data)[_t5];
+		if (builtin__string__eq(r.name, target.repo_name)) {
+			repo_url = r.url;
 			break;
 		}
 	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_green}}, {_S("DONE"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	if (os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = final_meta.name}}, {_S(".service"), 0, { .d_c = 0 }}})))) {
-		if (!Array_string_contains(service_units, final_meta.name)) {
-			builtin__array_push((array*)&service_units, _MOV((string[]){ builtin__string_clone(final_meta.name) }));
+	bool is_inst = main__is_installed(cfg, target.name);
+	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
+	string ngpkg_bin = builtin__string_plus_many(2, _MOV((string[2]){homedir, _S("/.ngpkg-bin")}));
+	builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\225\255\342\224\200 Package Information: "), _const_main__c_bold, target.name, _const_main__c_reset, _S(" "), _const_main__c_cyan, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Name:"), _const_main__c_reset, _S("         "), _const_main__c_bold, target.name, _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Version:"), _const_main__c_reset, _S("      "), _const_main__c_yellow, target.version, _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(14, _MOV((string[14]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Repository:"), _const_main__c_reset, _S("   "), _const_main__c_purple, target.repo_name, _const_main__c_reset, _S(" ("), repo_url, _S(")")})));
+	builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Category:"), _const_main__c_reset, _S("     "), _const_main__c_purple, target.category, _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Payload Size:"), _const_main__c_reset, _S(" "), target.size})));
+	builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Type:"), _const_main__c_reset, _S("         "), target.pkg_type})));
+	builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Binary Path:"), _const_main__c_reset, _S("  "), target.bin})));
+	builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Source Path:"), _const_main__c_reset, _S("  "), target.src})));
+	builtin__println(builtin__string__plus(builtin__string_plus_many(8, _MOV((string[8]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Status:"), _const_main__c_reset, _S("       ")})), (is_inst ? (builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_green, _S("\342\227\217 Installed"), _const_main__c_reset}))) : (builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("\342\227\213 Available for installation"), _const_main__c_reset}))))));
+	builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Exec Link:"), _const_main__c_reset, _S("    "), ngpkg_bin, _S("/"), target.name})));
+	builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Description:"), _const_main__c_reset, _S("  "), target.description})));
+	if (is_inst) {
+		Array_string _t6 = main__get_installed_db_dirs(cfg);
+		for (int _t7 = 0; _t7 < _t6.len; ++_t7) {
+			string d = ((string*)_t6.data)[_t7];
+			string list_file = builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), target.name, _S(".list")}));
+			if (os__exists(list_file)) {
+				_result_Array_string _t8 = os__read_lines(list_file);
+				if (_t8.is_error) {
+					*(Array_string*) _t8.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+				}
+				
+ 				Array_string lines = (*(Array_string*)_t8.data);
+				builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset})));
+				builtin__println(builtin__string_plus_many(10, _MOV((string[10]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_bold, _S("Installed Files:"), _const_main__c_reset, _S(" ("), builtin__int_str(lines.len), _S(" files)")})));
+				int count = 0;
+				for (int _t9 = 0; _t9 < lines.len; ++_t9) {
+					string l = ((string*)lines.data)[_t9];
+					if ((builtin__string_trim_space(l)).len != 0 && count < 8) {
+						builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("    "), _const_main__c_gray, _S("\342\200\242"), _const_main__c_reset, _S(" "), cfg.prefix, _S("/"), builtin__string_trim_space(l)})));
+						count++;
+					}
+				}
+				if (lines.len > 8) {
+					builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("    "), _const_main__c_dim, _S("... and "), builtin__int_str(lines.len - 8), _S(" more files"), _const_main__c_reset})));
+				}
+				break;
+			}
 		}
 	}
-	if (service_units.len > 0) {
-		os__execute(_S("systemctl daemon-reload 2>/dev/null || true"));
-		for (int _t35 = 0; _t35 < service_units.len; ++_t35) {
-			string svc = ((string*)service_units.data)[_t35];
-			builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_purple}}, {_S("\342\232\241 Registering system service:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = svc}}, {_S(".service"), 0, { .d_c = 0 }}})));
-			os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl enable "), 0xfe10, {.d_s = svc}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
-			os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl start "), 0xfe10, {.d_s = svc}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
-		}
-	}
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("\n"), 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\234\223 Successfully installed "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = final_meta.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" ("), 0xfe10, {.d_s = final_meta.version}}, {_S(")!"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(7, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_gray}}, {_S("Executables:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = final_meta.name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" (ready to run)\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(2, _MOV((string[2]){_const_main__c_cyan, _S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257\n")})));
 	return 0;
 }
-VV_LOC int main__cmd_install_file(main__Config cfg, string raw_path) {
-	string file_path = os__real_path(raw_path);
-	if (!os__exists(file_path)) {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package archive file not found: "), 0xfe10, {.d_s = raw_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		return 1;
-	}
-	if (os__is_dir(file_path)) {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Path is a directory, expected a .ngpkg package file: "), 0xfe10, {.d_s = raw_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		return 1;
-	}
-	string test_cmd = builtin__str_intp(5, _MOV((StrIntpData[]){{_S("(gzip -dc \""), 0xfe10, {.d_s = file_path}}, {_S("\" 2>/dev/null || gunzip -c \""), 0xfe10, {.d_s = file_path}}, {_S("\" 2>/dev/null || cat \""), 0xfe10, {.d_s = file_path}}, {_S("\") | tar -tf - >/dev/null 2>&1 || tar -tf \""), 0xfe10, {.d_s = file_path}}, {_S("\" >/dev/null 2>&1"), 0, { .d_c = 0 }}}));
-	os__Result test_res = os__execute(test_cmd);
-	if (test_res.exit_code != 0) {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Invalid or corrupted package archive: "), 0xfe10, {.d_s = raw_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		return 1;
-	}
-	main__PackageMeta meta = main__inspect_archive_meta(file_path);
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Installing custom local package: "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = file_path}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	return main__install_payload(cfg, file_path, meta, true);
-}
 VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
-	Array_main__PackageMeta pkgs = main__fetch_index(cfg);
+	Array_main__Package pkgs = main__fetch_all_repo_packages(cfg);
 	if (pkgs.len == 0) {
-		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[! No index]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Updating repository index first..."), 0, { .d_c = 0 }}})));
-		if (main__cmd_update(cfg) != 0) {
-			return 1;
-		}
+		main__cmd_update(cfg);
 	}
-	Array_main__PackageMeta fresh_pkgs = main__fetch_index(cfg);
-	main__PackageMeta target_pkg = ((main__PackageMeta){.name = (string){.str=(byteptr)"", .is_lit=1},.version = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.description = (string){.str=(byteptr)"", .is_lit=1},.category = (string){.str=(byteptr)"", .is_lit=1},});
+	Array_main__Package fresh_pkgs = main__fetch_all_repo_packages(cfg);
+	main__Package _t1 = ((main__Package){.name = (string){.str=(byteptr)"", .is_lit=1},.version = (string){.str=(byteptr)"", .is_lit=1},.arch = (string){.str=(byteptr)"", .is_lit=1},.size = (string){.str=(byteptr)"", .is_lit=1},.size_bytes = 0,.description = (string){.str=(byteptr)"", .is_lit=1},.category = (string){.str=(byteptr)"", .is_lit=1},.bin = (string){.str=(byteptr)"", .is_lit=1},.src = (string){.str=(byteptr)"", .is_lit=1},.pkg_type = (string){.str=(byteptr)"", .is_lit=1},.repo_name = (string){.str=(byteptr)"", .is_lit=1},});
+	main__Package target_pkg = _t1;
 	bool found = false;
 	for (int _t2 = 0; _t2 < fresh_pkgs.len; ++_t2) {
-		main__PackageMeta p = ((main__PackageMeta*)fresh_pkgs.data)[_t2];
+		main__Package p = ((main__Package*)fresh_pkgs.data)[_t2];
 		if (builtin__string__eq(p.name, pkg_name)) {
 			target_pkg = p;
 			found = true;
@@ -8949,218 +11795,559 @@ VV_LOC int main__cmd_install(main__Config cfg, string pkg_name) {
 		}
 	}
 	if (!found) {
-		Array_string local_candidates = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_S(".apkg"), 0, { .d_c = 0 }}}))}));
-		for (int _t3 = 0; _t3 < local_candidates.len; ++_t3) {
-			string cand = ((string*)local_candidates.data)[_t3];
-			if (os__exists(cand) && !os__is_dir(cand)) {
-				builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_yellow}}, {_S("[*] Found matching local package archive: "), 0xfe10, {.d_s = cand}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-				return main__cmd_install_file(cfg, cand);
-			}
+		if (builtin__string_ends_with(pkg_name, _S(".ngpkg")) || builtin__string_ends_with(pkg_name, _S(".tar.gz")) || os__exists(pkg_name)) {
+			return main__cmd_install_local_file(cfg, pkg_name);
 		}
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" not found in repository index."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  Run "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg list"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" to see all available applications, or"), 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  Run "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg install /path/to/custom.ngpkg"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" to install a custom package file."), 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("\342\234\227 Package \""), pkg_name, _S("\" not found in any repository index."), _const_main__c_reset})));
+		builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_S("  Run "), _const_main__c_bold, _S("pkg list"), _const_main__c_reset, _S(" to view all available applications.")})));
 		return 1;
 	}
-	builtin__print(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_blue}}, {_S("[1/2]"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" \342\254\207 Downloading payload..."), 0, { .d_c = 0 }}})));
-	string cache_dir = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/cache"), 0, { .d_c = 0 }}}));
+	main__Repo target_repo = ((main__Repo){.name = _const_main__default_repo_name,.url = _const_main__default_repo_url,.raw_url = _const_main__default_repo_url,.package_count = 0,});
+	for (int _t5 = 0; _t5 < cfg.repos.len; ++_t5) {
+		main__Repo r = ((main__Repo*)cfg.repos.data)[_t5];
+		if (builtin__string__eq(r.name, target_pkg.repo_name)) {
+			target_repo = r;
+			break;
+		}
+	}
+	string bin_path = builtin__string_trim_left(target_pkg.bin, _S("/"));
+	if ((bin_path).len == 0) {
+		bin_path = builtin__string_plus_many(2, _MOV((string[2]){_S("bin/"), target_pkg.name}));
+	}
+	Array_string candidate_urls = main__get_repo_file_urls(target_repo, bin_path);
+	builtin__println(builtin__string_plus_many(19, _MOV((string[19]){_const_main__c_cyan, _S("\342\227\210"), _const_main__c_reset, _S(" Installing "), _const_main__c_bold, target_pkg.name, _const_main__c_reset, _S(" ("), _const_main__c_yellow, _S("v"), target_pkg.version, _const_main__c_reset, _S(", "), target_pkg.size, _S(") from repo ["), _const_main__c_purple, target_pkg.repo_name, _const_main__c_reset, _S("]...")})));
+	string cache_dir = builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/cache")}));
 	_result_void _t6 = os__mkdir_all(cache_dir, ((os__MkdirParams){.mode = 0777,}));
 	(void)_t6;
  ;
-	string archive_file = builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cache_dir}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}}));
-	string base_url = builtin__string_trim_right(builtin__string_trim_string_right(cfg.repo_url, _S("/packages")), _S("/"));
-	Array_string candidate_urls = builtin__new_array_from_c_array(6, 6, sizeof(string), _MOV((string[6]){builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/packages/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = base_url}}, {_S("/packages/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".ngpkg"), 0, { .d_c = 0 }}})), builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S("-"), 0xfe10, {.d_s = target_pkg.version}}, {_S(".apkg"), 0, { .d_c = 0 }}})), builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.repo_url}}, {_S("/"), 0xfe10, {.d_s = target_pkg.name}}, {_S(".apkg"), 0, { .d_c = 0 }}}))}));
+	string archive_filename = os__file_name(bin_path);
+	string dest_file = builtin__string_plus_many(3, _MOV((string[3]){cache_dir, _S("/"), archive_filename}));
+	builtin__print(builtin__string_plus_many(9, _MOV((string[9]){_S("  "), _const_main__c_blue, _S("[1/2]"), _const_main__c_reset, _S(" \342\254\207 Downloading from "), _const_main__c_gray, target_repo.name, _const_main__c_reset, _S("...")})));
 	bool downloaded = false;
 	for (int _t7 = 0; _t7 < candidate_urls.len; ++_t7) {
-		string url = ((string*)candidate_urls.data)[_t7];
-		string dl_cmd = builtin__str_intp(5, _MOV((StrIntpData[]){{_S("wget -q -T 30 -O \""), 0xfe10, {.d_s = archive_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null || curl -fsSL --connect-timeout 10 -o \""), 0xfe10, {.d_s = archive_file}}, {_S("\" \""), 0xfe10, {.d_s = url}}, {_S("\" 2>/dev/null"), 0, { .d_c = 0 }}}));
-		os__Result dl_res = os__execute(dl_cmd);
-		if (dl_res.exit_code == 0 && os__exists(archive_file) && os__file_size(archive_file) > 100) {
+		string u = ((string*)candidate_urls.data)[_t7];
+		if (main__download_url(u, dest_file)) {
 			downloaded = true;
 			break;
 		}
 	}
 	if (!downloaded) {
-		builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_red}}, {_S("FAILED"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Failed to download package "), 0xfe10, {.d_s = target_pkg.name}}, {_S(" from repository."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_S(" "), _const_main__c_red, _S("FAILED"), _const_main__c_reset})));
+		builtin__eprintln(builtin__string_plus_many(7, _MOV((string[7]){_const_main__c_red, _S("\342\234\227 Failed to download "), target_pkg.name, _S(" from repository "), target_repo.name, _S("."), _const_main__c_reset})));
 		return 1;
 	}
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S(" "), 0xfe10, {.d_s = _const_main__c_green}}, {_S("DONE"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	return main__install_payload(cfg, archive_file, target_pkg, false);
+	builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_S(" "), _const_main__c_green, _S("DONE"), _const_main__c_reset})));
+	int res = main__deploy_package_payload(cfg, dest_file, target_pkg);
+	_result_void _t9 = os__rm(dest_file);
+	(void)_t9;
+ ;
+	return res;
 }
-VV_LOC int main__cmd_install_dispatcher(main__Config cfg, Array_string args) {
-	if (args.len == 0) {
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install <package-name|path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+VV_LOC int main__cmd_install_local_file(main__Config cfg, string file_path) {
+	if (!os__exists(file_path)) {
+		builtin__eprintln(builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_red, _S("\342\234\227 File not found: "), file_path, _const_main__c_reset})));
 		return 1;
 	}
-	string first = (*(string*)builtin__array_get(args, 0));
-	if (_SLIT_EQ(first.str, first.len, "-f") || _SLIT_EQ(first.str, first.len, "--file")) {
-		if (args.len < 2) {
-			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install -f <path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	string base = builtin__string_trim_string_right(builtin__string_trim_string_right(os__file_name(file_path), _S(".ngpkg")), _S(".tar.gz"));
+	main__Package _t2 = ((main__Package){
+		.name = base,
+		.version = _S("local"),
+		.arch = _S("armv7l"),
+		.size = main__format_bytes(((u64)(os__file_size(file_path)))),
+		.size_bytes = 0,
+		.description = _S("Custom local package"),
+		.category = _S("custom"),
+		.bin = (string){.str=(byteptr)"", .is_lit=1},
+		.src = (string){.str=(byteptr)"", .is_lit=1},
+		.pkg_type = _S("archive"),
+		.repo_name = _S("local"),
+	});
+	main__Package pkg = _t2;
+	builtin__println(builtin__string_plus_many(8, _MOV((string[8]){_const_main__c_cyan, _S("\342\227\210"), _const_main__c_reset, _S(" Installing local package file: "), _const_main__c_bold, file_path, _const_main__c_reset, _S("...")})));
+	return main__deploy_package_payload(cfg, file_path, pkg);
+}
+VV_LOC int main__deploy_package_payload(main__Config cfg, string payload_file, main__Package pkg) {
+	builtin__print(builtin__string_plus_many(9, _MOV((string[9]){_S("  "), _const_main__c_blue, _S("[2/2]"), _const_main__c_reset, _S(" \360\237\223\246 Deploying to "), _const_main__c_bold, cfg.prefix, _const_main__c_reset, _S(" & establishing links...")})));
+	_result_void _t1 = os__mkdir_all(cfg.prefix, ((os__MkdirParams){.mode = 0777,}));
+	(void)_t1;
+ ;
+	_result_void _t2 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/bin")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t2;
+ ;
+	_result_void _t3 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/sbin")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t3;
+ ;
+	_result_void _t4 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/lib")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t4;
+ ;
+	_result_void _t5 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/etc")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t5;
+ ;
+	_result_void _t6 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/share")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t6;
+ ;
+	_result_void _t7 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.prefix, _S("/var/lib/ngpkg/installed")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t7;
+ ;
+	_result_void _t8 = os__mkdir_all(builtin__string_plus_many(2, _MOV((string[2]){cfg.db_dir, _S("/installed")})), ((os__MkdirParams){.mode = 0777,}));
+	(void)_t8;
+ ;
+	Array_string installed_files = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	bool is_archive = builtin__string_ends_with(payload_file, _S(".tar.gz")) || builtin__string_ends_with(payload_file, _S(".tgz")) || builtin__string_ends_with(payload_file, _S(".ngpkg")) || builtin__string_ends_with(payload_file, _S(".tar")) || builtin__string_ends_with(payload_file, _S(".tar.xz"));
+	if (is_archive) {
+		string list_cmd = builtin__string_plus_many(9, _MOV((string[9]){_S("(gzip -dc \""), payload_file, _S("\" 2>/dev/null || gunzip -c \""), payload_file, _S("\" 2>/dev/null || cat \""), payload_file, _S("\") | tar -tf - 2>/dev/null || tar -tf \""), payload_file, _S("\" 2>/dev/null")}));
+		os__Result res_list = os__execute(list_cmd);
+		if (res_list.exit_code == 0) {
+			Array_string _t9 = builtin__string_split_into_lines(res_list.output);
+			for (int _t10 = 0; _t10 < _t9.len; ++_t10) {
+				string f = ((string*)_t9.data)[_t10];
+				string trimmed = builtin__string_trim_left(builtin__string_trim_space(f), _S("./"));
+				if ((trimmed).len != 0 && !builtin__string_ends_with(trimmed, _S("/"))) {
+					builtin__array_push((array*)&installed_files, _MOV((string[]){ builtin__string_clone(trimmed) }));
+				}
+			}
+		}
+		string unpack_cmd = builtin__string_plus_many(13, _MOV((string[13]){_S("(gzip -dc \""), payload_file, _S("\" 2>/dev/null || gunzip -c \""), payload_file, _S("\" 2>/dev/null || cat \""), payload_file, _S("\") | tar -xf - -C \""), cfg.prefix, _S("\" 2>/dev/null || tar -xf \""), payload_file, _S("\" -C \""), cfg.prefix, _S("\" 2>/dev/null")}));
+		os__Result unpack_res = os__execute(unpack_cmd);
+		if (unpack_res.exit_code != 0) {
+			builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_S(" "), _const_main__c_red, _S("FAILED"), _const_main__c_reset})));
+			builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("\342\234\227 Failed to unpack payload archive to "), cfg.prefix, _S("."), _const_main__c_reset})));
 			return 1;
 		}
-		return main__cmd_install_file(cfg, (*(string*)builtin__array_get(args, 1)));
+	} else {
+		string bin_dest = builtin__string_plus_many(3, _MOV((string[3]){cfg.prefix, _S("/bin/"), pkg.name}));
+		_result_void _t13 = os__cp(payload_file, bin_dest, ((os__CopyParams){.fail_if_exists = 0,}));
+		if (_t13.is_error) {
+			builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_S(" "), _const_main__c_red, _S("FAILED"), _const_main__c_reset})));
+			builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("\342\234\227 Failed to copy binary to "), bin_dest, _S("."), _const_main__c_reset})));
+			return 1;
+		}
+		
+ ;
+		_result_void _t15 = os__chmod(bin_dest, 0755);
+		(void)_t15;
+ ;
+		builtin__array_push((array*)&installed_files, _MOV((string[]){ builtin__string_plus_many(2, _MOV((string[2]){_S("bin/"), pkg.name})) }));
 	}
-	if (builtin__string_ends_with(first, _S(".ngpkg")) || builtin__string_ends_with(first, _S(".apkg")) || builtin__string_ends_with(first, _S(".tar.gz")) || builtin__string_ends_with(first, _S(".tgz")) || builtin__string_contains(first, _S("/")) || (os__exists(first) && !os__is_dir(first))) {
-		return main__cmd_install_file(cfg, first);
+	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
+	string ngpkg_bin = builtin__string_plus_many(2, _MOV((string[2]){homedir, _S("/.ngpkg-bin")}));
+	_result_void _t17 = os__mkdir_all(ngpkg_bin, ((os__MkdirParams){.mode = 0777,}));
+	(void)_t17;
+ ;
+	if (_SLIT_NE(homedir.str, homedir.len, "/root")) {
+		_result_void _t18 = os__mkdir_all(_S("/root/.ngpkg-bin"), ((os__MkdirParams){.mode = 0777,}));
+		(void)_t18;
+ ;
 	}
-	return main__cmd_install(cfg, first);
+	Array_string service_units = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	for (int _t19 = 0; _t19 < installed_files.len; ++_t19) {
+		string f = ((string*)installed_files.data)[_t19];
+		string full = builtin__string_plus_many(3, _MOV((string[3]){cfg.prefix, _S("/"), f}));
+		if (builtin__string_starts_with(f, _S("bin/"))) {
+			string b_name = builtin__string_all_after(f, _S("bin/"));
+			if (!builtin__string_contains(b_name, _S("/"))) {
+				_result_void _t20 = os__chmod(full, 0755);
+				(void)_t20;
+ ;
+				string sym = builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), b_name}));
+				if (!os__exists(sym) && !os__is_link(sym)) {
+					_result_void _t21 = os__symlink(full, sym);
+					(void)_t21;
+ ;
+				}
+				if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name}))) && !os__is_link(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name})))) {
+					_result_void _t22 = os__symlink(full, builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name})));
+					(void)_t22;
+ ;
+				}
+			}
+		} else if (builtin__string_starts_with(f, _S("sbin/"))) {
+			string b_name = builtin__string_all_after(f, _S("sbin/"));
+			if (!builtin__string_contains(b_name, _S("/"))) {
+				_result_void _t23 = os__chmod(full, 0755);
+				(void)_t23;
+ ;
+				string sym = builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), b_name}));
+				if (!os__exists(sym) && !os__is_link(sym)) {
+					_result_void _t24 = os__symlink(full, sym);
+					(void)_t24;
+ ;
+				}
+				if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name}))) && !os__is_link(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name})))) {
+					_result_void _t25 = os__symlink(full, builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name})));
+					(void)_t25;
+ ;
+				}
+			}
+		} else if (builtin__string_starts_with(f, _S("etc/systemd/system/")) && builtin__string_ends_with(f, _S(".service"))) {
+			string svc_name = builtin__string_trim_string_right(builtin__string_all_after(f, _S("etc/systemd/system/")), _S(".service"));
+			_result_void _t26 = os__mkdir_all(_S("/etc/systemd/system"), ((os__MkdirParams){.mode = 0777,}));
+			(void)_t26;
+ ;
+			string dst = builtin__string_plus_many(3, _MOV((string[3]){_S("/etc/systemd/system/"), svc_name, _S(".service")}));
+			if (!os__exists(dst) && !os__is_link(dst)) {
+				_result_void _t27 = os__symlink(full, dst);
+				(void)_t27;
+ ;
+			}
+			builtin__array_push((array*)&service_units, _MOV((string[]){ builtin__string_clone(svc_name) }));
+		}
+	}
+	if (os__exists(builtin__string_plus_many(3, _MOV((string[3]){cfg.prefix, _S("/bin/"), pkg.name})))) {
+		string p_target = builtin__string_plus_many(3, _MOV((string[3]){cfg.prefix, _S("/bin/"), pkg.name}));
+		_result_void _t29 = os__chmod(p_target, 0755);
+		(void)_t29;
+ ;
+		if (!os__exists(builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), pkg.name}))) && !os__is_link(builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), pkg.name})))) {
+			_result_void _t30 = os__symlink(p_target, builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), pkg.name})));
+			(void)_t30;
+ ;
+		}
+		if (_SLIT_NE(homedir.str, homedir.len, "/root") && !os__exists(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), pkg.name}))) && !os__is_link(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), pkg.name})))) {
+			_result_void _t31 = os__symlink(p_target, builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), pkg.name})));
+			(void)_t31;
+ ;
+		}
+	}
+	if (os__exists(builtin__string_plus_many(3, _MOV((string[3]){_S("/etc/systemd/system/"), pkg.name, _S(".service")}))) && !Array_string_contains(service_units, pkg.name)) {
+		builtin__array_push((array*)&service_units, _MOV((string[]){ builtin__string_clone(pkg.name) }));
+	}
+	if (service_units.len > 0) {
+		os__execute(_S("systemctl daemon-reload 2>/dev/null || true"));
+		for (int _t33 = 0; _t33 < service_units.len; ++_t33) {
+			string svc = ((string*)service_units.data)[_t33];
+			os__execute(builtin__string_plus_many(3, _MOV((string[3]){_S("systemctl enable "), svc, _S(" 2>/dev/null || true")})));
+			os__execute(builtin__string_plus_many(3, _MOV((string[3]){_S("systemctl start "), svc, _S(" 2>/dev/null || true")})));
+		}
+	}
+	strings__Builder receipt_content = strings__new_builder(512);
+	strings__Builder_write_string(&receipt_content, _S("{\n"));
+	{
+		strings__Builder_write_string(&receipt_content, _S("  \"name\": \""));
+		strings__Builder_write_string(&receipt_content, pkg.name);
+		strings__Builder_write_string(&receipt_content, _S("\",\n"));
+	}
+	{
+		strings__Builder_write_string(&receipt_content, _S("  \"version\": \""));
+		strings__Builder_write_string(&receipt_content, pkg.version);
+		strings__Builder_write_string(&receipt_content, _S("\",\n"));
+	}
+	{
+		strings__Builder_write_string(&receipt_content, _S("  \"repo\": \""));
+		strings__Builder_write_string(&receipt_content, pkg.repo_name);
+		strings__Builder_write_string(&receipt_content, _S("\",\n"));
+	}
+	{
+		strings__Builder_write_string(&receipt_content, _S("  \"description\": \""));
+		strings__Builder_write_string(&receipt_content, main__json_escape(pkg.description));
+		strings__Builder_write_string(&receipt_content, _S("\",\n"));
+	}
+	{
+		strings__Builder_write_string(&receipt_content, _S("  \"category\": \""));
+		strings__Builder_write_string(&receipt_content, pkg.category);
+		strings__Builder_write_string(&receipt_content, _S("\",\n"));
+	}
+	strings__Builder_write_string(&receipt_content, _S("  \"files\": [\n"));
+	for (int idx = 0; idx < installed_files.len; ++idx) {
+		string f = ((string*)installed_files.data)[idx];
+		string comma = (idx < installed_files.len - 1 ? (_S(",")) : (_S("")));
+		{
+			strings__Builder_write_string(&receipt_content, _S("    \""));
+			strings__Builder_write_string(&receipt_content, f);
+			strings__Builder_write_string(&receipt_content, _S("\""));
+			strings__Builder_write_string(&receipt_content, comma);
+			strings__Builder_write_string(&receipt_content, _S("\n"));
+		}
+	}
+	strings__Builder_write_string(&receipt_content, _S("  ]\n}\n"));
+	Array_string receipt_dests = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__string_plus_many(4, _MOV((string[4]){cfg.prefix, _S("/var/lib/ngpkg/installed/"), pkg.name, _S(".json")})), builtin__string_plus_many(4, _MOV((string[4]){cfg.db_dir, _S("/installed/"), pkg.name, _S(".json")}))}));
+	for (int _t34 = 0; _t34 < receipt_dests.len; ++_t34) {
+		string d = ((string*)receipt_dests.data)[_t34];
+		_result_void _t35 = os__mkdir_all(os__dir(d), ((os__MkdirParams){.mode = 0777,}));
+		(void)_t35;
+ ;
+		_result_void _t36 = os__write_file(d, strings__Builder_str(&receipt_content));
+		(void)_t36;
+ ;
+	}
+	string list_content = builtin__string__plus(Array_string_join(installed_files, _S("\n")), _S("\n"));
+	_result_void _t37 = os__write_file(builtin__string_plus_many(4, _MOV((string[4]){cfg.prefix, _S("/var/lib/ngpkg/installed/"), pkg.name, _S(".list")})), list_content);
+	(void)_t37;
+ ;
+	_result_void _t38 = os__write_file(builtin__string_plus_many(4, _MOV((string[4]){cfg.db_dir, _S("/installed/"), pkg.name, _S(".list")})), list_content);
+	(void)_t38;
+ ;
+	builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_S(" "), _const_main__c_green, _S("DONE"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(10, _MOV((string[10]){_S("\n"), _const_main__c_green, _S("\342\234\223 Successfully installed "), _const_main__c_bold, pkg.name, _const_main__c_reset, _S(" ("), pkg.version, _S(")!"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_S("  "), _const_main__c_gray, _S("Executables:"), _const_main__c_reset, _S(" "), _const_main__c_cyan, ngpkg_bin, _S("/"), pkg.name, _const_main__c_reset, _S(" (ready to run)\n")})));
+	return 0;
 }
 VV_LOC int main__cmd_remove(main__Config cfg, string pkg_name) {
 	if (!main__is_installed(cfg, pkg_name)) {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("\342\234\227 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" is not installed."), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("\342\234\227 Package \""), pkg_name, _S("\" is not installed."), _const_main__c_reset})));
 		return 1;
 	}
-	builtin__println(builtin__str_intp(6, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("\342\227\210"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" Removing package "), 0xfe10, {.d_s = _const_main__c_bold}}, {_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_SLIT0, 0xfe10, {.d_s = _const_main__c_reset}}, {_S("..."), 0, { .d_c = 0 }}})));
-	Array_string pre_remove_hooks = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/"), 0xfe10, {.d_s = pkg_name}}, {_S("/uninstall.sh"), 0, { .d_c = 0 }}})), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/share/ngpkg/uninstall.sh"), 0, { .d_c = 0 }}}))}));
-	for (int _t2 = 0; _t2 < pre_remove_hooks.len; ++_t2) {
-		string hook = ((string*)pre_remove_hooks.data)[_t2];
-		if (os__exists(hook)) {
-			_result_void _t3 = os__chmod(hook, 0755);
-			(void)_t3;
- ;
-			os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/bin/sh \""), 0xfe10, {.d_s = hook}}, {_S("\" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(8, _MOV((string[8]){_const_main__c_cyan, _S("\342\227\210"), _const_main__c_reset, _S(" Removing package "), _const_main__c_bold, pkg_name, _const_main__c_reset, _S("...")})));
+	os__execute(builtin__string_plus_many(3, _MOV((string[3]){_S("systemctl stop "), pkg_name, _S(" 2>/dev/null || true")})));
+	os__execute(builtin__string_plus_many(3, _MOV((string[3]){_S("systemctl disable "), pkg_name, _S(" 2>/dev/null || true")})));
+	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
+	string ngpkg_bin = builtin__string_plus_many(2, _MOV((string[2]){homedir, _S("/.ngpkg-bin")}));
+	Array_string files_to_remove = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+	Array_string _t2 = main__get_installed_db_dirs(cfg);
+	for (int _t3 = 0; _t3 < _t2.len; ++_t3) {
+		string d = ((string*)_t2.data)[_t3];
+		string json_file = builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".json")}));
+		if (os__exists(json_file)) {
+			_result_string _t4 = os__read_file(json_file);
+			if (_t4.is_error) {
+				*(string*) _t4.data = _S("");
+			}
+			
+ 			string content = (*(string*)_t4.data);
+			if (builtin__string_contains(content, _S("\"files\""))) {
+				string files_part = builtin__string_all_before(builtin__string_all_after(builtin__string_all_after(content, _S("\"files\"")), _S("[")), _S("]"));
+				Array_string _t5 = builtin__string_split_into_lines(files_part);
+				for (int _t6 = 0; _t6 < _t5.len; ++_t6) {
+					string line = ((string*)_t5.data)[_t6];
+					string trimmed = builtin__string_trim(builtin__string_trim_space(line), _S("\","));
+					if ((trimmed).len != 0) {
+						builtin__array_push((array*)&files_to_remove, _MOV((string[]){ builtin__string_clone(trimmed) }));
+					}
+				}
+			}
+			break;
+		}
+		string list_file = builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".list")}));
+		if (os__exists(list_file)) {
+			_result_Array_string _t8 = os__read_lines(list_file);
+			if (_t8.is_error) {
+				*(Array_string*) _t8.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+			}
+			
+ 			Array_string lines = (*(Array_string*)_t8.data);
+			for (int _t9 = 0; _t9 < lines.len; ++_t9) {
+				string l = ((string*)lines.data)[_t9];
+				string trimmed = builtin__string_trim_space(l);
+				if ((trimmed).len != 0) {
+					builtin__array_push((array*)&files_to_remove, _MOV((string[]){ builtin__string_clone(trimmed) }));
+				}
+			}
 			break;
 		}
 	}
-	string service_file = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = pkg_name}}, {_S(".service"), 0, { .d_c = 0 }}}));
-	if (os__exists(service_file)) {
-		os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl stop "), 0xfe10, {.d_s = pkg_name}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
-		os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl disable "), 0xfe10, {.d_s = pkg_name}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
+	if (files_to_remove.len == 0) {
+		builtin__array_push((array*)&files_to_remove, _MOV((string[]){ builtin__string_plus_many(2, _MOV((string[2]){_S("bin/"), pkg_name})) }));
 	}
-	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
-	string ngpkg_bin = builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = homedir}}, {_S("/.ngpkg-bin"), 0, { .d_c = 0 }}}));
-	Array_string dirs = main__get_installed_db_dirs(cfg);
-	for (int _t4 = 0; _t4 < dirs.len; ++_t4) {
-		string d = ((string*)dirs.data)[_t4];
-		string list_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = d}}, {_S("/"), 0xfe10, {.d_s = pkg_name}}, {_S(".list"), 0, { .d_c = 0 }}}));
-		if (os__exists(list_file)) {
-			_result_Array_string _t5 = os__read_lines(list_file);
-			if (_t5.is_error) {
-				*(Array_string*) _t5.data = builtin____new_array_with_default(0, 0, sizeof(string), 0);
-			}
-			
- 			Array_string lines = (*(Array_string*)_t5.data);
-			for (int i = (int)(lines.len - 1); i >= 0; i--) {
-				string rel_path = builtin__string_trim_space((*(string*)builtin__array_get(lines, i)));
-				if (rel_path.len == 0) {
-					continue;
-				}
-				string full_path = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = cfg.prefix}}, {_S("/"), 0xfe10, {.d_s = rel_path}}, {_SLIT0, 0, { .d_c = 0 }}}));
-				if (os__is_file(full_path) || os__is_link(full_path)) {
-					_result_void _t6 = os__rm(full_path);
-					(void)_t6;
+	for (int _t12 = 0; _t12 < files_to_remove.len; ++_t12) {
+		string f = ((string*)files_to_remove.data)[_t12];
+		string full = builtin__string_plus_many(3, _MOV((string[3]){cfg.prefix, _S("/"), f}));
+		if (os__is_file(full) || os__is_link(full)) {
+			_result_void _t13 = os__rm(full);
+			(void)_t13;
  ;
-				} else if (os__is_dir(full_path)) {
-					_result_void _t7 = os__rmdir(full_path);
-					(void)_t7;
- ;
-				}
-				if (builtin__string_starts_with(rel_path, _S("bin/"))) {
-					string bin_name = builtin__string_all_after(rel_path, _S("bin/"));
-					if (!builtin__string_contains(bin_name, _S("/"))) {
-						string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
-						if (os__is_link(symlink) || os__exists(symlink)) {
-							_result_void _t8 = os__rm(symlink);
-							(void)_t8;
- ;
-						}
-						if (os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-							_result_void _t9 = os__rm(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
-							(void)_t9;
- ;
-						}
-					}
-				} else if (builtin__string_starts_with(rel_path, _S("sbin/"))) {
-					string sbin_name = builtin__string_all_after(rel_path, _S("sbin/"));
-					if (!builtin__string_contains(sbin_name, _S("/"))) {
-						string symlink = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
-						if (os__is_link(symlink) || os__exists(symlink)) {
-							_result_void _t10 = os__rm(symlink);
-							(void)_t10;
- ;
-						}
-						if (os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-							_result_void _t11 = os__rm(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = sbin_name}}, {_SLIT0, 0, { .d_c = 0 }}})));
-							(void)_t11;
- ;
-						}
-					}
-				} else if (builtin__string_starts_with(rel_path, _S("etc/systemd/system/")) && builtin__string_ends_with(rel_path, _S(".service"))) {
-					string svc_file = builtin__string_all_after(rel_path, _S("etc/systemd/system/"));
-					if (!builtin__string_contains(svc_file, _S("/"))) {
-						string svc_unit = builtin__string_trim_string_right(svc_file, _S(".service"));
-						os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl stop "), 0xfe10, {.d_s = svc_unit}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
-						os__execute(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("systemctl disable "), 0xfe10, {.d_s = svc_unit}}, {_S(" 2>/dev/null || true"), 0, { .d_c = 0 }}})));
-						string systemd_link = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/systemd/system/"), 0xfe10, {.d_s = svc_file}}, {_SLIT0, 0, { .d_c = 0 }}}));
-						if (os__is_link(systemd_link) || os__exists(systemd_link)) {
-							_result_void _t12 = os__rm(systemd_link);
-							(void)_t12;
- ;
-						}
-					}
-				} else if (builtin__string_starts_with(rel_path, _S("etc/init.d/"))) {
-					string svc_name = builtin__string_all_after(rel_path, _S("etc/init.d/"));
-					if (!builtin__string_contains(svc_name, _S("/"))) {
-						string init_link = builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/etc/init.d/"), 0xfe10, {.d_s = svc_name}}, {_SLIT0, 0, { .d_c = 0 }}}));
-						if (os__is_link(init_link) || os__exists(init_link)) {
-							_result_void _t13 = os__rm(init_link);
-							(void)_t13;
- ;
-						}
-					}
-				}
-			}
-			_result_void _t14 = os__rm(list_file);
+		}
+		if (builtin__string_starts_with(f, _S("bin/"))) {
+			string b_name = builtin__string_all_after(f, _S("bin/"));
+			_result_void _t14 = os__rm(builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), b_name})));
 			(void)_t14;
  ;
-		}
-		string meta_file = builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = d}}, {_S("/"), 0xfe10, {.d_s = pkg_name}}, {_S(".meta"), 0, { .d_c = 0 }}}));
-		if (os__exists(meta_file)) {
-			_result_void _t15 = os__rm(meta_file);
-			(void)_t15;
+			if (_SLIT_NE(homedir.str, homedir.len, "/root")) {
+				_result_void _t15 = os__rm(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name})));
+				(void)_t15;
  ;
-		}
-	}
-	Array_string _t16 = builtin__new_array_from_c_array(2, 2, sizeof(string), _MOV((string[2]){builtin__string_clone(pkg_name), builtin__str_intp(2, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = pkg_name}}, {_S(".bin"), 0, { .d_c = 0 }}}))}));
-	for (int _t17 = 0; _t17 < _t16.len; ++_t17) {
-		string bin_cand = ((string*)_t16.data)[_t17];
-		if (os__is_link(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-			_result_void _t18 = os__rm(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = ngpkg_bin}}, {_S("/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			}
+		} else if (builtin__string_starts_with(f, _S("sbin/"))) {
+			string b_name = builtin__string_all_after(f, _S("sbin/"));
+			_result_void _t16 = os__rm(builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), b_name})));
+			(void)_t16;
+ ;
+			if (_SLIT_NE(homedir.str, homedir.len, "/root")) {
+				_result_void _t17 = os__rm(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), b_name})));
+				(void)_t17;
+ ;
+			}
+		} else if (builtin__string_starts_with(f, _S("etc/systemd/system/"))) {
+			string svc_file = builtin__string_all_after(f, _S("etc/systemd/system/"));
+			_result_void _t18 = os__rm(builtin__string_plus_many(2, _MOV((string[2]){_S("/etc/systemd/system/"), svc_file})));
 			(void)_t18;
  ;
 		}
-		if (os__is_link(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}}))) || os__exists(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})))) {
-			_result_void _t19 = os__rm(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("/root/.ngpkg-bin/"), 0xfe10, {.d_s = bin_cand}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			(void)_t19;
+	}
+	_result_void _t19 = os__rm(builtin__string_plus_many(3, _MOV((string[3]){ngpkg_bin, _S("/"), pkg_name})));
+	(void)_t19;
  ;
-		}
+	if (_SLIT_NE(homedir.str, homedir.len, "/root")) {
+		_result_void _t20 = os__rm(builtin__string_plus_many(2, _MOV((string[2]){_S("/root/.ngpkg-bin/"), pkg_name})));
+		(void)_t20;
+ ;
+	}
+	Array_string _t21 = main__get_installed_db_dirs(cfg);
+	for (int _t22 = 0; _t22 < _t21.len; ++_t22) {
+		string d = ((string*)_t21.data)[_t22];
+		_result_void _t23 = os__rm(builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".json")})));
+		(void)_t23;
+ ;
+		_result_void _t24 = os__rm(builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".list")})));
+		(void)_t24;
+ ;
+		_result_void _t25 = os__rm(builtin__string_plus_many(4, _MOV((string[4]){d, _S("/"), pkg_name, _S(".meta")})));
+		(void)_t25;
+ ;
 	}
 	os__execute(_S("systemctl daemon-reload 2>/dev/null || true"));
-	builtin__println(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_green}}, {_S("\342\234\223 Package \""), 0xfe10, {.d_s = pkg_name}}, {_S("\" removed successfully."), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("\n"), 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(6, _MOV((string[6]){_const_main__c_green, _S("\342\234\223 Package \""), pkg_name, _S("\" removed successfully."), _const_main__c_reset, _S("\n")})));
+	return 0;
+}
+VV_LOC int main__cmd_repo_list(main__Config cfg, bool json_mode) {
+	if (json_mode) {
+		Array_string items = builtin____new_array_with_default(0, 0, sizeof(string), 0);
+		for (int _t1 = 0; _t1 < cfg.repos.len; ++_t1) {
+			main__Repo r = ((main__Repo*)cfg.repos.data)[_t1];
+			string cache_file = builtin__string_plus_many(4, _MOV((string[4]){cfg.db_dir, _S("/repos/"), r.name, _S("/index.json")}));
+			int count = 0;
+			if (os__exists(cache_file)) {
+				_result_string _t2 = os__read_file(cache_file);
+				if (_t2.is_error) {
+					*(string*) _t2.data = _S("");
+				}
+				
+ 				string c = (*(string*)_t2.data);
+				Array_main__Package pkgs = main__parse_index_json(c, r.name);
+				count = pkgs.len;
+			}
+			builtin__array_push((array*)&items, _MOV((string[]){ builtin__string_plus_many(9, _MOV((string[9]){_S("{\"name\":\""), r.name, _S("\",\"url\":\""), r.url, _S("\",\"raw_url\":\""), r.raw_url, _S("\",\"packages\":"), builtin__int_str(count), _S("}")})) }));
+		}
+		builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_S("["), Array_string_join(items, _S(",")), _S("]")})));
+		return 0;
+	}
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_bold, _S("Configured OpenNGFW Repositories:"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset})));
+	string h_name = main__pad_right(_S("NAME"), 14);
+	string h_pkgs = main__pad_right(_S("PACKAGES"), 10);
+	builtin__println(builtin__string_plus_many(7, _MOV((string[7]){_S("  "), _const_main__c_bold, h_name, _S(" "), h_pkgs, _S(" URL"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset})));
+	for (int _t5 = 0; _t5 < cfg.repos.len; ++_t5) {
+		main__Repo r = ((main__Repo*)cfg.repos.data)[_t5];
+		string cache_file = builtin__string_plus_many(4, _MOV((string[4]){cfg.db_dir, _S("/repos/"), r.name, _S("/index.json")}));
+		int count = 0;
+		if (os__exists(cache_file)) {
+			_result_string _t6 = os__read_file(cache_file);
+			if (_t6.is_error) {
+				*(string*) _t6.data = _S("");
+			}
+			
+ 			string c = (*(string*)_t6.data);
+			Array_main__Package pkgs = main__parse_index_json(c, r.name);
+			count = pkgs.len;
+		}
+		string name_fmt = builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_purple, _const_main__c_bold, main__pad_right(r.name, 14), _const_main__c_reset}));
+		string pkgs_fmt = builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, main__pad_right(builtin__int_str(count), 10), _const_main__c_reset}));
+		builtin__println(builtin__string_plus_many(6, _MOV((string[6]){_S("  "), name_fmt, _S(" "), pkgs_fmt, _S(" "), r.url})));
+	}
+	builtin__println(builtin__string_plus_many(4, _MOV((string[4]){_const_main__c_gray, _S("\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200"), _const_main__c_reset, _S("\n")})));
+	return 0;
+}
+VV_LOC int main__cmd_repo_add(main__Config* cfg, string name, string url) {
+	if ((name).len == 0 || (url).len == 0) {
+		builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg repo add <name> <git-or-raw-url>"), _const_main__c_reset})));
+		return 1;
+	}
+	for (int _t2 = 0; _t2 < cfg->repos.len; ++_t2) {
+		main__Repo* r = ((main__Repo*)cfg->repos.data) + _t2;
+		if (builtin__string__eq(r->name, name)) {
+			builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_yellow, _S("[*] Updating existing repository \""), name, _S("\"..."), _const_main__c_reset})));
+			r->url = url;
+			r->raw_url = main__normalize_repo_url(url);
+			main__save_repos_config(*cfg);
+			return main__cmd_update(*cfg);
+		}
+	}
+	string raw = main__normalize_repo_url(url);
+	builtin__array_push((array*)&cfg->repos, _MOV((main__Repo[]){ ((main__Repo){.name = name,.url = url,.raw_url = raw,.package_count = 0,}) }));
+	main__save_repos_config(*cfg);
+	builtin__println(builtin__string_plus_many(6, _MOV((string[6]){_const_main__c_green, _S("\342\234\223 Added repository \""), name, _S("\": "), url, _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(7, _MOV((string[7]){_S("  "), _const_main__c_gray, _S("Raw URL:"), _const_main__c_reset, _S(" "), raw, _S("\n")})));
+	return main__cmd_update(*cfg);
+}
+VV_LOC int main__cmd_repo_remove(main__Config* cfg, string name) {
+	if ((name).len == 0) {
+		builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg repo remove <name>"), _const_main__c_reset})));
+		return 1;
+	}
+	int idx = -1;
+	for (int i = 0; i < cfg->repos.len; ++i) {
+		main__Repo r = ((main__Repo*)cfg->repos.data)[i];
+		if (builtin__string__eq(r.name, name)) {
+			idx = i;
+			break;
+		}
+	}
+	if (idx == -1) {
+		builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("\342\234\227 Repository \""), name, _S("\" not found in configuration."), _const_main__c_reset})));
+		return 1;
+	}
+	builtin__array_delete(&cfg->repos, idx);
+	main__save_repos_config(*cfg);
+	_result_void _t3 = os__rmdir_all(builtin__string_plus_many(3, _MOV((string[3]){cfg->db_dir, _S("/repos/"), name})));
+	(void)_t3;
+ ;
+	_result_void _t4 = os__rmdir_all(builtin__string_plus_many(3, _MOV((string[3]){cfg->prefix, _S("/var/lib/ngpkg/repos/"), name})));
+	(void)_t4;
+ ;
+	builtin__println(builtin__string_plus_many(6, _MOV((string[6]){_const_main__c_green, _S("\342\234\223 Removed repository \""), name, _S("\"."), _const_main__c_reset, _S("\n")})));
+	return 0;
+}
+VV_LOC int main__cmd_status(main__Config cfg) {
+	Array_string installed = main__get_installed_packages(cfg);
+	string homedir = ((os__getenv(_S("HOME"))).len != 0 ? (os__getenv(_S("HOME"))) : (_S("/root")));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("\342\225\255\342\224\200 System & Storage Status \342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\256"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(13, _MOV((string[13]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Package Manager:"), _const_main__c_reset, _S(" "), _const_main__c_bold, _S("ngpkg v"), _const_main__version, _const_main__c_reset, _S(" (Serverless Edition)")})));
+	builtin__println(builtin__string_plus_many(10, _MOV((string[10]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Repositories:"), _const_main__c_reset, _S("    "), builtin__int_str(cfg.repos.len), _S(" configured")})));
+	for (int _t1 = 0; _t1 < cfg.repos.len; ++_t1) {
+		main__Repo r = ((main__Repo*)cfg.repos.data)[_t1];
+		builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("    "), _const_main__c_purple, _S("\342\200\242 "), r.name, _S(":"), _const_main__c_reset, _S(" "), r.url})));
+	}
+	builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Install Root:"), _const_main__c_reset, _S("    "), cfg.prefix})));
+	builtin__println(builtin__string_plus_many(10, _MOV((string[10]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("User Binaries:"), _const_main__c_reset, _S("   "), homedir, _S("/.ngpkg-bin")})));
+	builtin__println(builtin__string_plus_many(12, _MOV((string[12]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_gray, _S("Installed:"), _const_main__c_reset, _S("       "), _const_main__c_green, builtin__int_str(installed.len), _S(" packages"), _const_main__c_reset})));
+	os__Result df_res = os__execute(builtin__string_plus_many(3, _MOV((string[3]){_S("df -h \""), cfg.prefix, _S("\" 2>/dev/null | tail -n 1")})));
+	if (df_res.exit_code == 0 && (builtin__string_trim_space(df_res.output)).len != 0) {
+		Array_string fields = builtin__string_fields(df_res.output);
+		if (fields.len >= 5) {
+			string total = (*(string*)builtin__array_get(fields, 1));
+			string used = (*(string*)builtin__array_get(fields, 2));
+			string avail = (*(string*)builtin__array_get(fields, 3));
+			string percent = (*(string*)builtin__array_get(fields, 4));
+			builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset})));
+			builtin__println(builtin__string_plus_many(9, _MOV((string[9]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("  "), _const_main__c_bold, _S("USB Storage ("), cfg.prefix, _S("):"), _const_main__c_reset})));
+			builtin__println(builtin__string_plus_many(11, _MOV((string[11]){_const_main__c_cyan, _S("\342\224\202"), _const_main__c_reset, _S("    Total: "), total, _S("  \342\200\242  Used: "), used, _S(" ("), percent, _S(")  \342\200\242  Free: "), avail})));
+		}
+	}
+	builtin__println(builtin__string_plus_many(2, _MOV((string[2]){_const_main__c_cyan, _S("\342\225\260\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\225\257\n")})));
 	return 0;
 }
 VV_LOC void main__print_help(void) {
 	main__print_banner();
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_S("USAGE:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_bold, _S("USAGE:"), _const_main__c_reset})));
 	builtin__println(_S("  pkg <command> [arguments]\n"));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_S("COMMANDS:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("update"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                      Sync latest package index from repository"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("list"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                        List all available & installed packages"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("search"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <query>              Search packages by name, description, or category"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("info"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <package>              Inspect package details, size, and installed files"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("install"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <pkg|file.ngpkg>   Install package from repo or custom .ngpkg file"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("install-file"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <file.ngpkg>   Install directly from a standalone .ngpkg archive"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("remove"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" <package>            Uninstall an application and clean symlinks/services"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("status"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                      Display USB storage, prefix, and repository info"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("  "), 0xfe10, {.d_s = _const_main__c_cyan}}, {_S("help"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S("                        Show this reference manual\n"), 0, { .d_c = 0 }}})));
-	builtin__println(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_bold}}, {_S("EXAMPLES:"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_bold, _S("COMMANDS:"), _const_main__c_reset})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("update"), _const_main__c_reset, _S("                      Sync latest package indexes from all git repos")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("list"), _const_main__c_reset, _S(" [--json]               List all available & installed packages")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("search"), _const_main__c_reset, _S(" <query>              Search packages by name, description, or category")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("info"), _const_main__c_reset, _S(" <package>              Inspect package details, source & binary paths")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("install"), _const_main__c_reset, _S(" <pkg|file>          Install package from repo or local archive")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("remove"), _const_main__c_reset, _S(" <package>            Uninstall an application and clean symlinks/services")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("repo list"), _const_main__c_reset, _S(" [--json]          List configured serverless repositories")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("repo add"), _const_main__c_reset, _S(" <name> <url>       Add a new Git repository (GitHub/GitLab/etc.)")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("repo remove"), _const_main__c_reset, _S(" <name>          Remove a configured repository")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("status"), _const_main__c_reset, _S("                      Display repositories, installed count & storage")})));
+	builtin__println(builtin__string_plus_many(5, _MOV((string[5]){_S("  "), _const_main__c_cyan, _S("help"), _const_main__c_reset, _S("                        Show this reference manual\n")})));
+	builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_bold, _S("EXAMPLES:"), _const_main__c_reset})));
 	builtin__println(_S("  pkg update"));
-	builtin__println(_S("  pkg install btop"));
-	builtin__println(_S("  pkg install ./custom-app-1.0.0.ngpkg"));
-	builtin__println(_S("  pkg install-file /mnt/usb/mypackage.ngpkg"));
-	builtin__println(_S("  pkg info custom-app"));
-	builtin__println(_S("  pkg remove btop\n"));
+	builtin__println(_S("  pkg repo add custom https://github.com/myuser/my-openngfw-packages"));
+	builtin__println(_S("  pkg list"));
+	builtin__println(_S("  pkg install nano"));
+	builtin__println(_S("  pkg remove nano\n"));
 }
 VV_LOC void main__main(void) {
 	Array_string args = builtin__array_slice(_const_os__args, 1, 2147483647);
@@ -9176,12 +12363,13 @@ VV_LOC void main__main(void) {
 		VUNREACHABLE();
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "list") || _SLIT_EQ(cmd.str, cmd.len, "ls")) {
-		builtin___v_exit(main__cmd_list(cfg));
+		bool json_mode = Array_string_contains(args, _S("--json")) || Array_string_contains(args, _S("-j"));
+		builtin___v_exit(main__cmd_list(cfg, json_mode));
 		VUNREACHABLE();
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "search") || _SLIT_EQ(cmd.str, cmd.len, "find")) {
 		if (args.len < 2) {
-			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg search <query>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg search <query>"), _const_main__c_reset})));
 			builtin___v_exit(1);
 			VUNREACHABLE();
 		}
@@ -9190,7 +12378,7 @@ VV_LOC void main__main(void) {
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "info") || _SLIT_EQ(cmd.str, cmd.len, "show")) {
 		if (args.len < 2) {
-			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg info <package>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg info <package>"), _const_main__c_reset})));
 			builtin___v_exit(1);
 			VUNREACHABLE();
 		}
@@ -9199,30 +12387,50 @@ VV_LOC void main__main(void) {
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "install") || _SLIT_EQ(cmd.str, cmd.len, "i") || _SLIT_EQ(cmd.str, cmd.len, "add") || _SLIT_EQ(cmd.str, cmd.len, "get")) {
 		if (args.len < 2) {
-			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install <package|path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg install <package|path/to/package>"), _const_main__c_reset})));
 			builtin___v_exit(1);
 			VUNREACHABLE();
 		}
-		builtin___v_exit(main__cmd_install_dispatcher(cfg, builtin__array_slice(args, 1, 2147483647)));
-		VUNREACHABLE();
-	}
-	else if (_SLIT_EQ(cmd.str, cmd.len, "install-file") || _SLIT_EQ(cmd.str, cmd.len, "install-local") || _SLIT_EQ(cmd.str, cmd.len, "local-install") || _SLIT_EQ(cmd.str, cmd.len, "pkg-install")) {
-		if (args.len < 2) {
-			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg install-file <path/to/package.ngpkg>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-			builtin___v_exit(1);
-			VUNREACHABLE();
-		}
-		builtin___v_exit(main__cmd_install_file(cfg, (*(string*)builtin__array_get(args, 1))));
+		builtin___v_exit(main__cmd_install(cfg, (*(string*)builtin__array_get(args, 1))));
 		VUNREACHABLE();
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "remove") || _SLIT_EQ(cmd.str, cmd.len, "uninstall") || _SLIT_EQ(cmd.str, cmd.len, "rm") || _SLIT_EQ(cmd.str, cmd.len, "delete")) {
 		if (args.len < 2) {
-			builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Usage: pkg remove <package>"), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
+			builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg remove <package>"), _const_main__c_reset})));
 			builtin___v_exit(1);
 			VUNREACHABLE();
 		}
 		builtin___v_exit(main__cmd_remove(cfg, (*(string*)builtin__array_get(args, 1))));
 		VUNREACHABLE();
+	}
+	else if (_SLIT_EQ(cmd.str, cmd.len, "repo") || _SLIT_EQ(cmd.str, cmd.len, "repos")) {
+		if (args.len < 2 || builtin__string__eq((*(string*)builtin__array_get(args, 1)), _S("list")) || builtin__string__eq((*(string*)builtin__array_get(args, 1)), _S("ls"))) {
+			bool json_mode = Array_string_contains(args, _S("--json")) || Array_string_contains(args, _S("-j"));
+			builtin___v_exit(main__cmd_repo_list(cfg, json_mode));
+			VUNREACHABLE();
+		}
+		string sub = (*(string*)builtin__array_get(args, 1));
+		if (_SLIT_EQ(sub.str, sub.len, "add")) {
+			if (args.len < 4) {
+				builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg repo add <name> <git-or-raw-url>"), _const_main__c_reset})));
+				builtin___v_exit(1);
+				VUNREACHABLE();
+			}
+			builtin___v_exit(main__cmd_repo_add((voidptr)&cfg, (*(string*)builtin__array_get(args, 2)), (*(string*)builtin__array_get(args, 3))));
+			VUNREACHABLE();
+		} else if (_SLIT_EQ(sub.str, sub.len, "remove") || _SLIT_EQ(sub.str, sub.len, "rm") || _SLIT_EQ(sub.str, sub.len, "del") || _SLIT_EQ(sub.str, sub.len, "delete")) {
+			if (args.len < 3) {
+				builtin__eprintln(builtin__string_plus_many(3, _MOV((string[3]){_const_main__c_red, _S("Usage: pkg repo remove <name>"), _const_main__c_reset})));
+				builtin___v_exit(1);
+				VUNREACHABLE();
+			}
+			builtin___v_exit(main__cmd_repo_remove((voidptr)&cfg, (*(string*)builtin__array_get(args, 2))));
+			VUNREACHABLE();
+		} else {
+			builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("Unknown repo command: "), sub, _S(". Available: list, add, remove"), _const_main__c_reset})));
+			builtin___v_exit(1);
+			VUNREACHABLE();
+		}
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "status") || _SLIT_EQ(cmd.str, cmd.len, "stat") || _SLIT_EQ(cmd.str, cmd.len, "df")) {
 		builtin___v_exit(main__cmd_status(cfg));
@@ -9234,18 +12442,19 @@ VV_LOC void main__main(void) {
 		VUNREACHABLE();
 	}
 	else if (_SLIT_EQ(cmd.str, cmd.len, "version") || _SLIT_EQ(cmd.str, cmd.len, "--version") || _SLIT_EQ(cmd.str, cmd.len, "-v")) {
-		builtin__println(builtin__str_intp(2, _MOV((StrIntpData[]){{_S("ngpkg version "), 0xfe10, {.d_s = _const_main__version}}, {_S(" (OpenNGFW Edition)"), 0, { .d_c = 0 }}})));
+		builtin__println(builtin__string_plus_many(3, _MOV((string[3]){_S("ngpkg version "), _const_main__version, _S(" (Serverless Edition)")})));
 		builtin___v_exit(0);
 		VUNREACHABLE();
 	}
 	else {
-		builtin__eprintln(builtin__str_intp(4, _MOV((StrIntpData[]){{_SLIT0, 0xfe10, {.d_s = _const_main__c_red}}, {_S("Unknown command: \""), 0xfe10, {.d_s = cmd}}, {_S("\""), 0xfe10, {.d_s = _const_main__c_reset}}, {_SLIT0, 0, { .d_c = 0 }}})));
-		builtin__eprintln(builtin__str_intp(3, _MOV((StrIntpData[]){{_S("Run "), 0xfe10, {.d_s = _const_main__c_bold}}, {_S("pkg help"), 0xfe10, {.d_s = _const_main__c_reset}}, {_S(" for available commands."), 0, { .d_c = 0 }}})));
+		builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_const_main__c_red, _S("Unknown command: \""), cmd, _S("\""), _const_main__c_reset})));
+		builtin__eprintln(builtin__string_plus_many(5, _MOV((string[5]){_S("Run "), _const_main__c_bold, _S("pkg help"), _const_main__c_reset, _S(" for available commands.")})));
 		builtin___v_exit(1);
 		VUNREACHABLE();
 	}
 }
 void _vinit(int ___argc, voidptr ___argv) {
+	static bool once = false; if (once) {return;} once = true;
 #if __STDC_HOSTED__ == 1
 	signal(11, builtin__v_segmentation_fault_handler);
 #endif
@@ -9254,17 +12463,27 @@ void _vinit(int ___argc, voidptr ___argv) {
 	_const_strconv__digit_pairs = _S("00102030405060708090011121314151617181910212223242526272829203132333435363738393041424344454647484940515253545556575859506162636465666768696071727374757677787970818283848586878889809192939495969798999");
 	_const_strconv__base_digits = _S("0123456789abcdefghijklmnopqrstuvwxyz");
 	// Initializations of consts for module builtin
+	_const_grapheme_control_ranges = _S("00000000090000000b0000000c0000000e0000001f0000007f0000009f000000ad000000ad0000001c0600001c0600000e1800000e1800000b2000000b2000000e2000000f200000282000002820000029200000292000002a2000002e20000060200000642000006520000065200000662000006f200000fffe0000fffe0000f0ff0000f8ff0000f9ff0000fbff00003034010038340100a0bc0100a3bc010073d101007ad1010000000e0000000e0001000e0001000e0002000e001f000e0080000e00ff000e00f0010e00ff0f0e00");
+	_const_grapheme_extend_ranges = _S("000300006f0300008304000087040000880400008904000091050000bd050000bf050000bf050000c1050000c2050000c4050000c5050000c7050000c7050000100600001a0600004b0600005f0600007006000070060000d6060000dc060000df060000e4060000e7060000e8060000ea060000ed0600001107000011070000300700004a070000a6070000b0070000eb070000f3070000fd070000fd07000016080000190800001b080000230800002508000027080000290800002d080000590800005b080000d3080000e1080000e3080000020900003a0900003a0900003c0900003c09000041090000480900004d0900004d090000510900005709000062090000630900008109000081090000bc090000bc090000be090000be090000c1090000c4090000cd090000cd090000d7090000d7090000e2090000e3090000fe090000fe090000010a0000020a00003c0a00003c0a0000410a0000420a0000470a0000480a00004b0a00004d0a0000510a0000510a0000700a0000710a0000750a0000750a0000810a0000820a0000bc0a0000bc0a0000c10a0000c50a0000c70a0000c80a0000cd0a0000cd0a0000e20a0000e30a0000fa0a0000ff0a0000010b0000010b00003c0b00003c0b00003e0b00003e0b00003f0b00003f0b0000410b0000440b00004d0b00004d0b0000550b0000560b0000570b0000570b0000620b0000630b0000820b0000820b0000be0b0000be0b0000c00b0000c00b0000cd0b0000cd0b0000d70b0000d70b0000000c0000000c0000040c0000040c00003e0c0000400c0000460c0000480c00004a0c00004d0c0000550c0000560c0000620c0000630c0000810c0000810c0000bc0c0000bc0c0000bf0c0000bf0c0000c20c0000c20c0000c60c0000c60c0000cc0c0000cd0c0000d50c0000d60c0000e20c0000e30c0000000d0000010d00003b0d00003c0d00003e0d00003e0d0000410d0000440d00004d0d00004d0d0000570d0000570d0000620d0000630d0000810d0000810d0000ca0d0000ca0d0000cf0d0000cf0d0000d20d0000d40d0000d60d0000d60d0000df0d0000df0d0000310e0000310e0000340e00003a0e0000470e00004e0e0000b10e0000b10e0000b40e0000bc0e0000c80e0000cd0e0000180f0000190f0000350f0000350f0000370f0000370f0000390f0000390f0000710f00007e0f0000800f0000840f0000860f0000870f00008d0f0000970f0000990f0000bc0f0000c60f0000c60f00002d100000301000003210000037100000391000003a1000003d1000003e10000058100000591000005e100000601000007110000074100000821000008210000085100000861000008d1000008d1000009d1000009d1000005d1300005f1300001217000014170000321700003417000052170000531700007217000073170000b4170000b5170000b7170000bd170000c6170000c6170000c9170000d3170000dd170000dd1700000b1800000d1800008518000086180000a9180000a9180000201900002219000027190000281900003219000032190000391900003b190000171a0000181a00001b1a00001b1a0000561a0000561a0000581a00005e1a0000601a0000601a0000621a0000621a0000651a00006c1a0000731a00007c1a00007f1a00007f1a0000b01a0000bd1a0000be1a0000be1a0000bf1a0000c01a0000001b0000031b0000341b0000341b0000351b0000351b0000361b00003a1b00003c1b00003c1b0000421b0000421b00006b1b0000731b0000801b0000811b0000a21b0000a51b0000a81b0000a91b0000ab1b0000ad1b0000e61b0000e61b0000e81b0000e91b0000ed1b0000ed1b0000ef1b0000f11b00002c1c0000331c0000361c0000371c0000d01c0000d21c0000d41c0000e01c0000e21c0000e81c0000ed1c0000ed1c0000f41c0000f41c0000f81c0000f91c0000c01d0000f91d0000fb1d0000ff1d00000c2000000c200000d0200000dc200000dd200000e0200000e1200000e1200000e2200000e4200000e5200000f0200000ef2c0000f12c00007f2d00007f2d0000e02d0000ff2d00002a3000002d3000002e3000002f300000993000009a3000006fa600006fa6000070a6000072a6000074a600007da600009ea600009fa60000f0a60000f1a6000002a8000002a8000006a8000006a800000ba800000ba8000025a8000026a800002ca800002ca80000c4a80000c5a80000e0a80000f1a80000ffa80000ffa8000026a900002da9000047a9000051a9000080a9000082a90000b3a90000b3a90000b6a90000b9a90000bca90000bda90000e5a90000e5a9000029aa00002eaa000031aa000032aa000035aa000036aa000043aa000043aa00004caa00004caa00007caa00007caa0000b0aa0000b0aa0000b2aa0000b4aa0000b7aa0000b8aa0000beaa0000bfaa0000c1aa0000c1aa0000ecaa0000edaa0000f6aa0000f6aa0000e5ab0000e5ab0000e8ab0000e8ab0000edab0000edab00001efb00001efb000000fe00000ffe000020fe00002ffe00009eff00009fff0000fd010100fd010100e0020100e0020100760301007a030100010a0100030a0100050a0100060a01000c0a01000f0a0100380a01003a0a01003f0a01003f0a0100e50a0100e60a0100240d0100270d0100ab0e0100ac0e0100460f0100500f0100011001000110010038100100461001007f10010081100100b3100100b6100100b9100100ba1001000011010002110100271101002b1101002d1101003411010073110100731101008011010081110100b6110100be110100c9110100cc110100cf110100cf1101002f12010031120100341201003412010036120100371201003e1201003e120100df120100df120100e3120100ea12010000130100011301003b1301003c1301003e1301003e13010040130100401301005713010057130100661301006c1301007013010074130100381401003f140100421401004414010046140100461401005e1401005e140100b0140100b0140100b3140100b8140100ba140100ba140100bd140100bd140100bf140100c0140100c2140100c3140100af150100af150100b2150100b5150100bc150100bd150100bf150100c0150100dc150100dd150100331601003a1601003d1601003d1601003f16010040160100ab160100ab160100ad160100ad160100b0160100b5160100b7160100b71601001d1701001f1701002217010025170100271701002b1701002f18010037180100391801003a18010030190100301901003b1901003c1901003e1901003e1901004319010043190100d4190100d7190100da190100db190100e0190100e0190100011a01000a1a0100331a0100381a01003b1a01003e1a0100471a0100471a0100511a0100561a0100591a01005b1a01008a1a0100961a0100981a0100991a0100301c0100361c0100381c01003d1c01003f1c01003f1c0100921c0100a71c0100aa1c0100b01c0100b21c0100b31c0100b51c0100b61c0100311d0100361d01003a1d01003a1d01003c1d01003d1d01003f1d0100451d0100471d0100471d0100901d0100911d0100951d0100951d0100971d0100971d0100f31e0100f41e0100f06a0100f46a0100306b0100366b01004f6f01004f6f01008f6f0100926f0100e46f0100e46f01009dbc01009ebc010065d1010065d1010067d1010069d101006ed1010072d101007bd1010082d1010085d101008bd10100aad10100add1010042d2010044d2010000da010036da01003bda01006cda010075da010075da010084da010084da01009bda01009fda0100a1da0100afda010000e0010006e0010008e0010018e001001be0010021e0010023e0010024e0010026e001002ae0010030e1010036e10100ece20100efe20100d0e80100d6e8010044e901004ae90100fbf30100fff3010020000e007f000e0000010e00ef010e00");
+	_const_grapheme_spacing_mark_ranges = _S("03090000030900003b0900003b0900003e09000040090000490900004c0900004e0900004f0900008209000083090000bf090000c0090000c7090000c8090000cb090000cc090000030a0000030a00003e0a0000400a0000830a0000830a0000be0a0000c00a0000c90a0000c90a0000cb0a0000cc0a0000020b0000030b0000400b0000400b0000470b0000480b00004b0b00004c0b0000bf0b0000bf0b0000c10b0000c20b0000c60b0000c80b0000ca0b0000cc0b0000010c0000030c0000410c0000440c0000820c0000830c0000be0c0000be0c0000c00c0000c10c0000c30c0000c40c0000c70c0000c80c0000ca0c0000cb0c0000020d0000030d00003f0d0000400d0000460d0000480d00004a0d00004c0d0000820d0000830d0000d00d0000d10d0000d80d0000de0d0000f20d0000f30d0000330e0000330e0000b30e0000b30e00003e0f00003f0f00007f0f00007f0f000031100000311000003b1000003c10000056100000571000008410000084100000b6170000b6170000be170000c5170000c7170000c81700002319000026190000291900002b19000030190000311900003319000038190000191a00001a1a0000551a0000551a0000571a0000571a00006d1a0000721a0000041b0000041b00003b1b00003b1b00003d1b0000411b0000431b0000441b0000821b0000821b0000a11b0000a11b0000a61b0000a71b0000aa1b0000aa1b0000e71b0000e71b0000ea1b0000ec1b0000ee1b0000ee1b0000f21b0000f31b0000241c00002b1c0000341c0000351c0000e11c0000e11c0000f71c0000f71c000023a8000024a8000027a8000027a8000080a8000081a80000b4a80000c3a8000052a9000053a9000083a9000083a90000b4a90000b5a90000baa90000bba90000bea90000c0a900002faa000030aa000033aa000034aa00004daa00004daa0000ebaa0000ebaa0000eeaa0000efaa0000f5aa0000f5aa0000e3ab0000e4ab0000e6ab0000e7ab0000e9ab0000eaab0000ecab0000ecab0000001001000010010002100100021001008210010082100100b0100100b2100100b7100100b81001002c1101002c11010045110100461101008211010082110100b3110100b5110100bf110100c0110100ce110100ce1101002c1201002e12010032120100331201003512010035120100e0120100e212010002130100031301003f1301003f130100411301004413010047130100481301004b1301004d1301006213010063130100351401003714010040140100411401004514010045140100b1140100b2140100b9140100b9140100bb140100bc140100be140100be140100c1140100c1140100b0150100b1150100b8150100bb150100be150100be15010030160100321601003b1601003c1601003e1601003e160100ac160100ac160100ae160100af160100b6160100b6160100201701002117010026170100261701002c1801002e1801003818010038180100311901003519010037190100381901003d1901003d19010040190100401901004219010042190100d1190100d3190100dc190100df190100e4190100e4190100391a0100391a0100571a0100581a0100971a0100971a01002f1c01002f1c01003e1c01003e1c0100a91c0100a91c0100b11c0100b11c0100b41c0100b41c01008a1d01008e1d0100931d0100941d0100961d0100961d0100f51e0100f61e0100516f0100876f0100f06f0100f16f010066d1010066d101006dd101006dd10100");
+	_const_grapheme_prepend_ranges = _S("0006000005060000dd060000dd0600000f0700000f070000e2080000e20800004e0d00004e0d0000bd100100bd100100cd100100cd100100c2110100c31101003f1901003f19010041190100411901003a1a01003a1a0100841a0100891a0100461d0100461d0100");
+	_const_grapheme_extended_pictographic_ranges = _S("a9000000a9000000ae000000ae0000003c2000003c2000004920000049200000222100002221000039210000392100009421000099210000a9210000aa2100001a2300001b23000028230000282300008823000088230000cf230000cf230000e9230000ec230000ed230000ee230000ef230000ef230000f0230000f0230000f1230000f2230000f3230000f3230000f8230000fa230000c2240000c2240000aa250000ab250000b6250000b6250000c0250000c0250000fb250000fe2500000026000001260000022600000326000004260000042600000526000005260000072600000d2600000e2600000e2600000f2600001026000011260000112600001226000012260000142600001526000016260000172600001826000018260000192600001c2600001d2600001d2600001e2600001f2600002026000020260000212600002126000022260000232600002426000025260000262600002626000027260000292600002a2600002a2600002b2600002d2600002e2600002e2600002f2600002f260000302600003726000038260000392600003a2600003a2600003b2600003f26000040260000402600004126000041260000422600004226000043260000472600004826000053260000542600005e2600005f2600005f2600006026000060260000612600006226000063260000632600006426000064260000652600006626000067260000672600006826000068260000692600007a2600007b2600007b2600007c2600007d2600007e2600007e2600007f2600007f2600008026000085260000902600009126000092260000922600009326000093260000942600009426000095260000952600009626000097260000982600009826000099260000992600009a2600009a2600009b2600009c2600009d2600009f260000a0260000a1260000a2260000a6260000a7260000a7260000a8260000a9260000aa260000ab260000ac260000af260000b0260000b1260000b2260000bc260000bd260000be260000bf260000c3260000c4260000c5260000c6260000c7260000c8260000c8260000c9260000cd260000ce260000ce260000cf260000cf260000d0260000d0260000d1260000d1260000d2260000d2260000d3260000d3260000d4260000d4260000d5260000e8260000e9260000e9260000ea260000ea260000eb260000ef260000f0260000f1260000f2260000f3260000f4260000f4260000f5260000f5260000f6260000f6260000f7260000f9260000fa260000fa260000fb260000fc260000fd260000fd260000fe26000001270000022700000227000003270000042700000527000005270000082700000c2700000d2700000d2700000e2700000e2700000f2700000f27000010270000112700001227000012270000142700001427000016270000162700001d2700001d270000212700002127000028270000282700003327000034270000442700004427000047270000472700004c2700004c2700004e2700004e270000532700005527000057270000572700006327000063270000642700006427000065270000672700009527000097270000a1270000a1270000b0270000b0270000bf270000bf2700003429000035290000052b0000072b00001b2b00001c2b0000502b0000502b0000552b0000552b000030300000303000003d3000003d3000009732000097320000993200009932000000f0010003f0010004f0010004f0010005f00100cef00100cff00100cff00100d0f00100fff001000df101000ff101002ff101002ff101006cf101006ff1010070f1010071f101007ef101007ff101008ef101008ef1010091f101009af10100adf10100e5f1010001f2010002f2010003f201000ff201001af201001af201002ff201002ff2010032f201003af201003cf201003ff2010049f201004ff2010050f2010051f2010052f20100fff2010000f301000cf301000df301000ef301000ff301000ff3010010f3010010f3010011f3010011f3010012f3010012f3010013f3010015f3010016f3010018f3010019f3010019f301001af301001af301001bf301001bf301001cf301001cf301001df301001ef301001ff3010020f3010021f3010021f3010022f3010023f3010024f301002cf301002df301002ff3010030f3010031f3010032f3010033f3010034f3010035f3010036f3010036f3010037f301004af301004bf301004bf301004cf301004ff3010050f3010050f3010051f301007bf301007cf301007cf301007df301007df301007ef301007ff3010080f3010093f3010094f3010095f3010096f3010097f3010098f3010098f3010099f301009bf301009cf301009df301009ef301009ff30100a0f30100c4f30100c5f30100c5f30100c6f30100c6f30100c7f30100c7f30100c8f30100c8f30100c9f30100c9f30100caf30100caf30100cbf30100cef30100cff30100d3f30100d4f30100dff30100e0f30100e3f30100e4f30100e4f30100e5f30100f0f30100f1f30100f2f30100f3f30100f3f30100f4f30100f4f30100f5f30100f5f30100f6f30100f6f30100f7f30100f7f30100f8f30100faf3010000f4010007f4010008f4010008f4010009f401000bf401000cf401000ef401000ff4010010f4010011f4010012f4010013f4010013f4010014f4010014f4010015f4010015f4010016f4010016f4010017f4010029f401002af401002af401002bf401003ef401003ff401003ff4010040f4010040f4010041f4010041f4010042f4010064f4010065f4010065f4010066f401006bf401006cf401006df401006ef40100acf40100adf40100adf40100aef40100b5f40100b6f40100b7f40100b8f40100ebf40100ecf40100edf40100eef40100eef40100eff40100eff40100f0f40100f4f40100f5f40100f5f40100f6f40100f7f40100f8f40100f8f40100f9f40100fcf40100fdf40100fdf40100fef40100fef40100fff4010002f5010003f5010003f5010004f5010007f5010008f5010008f5010009f5010009f501000af5010014f5010015f5010015f5010016f501002bf501002cf501002df501002ef501003df5010046f5010048f5010049f501004af501004bf501004ef501004ff501004ff5010050f501005bf501005cf5010067f5010068f501006ef501006ff5010070f5010071f5010072f5010073f5010079f501007af501007af501007bf5010086f5010087f5010087f5010088f5010089f501008af501008df501008ef501008ff5010090f5010090f5010091f5010094f5010095f5010096f5010097f50100a3f50100a4f50100a4f50100a5f50100a5f50100a6f50100a7f50100a8f50100a8f50100a9f50100b0f50100b1f50100b2f50100b3f50100bbf50100bcf50100bcf50100bdf50100c1f50100c2f50100c4f50100c5f50100d0f50100d1f50100d3f50100d4f50100dbf50100dcf50100def50100dff50100e0f50100e1f50100e1f50100e2f50100e2f50100e3f50100e3f50100e4f50100e7f50100e8f50100e8f50100e9f50100eef50100eff50100eff50100f0f50100f2f50100f3f50100f3f50100f4f50100f9f50100faf50100faf50100fbf50100fff5010000f6010000f6010001f6010006f6010007f6010008f6010009f601000df601000ef601000ef601000ff601000ff6010010f6010010f6010011f6010011f6010012f6010014f6010015f6010015f6010016f6010016f6010017f6010017f6010018f6010018f6010019f6010019f601001af601001af601001bf601001bf601001cf601001ef601001ff601001ff6010020f6010025f6010026f6010027f6010028f601002bf601002cf601002cf601002df601002df601002ef601002ff6010030f6010033f6010034f6010034f6010035f6010035f6010036f6010036f6010037f6010040f6010041f6010044f6010045f601004ff6010080f6010080f6010081f6010082f6010083f6010085f6010086f6010086f6010087f6010087f6010088f6010088f6010089f6010089f601008af601008bf601008cf601008cf601008df601008df601008ef601008ef601008ff601008ff6010090f6010090f6010091f6010093f6010094f6010094f6010095f6010095f6010096f6010096f6010097f6010097f6010098f6010098f6010099f601009af601009bf60100a1f60100a2f60100a2f60100a3f60100a3f60100a4f60100a5f60100a6f60100a6f60100a7f60100adf60100aef60100b1f60100b2f60100b2f60100b3f60100b5f60100b6f60100b6f60100b7f60100b8f60100b9f60100bef60100bff60100bff60100c0f60100c0f60100c1f60100c5f60100c6f60100caf60100cbf60100cbf60100ccf60100ccf60100cdf60100cff60100d0f60100d0f60100d1f60100d2f60100d3f60100d4f60100d5f60100d5f60100d6f60100d7f60100d8f60100dff60100e0f60100e5f60100e6f60100e8f60100e9f60100e9f60100eaf60100eaf60100ebf60100ecf60100edf60100eff60100f0f60100f0f60100f1f60100f2f60100f3f60100f3f60100f4f60100f6f60100f7f60100f8f60100f9f60100f9f60100faf60100faf60100fbf60100fcf60100fdf60100fff6010074f701007ff70100d5f70100dff70100e0f70100ebf70100ecf70100fff701000cf801000ff8010048f801004ff801005af801005ff8010088f801008ff80100aef80100fff801000cf901000cf901000df901000ff9010010f9010018f9010019f901001ef901001ff901001ff9010020f9010027f9010028f901002ff9010030f9010030f9010031f9010032f9010033f901003af901003cf901003ef901003ff901003ff9010040f9010045f9010047f901004bf901004cf901004cf901004df901004ff9010050f901005ef901005ff901006bf901006cf9010070f9010071f9010071f9010072f9010072f9010073f9010076f9010077f9010078f9010079f9010079f901007af901007af901007bf901007bf901007cf901007ff9010080f9010084f9010085f9010091f9010092f9010097f9010098f90100a2f90100a3f90100a4f90100a5f90100aaf90100abf90100adf90100aef90100aff90100b0f90100b9f90100baf90100bff90100c0f90100c0f90100c1f90100c2f90100c3f90100caf90100cbf90100cbf90100ccf90100ccf90100cdf90100cff90100d0f90100e6f90100e7f90100fff9010000fa01006ffa010070fa010073fa010074fa010074fa010075fa010077fa010078fa01007afa01007bfa01007ffa010080fa010082fa010083fa010086fa010087fa01008ffa010090fa010095fa010096fa0100a8fa0100a9fa0100affa0100b0fa0100b6fa0100b7fa0100bffa0100c0fa0100c2fa0100c3fa0100cffa0100d0fa0100d6fa0100d7fa0100fffa010000fc0100fdff0100");
 	_const_digit_pairs = _S("00102030405060708090011121314151617181910212223242526272829203132333435363738393041424344454647484940515253545556575859506162636465666768696071727374757677787970818283848586878889809192939495969798999");
 	g_live_reload_info = *(voidptr*)&((voidptr[]){0}[0]); // global 5
-	_const_none__ = I_None___to_Interface_IError(((None__*)builtin__memdup(&(None__){.Error = ((Error){E_STRUCT}),}, sizeof(None__))));
-	_const_min_i64 = ((i64)((int_literal)(-9223372036854775807LL - 1)));
+	_const_error_sentinel = I_MessageError_to_Interface_IError((HEAP(MessageError, ((MessageError){.msg = _S("error"),.code = 0,}))));
+	_const_none__ = I_None___to_Interface_IError((HEAP(None__, ((None__){.Error = ((Error){E_STRUCT}),}))));
+	_const_min_i64 = ((i64)(-9223372036854775807LL - 1));
 	_const_max_i64 = ((i64)(9223372036854775807LL));
+	_const_utf8_replacement_rune = ((rune)(0xfffd));
 	// Initializations of consts for module os
 	_const_os__path_separator = _S("/");
 	_const_os__args = builtin__arguments();
+	// Calling fn init() for module os
+	os__init();
 	// Initializations of consts for module main
-	_const_main__version = _S("1.4.0");
-	_const_main__default_repo_url = _S("http://192.168.1.1:8000/packages");
+	_const_main__version = _S("2.0.0");
+	_const_main__default_repo_name = _S("core");
+	_const_main__default_repo_url = _S("https://code.weexnes.dev/NGPKG-PKG-REPO.git");
 	_const_main__default_install_prefix = _S("/mnt/usb/opt");
 	_const_main__default_db_dir = _S("/var/lib/ngpkg");
 	_const_main__c_reset = _S("\033[0m");
@@ -9279,6 +12498,7 @@ void _vinit(int ___argc, voidptr ___argv) {
 	_const_main__c_gray = _S("\033[38;5;244m");
 }
 void _vcleanup(void) {
+	static bool once = false; if (once) {return;} once = true;
 }
 
 int main(int ___argc, char** ___argv){
