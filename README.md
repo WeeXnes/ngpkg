@@ -1,33 +1,36 @@
-# ngpkg - Netgear Package Manager for OpenNGFW
+# ngpkg
 
-[![Platform](https://img.shields.io/badge/platform-OpenNGFW%20%7C%20Linux%20ARMv7-cyan.svg)](https://code.weexnes.dev/OpenNGFW/ngpkg)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Built With V](https://img.shields.io/badge/built%20with-Vlang-blue.svg)](https://vlang.io)
+Netgear package manager for [OpenNGFW](https://code.weexnes.dev/OpenNGFW): userspace apps on persistent USB storage, without using onboard flash.
 
-`ngpkg` is a standalone package manager designed for OpenNGFW (embedded Linux router operating systems). It enables routers to run userspace applications (such as `bash`, `nano`, `htop`, `btop`, `screen`, `git`, `ufw`, `netclient`, `bareiron`) installed on persistent USB storage (`/mnt/usb/opt`) without utilizing onboard flash memory.
+[![License](https://img.shields.io/badge/license-MIT-000000?style=flat-square&labelColor=1f1f1f)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-OpenNGFW%20%C2%B7%20Linux%20ARMv7-000000?style=flat-square&labelColor=1f1f1f)](https://code.weexnes.dev/OpenNGFW/ngpkg)
+[![Stack](https://img.shields.io/badge/stack-V-000000?style=flat-square&labelColor=1f1f1f)](https://vlang.io)
 
----
+`ngpkg` is a standalone package manager for OpenNGFW (embedded Linux router operating systems). It lets routers run
+userspace applications such as `bash`, `nano`, `htop`, `btop`, `screen`, `git`, `ufw`, `netclient` and `bareiron`,
+installed on persistent USB storage (`/mnt/usb/opt`).
 
 ## Features
 
-- **Zero Runtime Dependencies**: The client is written in V and translated to standalone C (`client/ngpkg.c`). It compiles against `musl` libc with no external library dependencies.
-- **Persistent Storage Integration**: Installs binaries to `/mnt/usb/opt` and automatically manages symlinks in `$HOME/.ngpkg-bin/` and `/root/.ngpkg-bin/`.
-- **Standalone Recipe Framework**: Each package is defined by a `recipe.json` manifest and a standalone `build.sh` script.
-- **Universal BusyBox Extraction**: Multi-tier extraction pipeline compatible with BusyBox `tar` and GNU `tar`.
-- **Package Repository Server**: Built-in HTTP server (`server/pkg_server.v`) providing package distribution and metadata APIs.
+- **Zero runtime dependencies:** the client is written in V and translated to standalone C (`client/ngpkg.c`). It compiles against `musl` libc with no external library dependencies.
+- **Persistent storage integration:** installs binaries to `/mnt/usb/opt` and manages symlinks in `$HOME/.ngpkg-bin/` and `/root/.ngpkg-bin/`.
+- **Standalone recipe framework:** each package is defined by a `recipe.json` manifest and a standalone `build.sh` script.
+- **Universal BusyBox extraction:** a multi-tier extraction pipeline compatible with BusyBox `tar` and GNU `tar`.
+- **Package repository server:** a built-in HTTP server (`server/pkg_server.v`) providing package distribution and metadata APIs.
 
----
+## Usage
 
-## Router Usage
+### 1. Configure the repository
 
-### 1. Configure Repository
 On the OpenNGFW router:
+
 ```bash
 export REPO_URL="http://<SERVER_IP>:8000/packages"
 pkg update
 ```
 
-### 2. Available Commands
+### 2. Commands
+
 ```bash
 # Update local package index
 pkg update
@@ -51,22 +54,21 @@ pkg remove <package>
 pkg status
 ```
 
----
-
-## Adding Packages (Recipe Framework)
+### Adding packages (recipe framework)
 
 Each package in `recipes/<name>/` consists of two files:
-- `recipe.json`: Package metadata manifest
-- `build.sh`: Standalone cross-compilation and packaging script
 
-### Creating a Recipe
+- `recipe.json`: package metadata manifest
+- `build.sh`: standalone cross-compilation and packaging script
 
 Scaffold a new recipe:
+
 ```bash
 python3 framework/ngpkg_build.py new <name>
 ```
 
 Example `recipes/myapp/recipe.json`:
+
 ```json
 {
   "name": "myapp",
@@ -83,6 +85,7 @@ Example `recipes/myapp/recipe.json`:
 ```
 
 Example `recipes/myapp/build.sh`:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -93,19 +96,30 @@ ${CROSS_CC:-arm-buildroot-linux-musleabi-gcc} -O2 src/main.c -o "${STAGE_DIR}/bi
 ${CROSS_STRIP:-arm-buildroot-linux-musleabi-strip} --strip-all "${STAGE_DIR}/bin/myapp"
 ```
 
-### Building Packages
+### Building packages
 
 ```bash
 # Build a single package
 python3 framework/ngpkg_build.py build myapp
 
-# Build all packages and generate repository index
+# Build all packages and generate the repository index
 python3 framework/ngpkg_build.py build-all
 ```
 
----
+## Build from source
 
-## Repository Structure
+```bash
+# Build native host client, server, and package recipes
+make
+
+# Build ARM target client using the cross-toolchain
+make client-arm
+
+# Start the repository server on port 8000
+make serve
+```
+
+## Project structure
 
 ```text
 ngpkg/
@@ -119,23 +133,6 @@ ngpkg/
 └── README.md            # Project overview
 ```
 
----
-
-## Local Compilation
-
-```bash
-# Build native host client, server, and package recipes
-make
-
-# Build ARM target client using cross-toolchain
-make client-arm
-
-# Start repository server on port 8000
-make serve
-```
-
----
-
 ## License
 
-MIT License.
+MIT License. See [LICENSE](LICENSE).
